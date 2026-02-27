@@ -1,0 +1,133 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id               String    @id @default(cuid())
+  email            String    @unique
+  name             String?
+  image            String?
+  emailVerified    DateTime?
+  plan             Plan      @default(FREE)
+  stripeCustomerId String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  accounts       Account[]
+  sessions       Session[]
+  birthProfiles  BirthProfile[]
+  reports        CompatibilityReport[]
+  chatSessions   ChatSession[]
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+enum Plan {
+  FREE
+  PREMIUM
+  ANNUAL
+}
+
+model BirthProfile {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name         String
+  birthDate    DateTime
+  birthTime    String?
+  birthCity    String
+  birthCountry String
+  latitude     Float
+  longitude    Float
+  timezone     String
+  isOwner      Boolean  @default(false)
+  chartData    Json?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  reportsAsPerson1 CompatibilityReport[] @relation("Person1")
+  reportsAsPerson2 CompatibilityReport[] @relation("Person2")
+}
+
+model CompatibilityReport {
+  id       String @id @default(cuid())
+  userId   String
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  person1Id String
+  person1   BirthProfile @relation("Person1", fields: [person1Id], references: [id])
+  person2Id String
+  person2   BirthProfile @relation("Person2", fields: [person2Id], references: [id])
+
+  overallScore       Int
+  communicationScore Int
+  emotionalScore     Int
+  chemistryScore     Int
+  stabilityScore     Int
+  conflictScore      Int
+
+  summaryNarrative String @db.Text
+  fullNarrative    String @db.Text
+  redFlags         Json
+  growthAreas      Json
+
+  synastryData  Json
+  compositeData Json?
+
+  tier      ReportTier @default(FREE)
+  createdAt DateTime   @default(now())
+
+  @@unique([person1Id, person2Id])
+}
+
+enum ReportTier {
+  FREE
+  PREMIUM
+  BOUTIQUE
+}
+
+model ChatSession {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reportId  String?
+  messages  Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

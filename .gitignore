@@ -39,3 +39,18 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+/src/generated/prisma
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+astro-service/venv/
+astro-service/.env
+
+# Keep .env.example files
+!.env.example
+!astro-service/.env.example

@@ -23,13 +23,17 @@ import type {
 // Client setup
 // ============================================================
 
-if (!process.env.ANTHROPIC_API_KEY) {
-  throw new Error("ANTHROPIC_API_KEY is not set in environment variables");
-}
+let _claude: Anthropic | null = null;
 
-export const claude = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-});
+function getClient(): Anthropic {
+  if (!_claude) {
+    if (!process.env.ANTHROPIC_API_KEY) {
+      throw new Error("ANTHROPIC_API_KEY is not set in environment variables");
+    }
+    _claude = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+  }
+  return _claude;
+}
 
 export const CLAUDE_MODEL = "claude-sonnet-4-20250514";
 
@@ -319,7 +323,7 @@ export async function generateFreeReport(
     person2Chart
   );
 
-  const response = await claude.messages.create({
+  const response = await getClient().messages.create({
     model: CLAUDE_MODEL,
     max_tokens: 1024,
     system: FREE_REPORT_PROMPT,
@@ -366,7 +370,7 @@ export async function generatePremiumReport(
       "\n\n" + formatCompositeForPrompt(compositeData);
   }
 
-  const response = await claude.messages.create({
+  const response = await getClient().messages.create({
     model: CLAUDE_MODEL,
     max_tokens: 4096,
     system: PREMIUM_REPORT_PROMPT,
@@ -505,7 +509,7 @@ export async function chatWithAstrologer(
     content: msg.content,
   }));
 
-  const response = await claude.messages.create({
+  const response = await getClient().messages.create({
     model: CLAUDE_MODEL,
     max_tokens: 1024,
     system: systemPrompt,

@@ -1,8 +1,7 @@
 "use client";
 
-import { useState, Suspense } from "react";
+import { useState } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { motion } from "framer-motion";
 import { Sparkles, ArrowLeft, Loader2, Eye, EyeOff } from "lucide-react";
@@ -12,25 +11,14 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { StarField } from "@/components/star-field";
 
-export default function SignInPage() {
-  return (
-    <Suspense>
-      <SignInContent />
-    </Suspense>
-  );
-}
-
-function SignInContent() {
-  const searchParams = useSearchParams();
-  const error = searchParams.get("error");
+export default function SignUpPage() {
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoadingGoogle, setIsLoadingGoogle] = useState(false);
-  const [isLoadingCredentials, setIsLoadingCredentials] = useState(false);
-  const [errorMessage, setErrorMessage] = useState(
-    error === "CredentialsSignin" ? "Invalid email or password" : ""
-  );
+  const [isLoadingSignup, setIsLoadingSignup] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
   const handleGoogleSignIn = async () => {
     setIsLoadingGoogle(true);
@@ -41,13 +29,28 @@ function SignInContent() {
     }
   };
 
-  const handleCredentialsSignIn = async (e: React.FormEvent) => {
+  const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) return;
-    setIsLoadingCredentials(true);
+    setIsLoadingSignup(true);
     setErrorMessage("");
 
     try {
+      const res = await fetch("/api/auth/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, password }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setErrorMessage(data.error || "Something went wrong");
+        setIsLoadingSignup(false);
+        return;
+      }
+
+      // Auto sign-in after successful signup
       const result = await signIn("credentials", {
         email,
         password,
@@ -55,14 +58,14 @@ function SignInContent() {
       });
 
       if (result?.error) {
-        setErrorMessage("Invalid email or password");
-        setIsLoadingCredentials(false);
+        setErrorMessage("Account created but sign-in failed. Please sign in manually.");
+        setIsLoadingSignup(false);
       } else {
         window.location.href = "/dashboard";
       }
     } catch {
       setErrorMessage("Something went wrong. Please try again.");
-      setIsLoadingCredentials(false);
+      setIsLoadingSignup(false);
     }
   };
 
@@ -99,7 +102,7 @@ function SignInContent() {
               </span>
             </div>
             <p className="text-sm text-muted-foreground">
-              Sign in to save your charts and unlock insights
+              Create your account to explore cosmic compatibility
             </p>
           </div>
 
@@ -149,8 +152,21 @@ function SignInContent() {
             </span>
           </div>
 
-          {/* Email + Password */}
-          <form onSubmit={handleCredentialsSignIn} className="space-y-4">
+          {/* Sign up form */}
+          <form onSubmit={handleSignUp} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="name" className="text-sm">
+                Name
+              </Label>
+              <Input
+                id="name"
+                type="text"
+                placeholder="Your name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="h-11 bg-white/5 border-white/10 focus:border-cosmic-purple/50 focus:ring-cosmic-purple/20"
+              />
+            </div>
             <div className="space-y-2">
               <Label htmlFor="email" className="text-sm">
                 Email address
@@ -173,10 +189,11 @@ function SignInContent() {
                 <Input
                   id="password"
                   type={showPassword ? "text" : "password"}
-                  placeholder="Enter your password"
+                  placeholder="At least 8 characters"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="h-11 bg-white/5 border-white/10 focus:border-cosmic-purple/50 focus:ring-cosmic-purple/20 pr-10"
+                  minLength={8}
                   required
                 />
                 <button
@@ -195,29 +212,29 @@ function SignInContent() {
             <Button
               type="submit"
               className="w-full h-11 bg-cosmic-purple hover:bg-cosmic-purple-dark text-white transition-all"
-              disabled={isLoadingCredentials || !email || !password}
+              disabled={isLoadingSignup || !email || !password}
             >
-              {isLoadingCredentials ? (
+              {isLoadingSignup ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               ) : null}
-              Sign In
+              Create Account
             </Button>
           </form>
 
-          {/* Sign up link */}
+          {/* Sign in link */}
           <p className="mt-6 text-center text-sm text-muted-foreground">
-            Don&apos;t have an account?{" "}
+            Already have an account?{" "}
             <Link
-              href="/auth/signup"
+              href="/auth/signin"
               className="text-cosmic-purple-light hover:underline font-medium"
             >
-              Sign up
+              Sign in
             </Link>
           </p>
         </div>
 
         <p className="mt-6 text-center text-xs text-muted-foreground">
-          By signing in, you agree to our{" "}
+          By creating an account, you agree to our{" "}
           <Link
             href="/terms"
             className="text-cosmic-purple-light hover:underline"

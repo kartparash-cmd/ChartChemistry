@@ -6,6 +6,7 @@ const footerLinks = {
   product: [
     { href: "/", label: "Home" },
     { href: "/compatibility", label: "Compatibility" },
+    { href: "/horoscope", label: "Daily Horoscope" },
     { href: "/pricing", label: "Pricing" },
     { href: "/dashboard", label: "Dashboard" },
   ],

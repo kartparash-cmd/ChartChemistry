@@ -572,9 +572,129 @@ export function buildChatContext(
   return lines.join("\n");
 }
 
+// ============================================================
+// Daily Horoscope
+// ============================================================
+
+const HOROSCOPE_PROMPT = `You are an expert astrologer writing a personalized daily horoscope based on the user's full natal chart and today's planetary transits. This is NOT a generic sun-sign horoscope — it's deeply personal.
+
+GUIDELINES:
+- Write 150-250 words.
+- Reference 2-3 specific transits affecting this person's chart today.
+- Cover: overall energy, love/relationships, career/purpose, and one actionable tip.
+- Be warm, specific, and encouraging. Avoid doom-and-gloom.
+- Use accessible language. Briefly explain any astrological terms.
+- Frame everything as tendencies, not predictions.
+- End with a "Cosmic tip" — one specific, actionable piece of advice for the day.
+
+OUTPUT FORMAT:
+Return a JSON object with these fields:
+{
+  "summary": "One sentence capturing today's overall energy (max 120 chars)",
+  "body": "The full horoscope text (150-250 words, flowing prose)",
+  "cosmicTip": "One actionable tip for the day (1-2 sentences)",
+  "luckyTime": "A time window suggestion like 'Late morning' or '2-4 PM'",
+  "mood": "One word capturing the day's energy: 'expansive' | 'reflective' | 'passionate' | 'grounded' | 'transformative' | 'playful' | 'intense' | 'harmonious'"
+}`;
+
+/**
+ * Generate a personalized daily horoscope.
+ */
+export async function generateDailyHoroscope(
+  natalChartData: NatalChart,
+  transitData: { aspectsToNatal: { transitingPlanet: string; natalPlanet: string; aspect: string; orb: number; keywords: string }[]; transitingPositions: PlanetPosition[] },
+  userName: string,
+  date: string
+): Promise<{
+  summary: string;
+  body: string;
+  cosmicTip: string;
+  luckyTime: string;
+  mood: string;
+}> {
+  const chartLines: string[] = [];
+
+  chartLines.push(`=== ${userName.toUpperCase()}'S NATAL CHART ===`);
+  for (const p of natalChartData.planets) {
+    chartLines.push(formatPlanet(p));
+  }
+  chartLines.push(`Dominant Planet: ${natalChartData.dominantPlanet}`);
+  chartLines.push("");
+
+  chartLines.push(`=== TODAY'S TRANSITS TO NATAL (${date}) ===`);
+  for (const t of transitData.aspectsToNatal) {
+    chartLines.push(`Transit ${t.transitingPlanet} ${t.aspect} Natal ${t.natalPlanet} (orb: ${t.orb.toFixed(1)}°) — ${t.keywords}`);
+  }
+  chartLines.push("");
+
+  chartLines.push("=== CURRENT PLANETARY POSITIONS ===");
+  for (const p of transitData.transitingPositions.slice(0, 5)) {
+    chartLines.push(formatPlanet(p));
+  }
+
+  const response = await getClient().messages.create({
+    model: CLAUDE_MODEL,
+    max_tokens: 1024,
+    system: HOROSCOPE_PROMPT,
+    messages: [
+      {
+        role: "user",
+        content: `Write a personalized daily horoscope for ${userName} for ${date}.\n\n${chartLines.join("\n")}`,
+      },
+    ],
+  });
+
+  const textBlock = response.content.find((block) => block.type === "text");
+  const raw = textBlock ? textBlock.text.trim() : "";
+
+  try {
+    const jsonMatch = raw.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      return JSON.parse(jsonMatch[0]);
+    }
+  } catch {
+    // Fallback
+  }
+
+  return {
+    summary: "A day of cosmic potential awaits you.",
+    body: raw,
+    cosmicTip: "Trust your intuition today.",
+    luckyTime: "Mid-afternoon",
+    mood: "harmonious",
+  };
+}
+
+/**
+ * Generate an AI explanation for a specific chart placement or aspect.
+ */
+export async function explainChartElement(
+  element: string,
+  chartData: NatalChart,
+  userName: string
+): Promise<string> {
+  const chartContext = chartData.planets.map(formatPlanet).join("\n");
+
+  const response = await getClient().messages.create({
+    model: CLAUDE_MODEL,
+    max_tokens: 512,
+    system: `You are an expert astrologer explaining a specific placement or aspect in someone's natal chart. Be warm, insightful, and educational. Write 80-150 words. Use accessible language. Reference how this placement interacts with other elements in their chart.`,
+    messages: [
+      {
+        role: "user",
+        content: `Explain what "${element}" means in ${userName}'s natal chart.\n\nFull chart:\n${chartContext}`,
+      },
+    ],
+  });
+
+  const textBlock = response.content.find((block) => block.type === "text");
+  return textBlock ? textBlock.text.trim() : "";
+}
+
 // Re-export prompts for testing or direct use
 export const SYSTEM_PROMPTS = {
   free: FREE_REPORT_PROMPT,
   premium: PREMIUM_REPORT_PROMPT,
   chat: CHAT_PROMPT,
+  horoscope: HOROSCOPE_PROMPT,
 } as const;

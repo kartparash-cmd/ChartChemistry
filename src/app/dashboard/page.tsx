@@ -20,6 +20,8 @@ import {
   Loader2,
   Calendar,
   ArrowRight,
+  Orbit,
+  Lightbulb,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -568,6 +570,43 @@ export default function DashboardPage() {
               value={planLabel}
               color="bg-cosmic-purple/10"
             />
+
+            {/* Daily Horoscope Quick Link */}
+            <motion.div
+              whileHover={{ scale: 1.02 }}
+              className="rounded-xl border border-gold/20 bg-gradient-to-br from-gold/[0.06] to-transparent p-4"
+            >
+              <div className="flex items-center gap-2 mb-2">
+                <Sun className="h-4 w-4 text-gold" />
+                <h4 className="font-heading text-sm font-semibold">Daily Horoscope</h4>
+              </div>
+              <p className="text-xs text-muted-foreground mb-3">
+                Your personalized cosmic reading for today
+              </p>
+              <Button asChild size="sm" variant="outline" className="w-full border-gold/20 text-gold hover:bg-gold/10">
+                <Link href="/horoscope">
+                  <Lightbulb className="mr-2 h-3 w-3" />
+                  Read Today&apos;s Horoscope
+                </Link>
+              </Button>
+            </motion.div>
+
+            {/* Transit Alerts */}
+            <motion.div
+              whileHover={{ scale: 1.02 }}
+              className="rounded-xl border border-cosmic-purple/20 bg-gradient-to-br from-cosmic-purple/[0.06] to-transparent p-4"
+            >
+              <div className="flex items-center gap-2 mb-2">
+                <Orbit className="h-4 w-4 text-cosmic-purple-light" />
+                <h4 className="font-heading text-sm font-semibold">Active Transits</h4>
+              </div>
+              <p className="text-xs text-muted-foreground mb-1">
+                Planetary influences on your chart today
+              </p>
+              <p className="text-[10px] text-muted-foreground/60">
+                Available when you have a birth profile with chart data
+              </p>
+            </motion.div>
 
             {data?.stats.plan === "FREE" && (
               <motion.div

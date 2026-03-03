@@ -105,7 +105,7 @@ export default function ChartPage() {
         const res = await fetch(`/api/profile/${chartId}`);
         if (res.ok) {
           const json = await res.json();
-          setProfile(json);
+          setProfile(json.profile || json);
         } else {
           setProfile(getDemoProfile(chartId));
         }

@@ -66,8 +66,8 @@ export default function CompatibilityPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          personA,
-          personB,
+          person1: personA,
+          person2: personB,
         }),
       });
 

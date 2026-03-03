@@ -757,8 +757,50 @@ function parseNarrativeSections(report: Report): NarrativeSection[] {
 }
 
 function extractSection(narrative: string, section: string): string {
-  // Simple extraction - in production, fullNarrative would be JSON
-  return narrative || `Detailed ${section} analysis will appear here once your report is generated.`;
+  if (!narrative) {
+    return `Detailed ${section} analysis will appear here once your report is generated.`;
+  }
+
+  // Try to parse as JSON first (premium reports store structured data)
+  try {
+    const parsed = JSON.parse(narrative);
+    // Map section IDs to JSON keys from PremiumReportSections
+    const keyMap: Record<string, string> = {
+      emotional: "emotionalLandscape",
+      romance: "passionAndAttraction",
+      communication: "communicationStyle",
+      "long-term": "longTermPotential",
+    };
+    const key = keyMap[section];
+    if (key && parsed[key]) return parsed[key];
+    // Fallback to theBigPicture if key missing
+    if (parsed.theBigPicture) return parsed.theBigPicture;
+  } catch {
+    // Not JSON — split plain text narrative into sections by paragraph
+  }
+
+  // Split plain text by double newlines or paragraph markers
+  const paragraphs = narrative
+    .split(/\n\n+/)
+    .map((p) => p.trim())
+    .filter(Boolean);
+
+  // Distribute paragraphs across the 4 section slots
+  const sectionIndex: Record<string, number> = {
+    emotional: 0,
+    romance: 1,
+    communication: 2,
+    "long-term": 3,
+  };
+
+  const idx = sectionIndex[section] ?? 0;
+
+  if (paragraphs.length >= 4) {
+    return paragraphs[idx] || paragraphs[0];
+  }
+
+  // If fewer paragraphs than sections, return the available one
+  return paragraphs[idx % paragraphs.length] || narrative;
 }
 
 // Demo report for when API is not available

@@ -61,9 +61,24 @@ export const authOptions: NextAuthOptions = {
       }
       return session;
     },
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger }) {
       if (user) {
         token.plan = (user as { plan?: string }).plan ?? "FREE";
+      }
+      // Refresh plan from DB on session update or periodically
+      if (trigger === "update" || (token.sub && !user)) {
+        // Re-read plan from DB every time to catch Stripe webhook updates
+        try {
+          const dbUser = await prisma.user.findUnique({
+            where: { id: token.sub },
+            select: { plan: true },
+          });
+          if (dbUser) {
+            token.plan = dbUser.plan;
+          }
+        } catch {
+          // Keep existing plan on DB error
+        }
       }
       return token;
     },

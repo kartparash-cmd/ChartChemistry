@@ -128,6 +128,7 @@ export default function ChatPage() {
   const [reports, setReports] = useState<ReportSummary[]>([]);
   const [selectedReportId, setSelectedReportId] = useState<string>("");
   const [loadingReports, setLoadingReports] = useState(true);
+  const [sessionId, setSessionId] = useState<string | undefined>();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -219,19 +220,19 @@ export default function ChatPage() {
         body: JSON.stringify({
           message: content.trim(),
           reportId: selectedReportId || undefined,
-          history: messages.slice(-10).map((m) => ({
-            role: m.role,
-            content: m.content,
-          })),
+          sessionId,
         }),
       });
 
       if (res.ok) {
         const data = await res.json();
+        if (data.sessionId) {
+          setSessionId(data.sessionId);
+        }
         const aiMessage: Message = {
           id: `ai-${Date.now()}`,
           role: "assistant",
-          content: data.response || data.message,
+          content: data.reply || data.response || data.message,
           timestamp: new Date(),
         };
         setMessages((prev) => [...prev, aiMessage]);
@@ -337,7 +338,7 @@ export default function ChatPage() {
             <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
           </div>
         ) : reports.length > 0 ? (
-          <Select value={selectedReportId} onValueChange={setSelectedReportId}>
+          <Select value={selectedReportId} onValueChange={(v) => { setSelectedReportId(v); setSessionId(undefined); }}>
             <SelectTrigger className="w-full bg-white/5 border-white/10">
               <SelectValue placeholder="Select a relationship..." />
             </SelectTrigger>

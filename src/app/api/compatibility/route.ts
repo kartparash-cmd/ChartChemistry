@@ -15,6 +15,7 @@ import { authOptions } from "@/lib/auth";
 import { calculateNatalChart, calculateSynastry } from "@/lib/astro-client";
 import { generateFreeReport, extractSynastryHighlights } from "@/lib/claude";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
+import { geocodeCity } from "@/lib/geocode";
 import type {
   PersonInput,
   CompatibilityRequest,
@@ -69,7 +70,12 @@ function validatePersonInput(
     return { valid: false, error: `${label}.birthCountry is required` };
   }
 
-  if (typeof p.latitude !== "number" || p.latitude < -90 || p.latitude > 90) {
+  // latitude, longitude, timezone are optional — will be geocoded if missing
+  if (
+    p.latitude !== undefined &&
+    p.latitude !== null &&
+    (typeof p.latitude !== "number" || p.latitude < -90 || p.latitude > 90)
+  ) {
     return {
       valid: false,
       error: `${label}.latitude must be a number between -90 and 90`,
@@ -77,18 +83,14 @@ function validatePersonInput(
   }
 
   if (
-    typeof p.longitude !== "number" ||
-    p.longitude < -180 ||
-    p.longitude > 180
+    p.longitude !== undefined &&
+    p.longitude !== null &&
+    (typeof p.longitude !== "number" || p.longitude < -180 || p.longitude > 180)
   ) {
     return {
       valid: false,
       error: `${label}.longitude must be a number between -180 and 180`,
     };
-  }
-
-  if (!p.timezone || typeof p.timezone !== "string") {
-    return { valid: false, error: `${label}.timezone is required` };
   }
 
   return {
@@ -99,9 +101,9 @@ function validatePersonInput(
       birthTime: p.birthTime as string | undefined,
       birthCity: p.birthCity as string,
       birthCountry: p.birthCountry as string,
-      latitude: p.latitude as number,
-      longitude: p.longitude as number,
-      timezone: p.timezone as string,
+      latitude: (p.latitude as number) || 0,
+      longitude: (p.longitude as number) || 0,
+      timezone: (p.timezone as string) || "",
     },
   };
 }
@@ -181,6 +183,46 @@ export async function POST(request: Request) {
 
     const person1 = v1.data;
     const person2 = v2.data;
+
+    // --- Geocode if coordinates are missing ---
+    const geocodePromises: Promise<void>[] = [];
+
+    if (!person1.latitude || !person1.longitude || !person1.timezone) {
+      geocodePromises.push(
+        geocodeCity(person1.birthCity, person1.birthCountry).then((geo) => {
+          person1.latitude = geo.latitude;
+          person1.longitude = geo.longitude;
+          person1.timezone = geo.timezone;
+        })
+      );
+    }
+
+    if (!person2.latitude || !person2.longitude || !person2.timezone) {
+      geocodePromises.push(
+        geocodeCity(person2.birthCity, person2.birthCountry).then((geo) => {
+          person2.latitude = geo.latitude;
+          person2.longitude = geo.longitude;
+          person2.timezone = geo.timezone;
+        })
+      );
+    }
+
+    if (geocodePromises.length > 0) {
+      try {
+        await Promise.all(geocodePromises);
+      } catch (geoError) {
+        return NextResponse.json(
+          {
+            error: "Geocoding failed",
+            message:
+              geoError instanceof Error
+                ? geoError.message
+                : "Could not determine coordinates for the provided city. Please check the city name.",
+          },
+          { status: 400 }
+        );
+      }
+    }
 
     // --- Step 1+2: Calculate natal charts in parallel ---
     const input1 = toNatalChartInput(person1);

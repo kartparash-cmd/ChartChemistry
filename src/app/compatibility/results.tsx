@@ -1,6 +1,8 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import { Lock, Share2, Bookmark } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CompatibilityScoreCard } from "@/components/compatibility-score-card";
@@ -118,6 +120,9 @@ export function CompatibilityResults({
   result,
   className,
 }: CompatibilityResultsProps) {
+  const { data: session } = useSession();
+  const router = useRouter();
+
   const radarData = [
     { dimension: "Emotional", score: result.dimensions.emotional },
     { dimension: "Chemistry", score: result.dimensions.chemistry },
@@ -293,8 +298,11 @@ export function CompatibilityResults({
           variant="outline"
           className="w-full rounded-full sm:w-auto"
           onClick={() => {
-            // Prompt auth if not logged in - for now just alert
-            alert("Please sign in to save your report.");
+            if (!session) {
+              router.push("/auth/signin");
+            } else {
+              router.push("/dashboard");
+            }
           }}
         >
           <Bookmark className="mr-2 h-4 w-4" />

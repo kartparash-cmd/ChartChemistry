@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import {
   Check,
@@ -162,12 +164,54 @@ function FeatureValue({ value }: { value: boolean | string }) {
 }
 
 export default function PricingPage() {
+  const { data: session } = useSession();
+  const router = useRouter();
   const [billing, setBilling] = useState<BillingPeriod>("monthly");
   const [toastVisible, setToastVisible] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const handleCta = () => {
-    setToastVisible(true);
-    setTimeout(() => setToastVisible(false), 3000);
+  const handleCta = async (tierName: string) => {
+    if (tierName === "Free") {
+      if (session) {
+        router.push("/dashboard");
+      } else {
+        router.push("/auth/signup");
+      }
+      return;
+    }
+
+    if (!session) {
+      router.push("/auth/signin");
+      return;
+    }
+
+    // For paid tiers, create a Stripe checkout session
+    const plan = tierName === "Premium"
+      ? (billing === "annual" ? "ANNUAL" : "PREMIUM")
+      : "PREMIUM"; // Boutique falls back to Premium for now
+
+    setLoading(true);
+    try {
+      const res = await fetch("/api/stripe/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plan }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok && data.url) {
+        window.location.href = data.url;
+      } else {
+        setToastVisible(true);
+        setTimeout(() => setToastVisible(false), 3000);
+      }
+    } catch {
+      setToastVisible(true);
+      setTimeout(() => setToastVisible(false), 3000);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const containerVariants = {
@@ -346,7 +390,8 @@ export default function PricingPage() {
 
               {/* CTA */}
               <Button
-                onClick={handleCta}
+                onClick={() => handleCta(tier.name)}
+                disabled={loading}
                 variant={tier.ctaVariant}
                 className={cn(
                   "w-full h-11 font-medium transition-all",
@@ -354,8 +399,8 @@ export default function PricingPage() {
                     "bg-cosmic-purple hover:bg-cosmic-purple-dark text-white shadow-lg shadow-cosmic-purple/20"
                 )}
               >
-                {tier.cta}
-                <ArrowRight className="ml-2 h-4 w-4" />
+                {loading ? "Redirecting..." : tier.cta}
+                {!loading && <ArrowRight className="ml-2 h-4 w-4" />}
               </Button>
             </motion.div>
           ))}
@@ -429,7 +474,7 @@ export default function PricingPage() {
         >
           <p className="text-sm font-medium">
             <Sparkles className="inline mr-1 h-3 w-3 text-cosmic-purple-light" />
-            Coming soon! Payments will be available at launch.
+            Something went wrong. Please try again or contact support.
           </p>
         </motion.div>
       )}

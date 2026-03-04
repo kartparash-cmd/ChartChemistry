@@ -135,7 +135,7 @@ export async function POST(request: Request) {
     // --- Rate limiting for unauthenticated / free users ---
     if (!isPremium) {
       const ip = getClientIp(request);
-      const rateLimitResult = checkRateLimit(ip);
+      const rateLimitResult = await checkRateLimit(ip);
 
       if (!rateLimitResult.allowed) {
         return NextResponse.json(

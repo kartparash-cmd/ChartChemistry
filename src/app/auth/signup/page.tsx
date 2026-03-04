@@ -50,18 +50,21 @@ export default function SignUpPage() {
         return;
       }
 
-      // Auto sign-in after successful signup
-      const result = await signIn("credentials", {
-        email,
-        password,
-        redirect: false,
-      });
-
-      if (result?.error) {
-        setErrorMessage("Account created but sign-in failed. Please sign in manually.");
-        setIsLoadingSignup(false);
+      // If email was sent, redirect to verification page; otherwise auto sign-in
+      if (data.message?.includes("check your email")) {
+        window.location.href = "/auth/verify-email";
       } else {
-        window.location.href = "/dashboard";
+        const signInResult = await signIn("credentials", {
+          email,
+          password,
+          redirect: false,
+        });
+        if (signInResult?.ok) {
+          window.location.href = "/dashboard";
+        } else {
+          // Account created but auto sign-in failed — send to sign-in page
+          window.location.href = "/auth/signin";
+        }
       }
     } catch {
       setErrorMessage("Something went wrong. Please try again.");

@@ -1,11 +1,64 @@
 /**
- * Simple in-memory rate limiter for the free compatibility endpoint.
+ * Rate limiter for the free compatibility endpoint.
+ *
+ * Uses Upstash Redis + @upstash/ratelimit when UPSTASH_REDIS_REST_URL and
+ * UPSTASH_REDIS_REST_TOKEN are configured. Falls back to in-memory
+ * rate limiting otherwise.
  *
  * IP-based, 3 checks per day for unauthenticated users.
  * Premium/Annual users bypass the limiter entirely.
- *
- * In production this should be replaced with Redis or a similar store.
  */
+
+import { Ratelimit } from "@upstash/ratelimit";
+import { Redis } from "@upstash/redis";
+
+/* -------------------------------------------------------------------------- */
+/*  Shared types & constants                                                  */
+/* -------------------------------------------------------------------------- */
+
+export interface RateLimitResult {
+  allowed: boolean;
+  remaining: number;
+  resetAt: number; // Unix timestamp in ms
+}
+
+const FREE_LIMIT = 3; // max requests per window
+const WINDOW_MS = 24 * 60 * 60 * 1000; // 24 hours
+
+/* -------------------------------------------------------------------------- */
+/*  Upstash rate limiter (lazy-initialised)                                   */
+/* -------------------------------------------------------------------------- */
+
+let upstashRatelimit: Ratelimit | null = null;
+let upstashChecked = false;
+
+function getUpstashRatelimit(): Ratelimit | null {
+  if (upstashChecked) return upstashRatelimit;
+  upstashChecked = true;
+
+  const url = process.env.UPSTASH_REDIS_REST_URL;
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+
+  if (url && token) {
+    try {
+      const redis = new Redis({ url, token });
+      upstashRatelimit = new Ratelimit({
+        redis,
+        limiter: Ratelimit.slidingWindow(FREE_LIMIT, "24 h"),
+        prefix: "ratelimit:compat",
+      });
+    } catch {
+      // If initialisation fails, fall back to in-memory
+      upstashRatelimit = null;
+    }
+  }
+
+  return upstashRatelimit;
+}
+
+/* -------------------------------------------------------------------------- */
+/*  In-memory fallback                                                        */
+/* -------------------------------------------------------------------------- */
 
 interface RateLimitEntry {
   count: number;
@@ -14,12 +67,7 @@ interface RateLimitEntry {
 
 const store = new Map<string, RateLimitEntry>();
 
-const FREE_LIMIT = 3; // max requests per window
-const WINDOW_MS = 24 * 60 * 60 * 1000; // 24 hours
-
-// Periodic cleanup every 10 minutes to prevent unbounded growth
 const CLEANUP_INTERVAL_MS = 10 * 60 * 1000;
-
 let cleanupTimer: ReturnType<typeof setInterval> | null = null;
 
 function ensureCleanupRunning() {
@@ -33,25 +81,16 @@ function ensureCleanupRunning() {
     }
   }, CLEANUP_INTERVAL_MS);
 
-  // Allow the Node process to exit even if the timer is running
-  if (cleanupTimer && typeof cleanupTimer === "object" && "unref" in cleanupTimer) {
+  if (
+    cleanupTimer &&
+    typeof cleanupTimer === "object" &&
+    "unref" in cleanupTimer
+  ) {
     cleanupTimer.unref();
   }
 }
 
-export interface RateLimitResult {
-  allowed: boolean;
-  remaining: number;
-  resetAt: number; // Unix timestamp in ms
-}
-
-/**
- * Check whether the given IP is within the rate limit.
- *
- * Returns an object indicating whether the request is allowed,
- * how many requests remain, and when the window resets.
- */
-export function checkRateLimit(ip: string): RateLimitResult {
+function checkRateLimitInMemory(ip: string): RateLimitResult {
   ensureCleanupRunning();
 
   const now = Date.now();
@@ -81,6 +120,41 @@ export function checkRateLimit(ip: string): RateLimitResult {
     resetAt: entry.resetAt,
   };
 }
+
+/* -------------------------------------------------------------------------- */
+/*  Exported check function                                                   */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Check whether the given IP is within the rate limit.
+ *
+ * Uses Upstash Redis when configured, otherwise falls back to in-memory.
+ * Returns an object indicating whether the request is allowed,
+ * how many requests remain, and when the window resets.
+ */
+export async function checkRateLimit(ip: string): Promise<RateLimitResult> {
+  const rl = getUpstashRatelimit();
+
+  if (rl) {
+    try {
+      const result = await rl.limit(ip);
+      return {
+        allowed: result.success,
+        remaining: result.remaining,
+        resetAt: result.reset,
+      };
+    } catch {
+      // If Upstash fails at runtime, fall back to in-memory
+      return checkRateLimitInMemory(ip);
+    }
+  }
+
+  return checkRateLimitInMemory(ip);
+}
+
+/* -------------------------------------------------------------------------- */
+/*  IP extraction                                                             */
+/* -------------------------------------------------------------------------- */
 
 /**
  * Get the client IP from a Request object.

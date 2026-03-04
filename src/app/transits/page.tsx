@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -89,22 +89,59 @@ function EmptyProfileState() {
   );
 }
 
-function ErrorState({ message }: { message: string }) {
+function ErrorState({
+  message,
+  onRetry,
+}: {
+  message: string;
+  onRetry: () => void;
+}) {
+  const isServiceError =
+    message.toLowerCase().includes("unreachable") ||
+    message.toLowerCase().includes("unavailable") ||
+    message.toLowerCase().includes("connect") ||
+    message.toLowerCase().includes("service") ||
+    message.toLowerCase().includes("temporarily");
+
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.98 }}
       animate={{ opacity: 1, scale: 1 }}
-      className="rounded-xl border border-red-400/20 bg-red-400/[0.04] p-8 text-center"
+      className="rounded-xl border border-white/10 bg-white/[0.03] p-8 text-center backdrop-blur-sm"
     >
-      <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-400/10">
-        <AlertTriangle className="h-6 w-6 text-red-400" />
-      </div>
+      <motion.div
+        initial={{ scale: 0.8, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ delay: 0.1, type: "spring", stiffness: 200 }}
+        className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-full bg-cosmic-purple/10"
+      >
+        <AlertTriangle className="h-7 w-7 text-cosmic-purple-light" />
+      </motion.div>
       <h3 className="font-heading text-lg font-semibold mb-2">
-        Unable to Load Transits
+        {isServiceError
+          ? "Service Temporarily Unavailable"
+          : "Unable to Load Transits"}
       </h3>
-      <p className="text-sm text-muted-foreground max-w-md mx-auto">
-        {message}
+      <p className="text-sm text-muted-foreground max-w-md mx-auto mb-6">
+        {isServiceError
+          ? "Our astrology calculation service is currently being updated. Please try again shortly."
+          : message}
       </p>
+      <div className="flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
+        <Button
+          onClick={onRetry}
+          className="bg-cosmic-purple text-white hover:bg-cosmic-purple-dark"
+        >
+          <Orbit className="mr-2 h-4 w-4" />
+          Try Again
+        </Button>
+        <Button asChild variant="outline" className="border-white/10">
+          <Link href="/dashboard">
+            <ArrowRight className="mr-2 h-4 w-4" />
+            Go to Dashboard
+          </Link>
+        </Button>
+      </div>
     </motion.div>
   );
 }
@@ -185,41 +222,47 @@ export default function TransitsPage() {
   }, [status, router]);
 
   // Fetch transit data
+  const fetchTransits = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    setNoProfile(false);
+    try {
+      const res = await fetch("/api/transits/personal");
+
+      if (res.status === 401) {
+        router.push("/auth/signin");
+        return;
+      }
+
+      if (res.status === 404) {
+        setNoProfile(true);
+        setLoading(false);
+        return;
+      }
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        const msg = errData.message || errData.error || "";
+        setError(
+          msg || "Something went wrong loading your transits. Please try again later."
+        );
+        setLoading(false);
+        return;
+      }
+
+      const json: TransitResponse = await res.json();
+      setData(json);
+    } catch {
+      setError("Failed to connect. Please check your connection and try again.");
+    } finally {
+      setLoading(false);
+    }
+  }, [router]);
+
   useEffect(() => {
     if (status !== "authenticated") return;
-
-    const fetchTransits = async () => {
-      try {
-        const res = await fetch("/api/transits/personal");
-
-        if (res.status === 401) {
-          router.push("/auth/signin");
-          return;
-        }
-
-        if (res.status === 404) {
-          setNoProfile(true);
-          setLoading(false);
-          return;
-        }
-
-        if (!res.ok) {
-          setError("Something went wrong loading your transits. Please try again later.");
-          setLoading(false);
-          return;
-        }
-
-        const json: TransitResponse = await res.json();
-        setData(json);
-      } catch {
-        setError("Failed to connect. Please check your connection and try again.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchTransits();
-  }, [status, router]);
+  }, [status, fetchTransits]);
 
   if (status === "loading" || loading) {
     return (
@@ -299,7 +342,7 @@ export default function TransitsPage() {
         {noProfile ? (
           <EmptyProfileState />
         ) : error ? (
-          <ErrorState message={error} />
+          <ErrorState message={error} onRetry={fetchTransits} />
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Main timeline */}

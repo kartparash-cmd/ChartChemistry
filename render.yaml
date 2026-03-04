@@ -2,6 +2,7 @@ services:
   - type: web
     name: chartchemistry-astro
     runtime: docker
+    rootDir: astro-service
     dockerfilePath: ./Dockerfile
     dockerContext: .
     plan: free
@@ -9,3 +10,5 @@ services:
     envVars:
       - key: EPHE_PATH
         value: /app/ephe
+      - key: CORS_ORIGINS
+        value: https://chartchemistry.com,https://www.chartchemistry.com,http://localhost:3000

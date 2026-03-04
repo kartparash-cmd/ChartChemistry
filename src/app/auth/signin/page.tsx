@@ -191,6 +191,14 @@ function SignInContent() {
                   )}
                 </button>
               </div>
+              <div className="flex justify-end">
+                <Link
+                  href="/auth/forgot-password"
+                  className="text-sm text-muted-foreground hover:text-cosmic-purple-light transition-colors"
+                >
+                  Forgot your password?
+                </Link>
+              </div>
             </div>
             <Button
               type="submit"

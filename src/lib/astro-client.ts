@@ -3,6 +3,9 @@
  *
  * Each public function maps 1-to-1 with a FastAPI endpoint and uses
  * the TypeScript types defined in @/types/astrology.ts.
+ *
+ * Includes a circuit breaker (fail-fast after consecutive failures)
+ * and a per-request timeout via AbortController.
  */
 
 import type {
@@ -17,35 +20,122 @@ import { HOUSE_SYSTEM_TO_API } from "@/types/astrology";
 
 const ASTRO_URL = process.env.ASTRO_SERVICE_URL || "http://localhost:8000";
 
+/** Default fetch timeout in milliseconds. */
+const REQUEST_TIMEOUT_MS = 15_000;
+
+// ---------------------------------------------------------------------------
+// Circuit breaker — module-level state (in-memory, per-process)
+// ---------------------------------------------------------------------------
+
+type CircuitState = "closed" | "open" | "half-open";
+
+/** Number of consecutive failures before the circuit opens. */
+const FAILURE_THRESHOLD = 5;
+
+/** How long (ms) the circuit stays open before allowing a probe request. */
+const COOLDOWN_MS = 60_000;
+
+let circuitState: CircuitState = "closed";
+let consecutiveFailures = 0;
+let circuitOpenedAt = 0;
+
+/**
+ * Return the current health / availability of the astro-service
+ * from the circuit breaker's perspective.
+ */
+export function getAstroServiceStatus(): {
+  available: boolean;
+  circuitState: CircuitState;
+} {
+  // Re-evaluate: if the cooldown has elapsed, transition to half-open.
+  if (
+    circuitState === "open" &&
+    Date.now() - circuitOpenedAt >= COOLDOWN_MS
+  ) {
+    circuitState = "half-open";
+  }
+
+  return {
+    available: circuitState !== "open",
+    circuitState,
+  };
+}
+
+/** Record a successful request — reset the breaker. */
+function onRequestSuccess(): void {
+  consecutiveFailures = 0;
+  circuitState = "closed";
+}
+
+/** Record a failed request — potentially trip the breaker. */
+function onRequestFailure(): void {
+  consecutiveFailures += 1;
+  if (consecutiveFailures >= FAILURE_THRESHOLD) {
+    circuitState = "open";
+    circuitOpenedAt = Date.now();
+  }
+}
+
+// ---------------------------------------------------------------------------
+
 interface AstroServiceError {
   detail: string;
 }
 
 /**
- * Low-level fetch wrapper with error handling.
+ * Low-level fetch wrapper with error handling, timeout, and circuit breaker.
  */
 async function request<T>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<T> {
+  // --- Circuit breaker gate ---
+  const status = getAstroServiceStatus();
+
+  if (status.circuitState === "open") {
+    throw new Error(
+      "Astrology service is temporarily unavailable. Please try again in a moment."
+    );
+  }
+
+  // In half-open state we allow exactly one probe through (handled below).
+
   const url = `${ASTRO_URL}${endpoint}`;
+
+  // --- Timeout via AbortController ---
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 
   let response: Response;
   try {
     response = await fetch(url, {
       ...options,
+      signal: controller.signal,
       headers: {
         "Content-Type": "application/json",
         ...options.headers,
       },
     });
   } catch (error) {
+    clearTimeout(timeoutId);
+    onRequestFailure();
+
+    if (error instanceof DOMException && error.name === "AbortError") {
+      throw new Error(
+        `Astro service request timed out after ${REQUEST_TIMEOUT_MS / 1000}s: ${url}`
+      );
+    }
+
     throw new Error(
       `Astro service unreachable at ${url}: ${error instanceof Error ? error.message : String(error)}`
     );
   }
 
+  clearTimeout(timeoutId);
+
   if (!response.ok) {
+    onRequestFailure();
+
     let detail = `Astro service error: ${response.status}`;
     try {
       const body: AstroServiceError = await response.json();
@@ -55,6 +145,9 @@ async function request<T>(
     }
     throw new Error(detail);
   }
+
+  // Success — reset the circuit breaker.
+  onRequestSuccess();
 
   return response.json() as Promise<T>;
 }

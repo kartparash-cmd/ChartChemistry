@@ -16,6 +16,8 @@ import {
   RefreshCw,
   Clock,
   ArrowRight,
+  AlertTriangle,
+  LayoutDashboard,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -337,30 +339,87 @@ export default function WellnessPage() {
             <LoadingSkeleton />
           </motion.div>
         ) : error ? (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="rounded-2xl border border-white/10 bg-white/[0.03] p-8 text-center"
-          >
-            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-cosmic-purple/10">
-              <Activity className="h-7 w-7 text-cosmic-purple-light" />
-            </div>
-            <h2 className="font-heading text-lg font-semibold mb-2">
-              Set Up Your Birth Chart
-            </h2>
-            <p className="text-sm text-muted-foreground mb-6 max-w-md mx-auto">
-              {error}
-            </p>
-            <Button
-              asChild
-              className="bg-cosmic-purple hover:bg-cosmic-purple-dark text-white"
-            >
-              <Link href="/compatibility">
-                <Sparkles className="mr-2 h-4 w-4" />
-                Create Your Chart
-              </Link>
-            </Button>
-          </motion.div>
+          (() => {
+            const isServiceError =
+              error.toLowerCase().includes("unreachable") ||
+              error.toLowerCase().includes("unavailable") ||
+              error.toLowerCase().includes("connect") ||
+              error.toLowerCase().includes("service") ||
+              error.toLowerCase().includes("temporarily");
+            return (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="rounded-2xl border border-white/10 bg-white/[0.03] p-8 text-center backdrop-blur-sm"
+              >
+                <motion.div
+                  initial={{ scale: 0.8, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ delay: 0.1, type: "spring", stiffness: 200 }}
+                  className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-full bg-cosmic-purple/10"
+                >
+                  {isServiceError ? (
+                    <AlertTriangle className="h-7 w-7 text-cosmic-purple-light" />
+                  ) : (
+                    <Activity className="h-7 w-7 text-cosmic-purple-light" />
+                  )}
+                </motion.div>
+                <h2 className="font-heading text-lg font-semibold mb-2">
+                  {isServiceError
+                    ? "Service Temporarily Unavailable"
+                    : "Set Up Your Birth Chart"}
+                </h2>
+                <p className="text-sm text-muted-foreground mb-6 max-w-md mx-auto">
+                  {isServiceError
+                    ? "Our astrology calculation service is currently being updated. Please try again shortly."
+                    : error}
+                </p>
+                <div className="flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
+                  {isServiceError ? (
+                    <>
+                      <Button
+                        onClick={fetchWellness}
+                        className="bg-cosmic-purple text-white hover:bg-cosmic-purple-dark"
+                      >
+                        <RefreshCw className="mr-2 h-4 w-4" />
+                        Try Again
+                      </Button>
+                      <Button
+                        asChild
+                        variant="outline"
+                        className="border-white/10"
+                      >
+                        <Link href="/dashboard">
+                          <LayoutDashboard className="mr-2 h-4 w-4" />
+                          Go to Dashboard
+                        </Link>
+                      </Button>
+                    </>
+                  ) : (
+                    <>
+                      <Button
+                        asChild
+                        className="bg-cosmic-purple hover:bg-cosmic-purple-dark text-white"
+                      >
+                        <Link href="/compatibility">
+                          <Sparkles className="mr-2 h-4 w-4" />
+                          Create Your Chart
+                        </Link>
+                      </Button>
+                      <Button
+                        onClick={fetchWellness}
+                        variant="outline"
+                        className="border-white/10"
+                      >
+                        <RefreshCw className="mr-2 h-4 w-4" />
+                        Retry
+                      </Button>
+                    </>
+                  )}
+                </div>
+              </motion.div>
+            );
+          })()
         ) : data ? (
           <div className="space-y-8">
             {/* Summary Bar */}

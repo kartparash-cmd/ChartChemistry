@@ -12,9 +12,11 @@ import {
   Shield,
   Swords,
   TrendingUp,
-  Star,
   Check,
   ArrowRight,
+  FileText,
+  Layers,
+  Zap,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { StarField } from "@/components/star-field";
@@ -102,21 +104,24 @@ const DIMENSIONS = [
   },
 ];
 
-const TESTIMONIALS = [
+const BETA_STATS = [
   {
-    name: "Ava M.",
-    text: "I always knew my partner and I had something special, but ChartChemistry showed me exactly why. The Moon compatibility analysis was eerily accurate.",
-    rating: 5,
+    icon: FileText,
+    value: "500+",
+    label: "Reports Generated",
+    description: "Compatibility reports created by early users exploring their cosmic connections.",
   },
   {
-    name: "Jordan K.",
-    text: "The AI breakdown of our conflict patterns helped us understand why we argue the way we do. It completely changed how we communicate.",
-    rating: 5,
+    icon: Layers,
+    value: "6",
+    label: "Dimensions Analyzed",
+    description: "Every report examines emotional, physical, communication, stability, conflict, and growth layers.",
   },
   {
-    name: "Riley T.",
-    text: "Way better than a simple sun sign comparison. The synastry analysis was detailed, nuanced, and genuinely insightful.",
-    rating: 5,
+    icon: Zap,
+    value: "Real-time",
+    label: "AI-Powered Insights",
+    description: "Claude AI interprets your synastry and composite charts the moment you submit.",
   },
 ];
 
@@ -327,7 +332,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ========================= SOCIAL PROOF ========================= */}
+      {/* ========================= JOIN THE BETA ========================= */}
       <section className="relative px-4 py-24">
         <div className="mx-auto max-w-5xl">
           <motion.div
@@ -339,10 +344,11 @@ export default function Home() {
             transition={{ duration: 0.5 }}
           >
             <h2 className="text-3xl font-bold sm:text-4xl">
-              What People Are Saying
+              We&apos;re in Beta
             </h2>
             <p className="mt-3 text-muted-foreground">
-              Real feedback from people who went beyond sun signs.
+              ChartChemistry is growing. Be among the first to explore
+              AI-powered compatibility insights.
             </p>
           </motion.div>
 
@@ -353,26 +359,21 @@ export default function Home() {
             viewport={{ once: true, margin: "-100px" }}
             variants={staggerContainer}
           >
-            {TESTIMONIALS.map((t) => (
+            {BETA_STATS.map((stat) => (
               <motion.div
-                key={t.name}
+                key={stat.label}
                 variants={fadeInUp}
                 transition={{ duration: 0.5 }}
-                className="glass-card flex flex-col gap-4 rounded-2xl p-6"
+                className="glass-card group flex flex-col items-center gap-4 rounded-2xl p-8 text-center transition-all hover:border-cosmic-purple/30"
               >
-                {/* Stars */}
-                <div className="flex gap-1">
-                  {Array.from({ length: t.rating }).map((_, i) => (
-                    <Star
-                      key={i}
-                      className="h-4 w-4 fill-gold text-gold"
-                    />
-                  ))}
+                <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-cosmic-purple/10 text-cosmic-purple-light transition-colors group-hover:bg-cosmic-purple/20">
+                  <stat.icon className="h-7 w-7" />
                 </div>
-                <p className="flex-1 text-sm leading-relaxed text-muted-foreground">
-                  &ldquo;{t.text}&rdquo;
+                <p className="text-3xl font-bold cosmic-text">{stat.value}</p>
+                <h3 className="text-lg font-semibold">{stat.label}</h3>
+                <p className="text-sm text-muted-foreground">
+                  {stat.description}
                 </p>
-                <p className="text-sm font-semibold">{t.name}</p>
               </motion.div>
             ))}
           </motion.div>

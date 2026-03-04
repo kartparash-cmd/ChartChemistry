@@ -2,7 +2,8 @@
 
 import { useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, AlertTriangle, RefreshCw, LayoutDashboard } from "lucide-react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { StarField } from "@/components/star-field";
 import { BirthDataForm, type BirthData } from "@/components/birth-data-form";
@@ -106,9 +107,13 @@ export default function CompatibilityPage() {
     } catch (err) {
       const message =
         err instanceof Error ? err.message : "Something went wrong";
+      const isServiceDown =
+        message.includes("fetch") ||
+        message.toLowerCase().includes("unreachable") ||
+        message.toLowerCase().includes("unavailable");
       setError(
-        message.includes("fetch")
-          ? "Our astrology calculation service is temporarily unavailable. Please try again in a moment."
+        isServiceDown
+          ? "Our astrology calculation service is currently being updated. Please try again shortly."
           : message
       );
       setPageState("error");
@@ -237,24 +242,57 @@ export default function CompatibilityPage() {
           {pageState === "error" && (
             <motion.div
               key="error"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.3 }}
-              className="flex flex-col items-center gap-4 py-16 text-center"
+              transition={{ duration: 0.4 }}
+              className="mx-auto max-w-lg"
             >
-              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-destructive/10">
-                <span className="text-2xl">!</span>
+              <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-8 text-center backdrop-blur-sm">
+                <motion.div
+                  initial={{ scale: 0.8, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ delay: 0.1, type: "spring", stiffness: 200 }}
+                  className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-cosmic-purple/10"
+                >
+                  <AlertTriangle className="h-8 w-8 text-cosmic-purple-light" />
+                </motion.div>
+                <h3 className="font-heading text-xl font-semibold mb-2">
+                  {error.toLowerCase().includes("updated") ||
+                  error.toLowerCase().includes("unavailable")
+                    ? "Service Temporarily Unavailable"
+                    : "Something Went Wrong"}
+                </h3>
+                <p className="mx-auto max-w-md text-sm text-muted-foreground mb-6">
+                  {error}
+                </p>
+                <div className="flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
+                  <Button
+                    onClick={handleSubmit}
+                    className="bg-cosmic-purple text-white hover:bg-cosmic-purple-dark"
+                  >
+                    <RefreshCw className="mr-2 h-4 w-4" />
+                    Try Again
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="border-white/10"
+                    onClick={handleReset}
+                  >
+                    Start Over
+                  </Button>
+                  <Button
+                    asChild
+                    variant="ghost"
+                    className="text-muted-foreground hover:text-foreground"
+                  >
+                    <Link href="/dashboard">
+                      <LayoutDashboard className="mr-2 h-4 w-4" />
+                      Go to Dashboard
+                    </Link>
+                  </Button>
+                </div>
               </div>
-              <h3 className="text-lg font-semibold">Something went wrong</h3>
-              <p className="max-w-md text-sm text-muted-foreground">{error}</p>
-              <Button
-                variant="outline"
-                onClick={handleReset}
-                className="mt-2 rounded-full"
-              >
-                Try Again
-              </Button>
             </motion.div>
           )}
         </AnimatePresence>

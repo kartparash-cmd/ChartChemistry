@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
+import crypto from "crypto";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
+import { sendVerificationEmail } from "@/lib/email";
 
 export async function POST(request: Request) {
   try {
@@ -41,8 +43,28 @@ export async function POST(request: Request) {
       },
     });
 
+    // Generate verification token and send email
+    const verificationToken = crypto.randomUUID();
+    await prisma.verificationToken.create({
+      data: {
+        identifier: email,
+        token: verificationToken,
+        expires: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours
+      },
+    });
+
+    const emailResult = await sendVerificationEmail(email, verificationToken);
+    if (!emailResult.success) {
+      console.warn("Verification email was not sent for user:", user.id);
+    }
+
     return NextResponse.json(
-      { message: "Account created successfully", userId: user.id },
+      {
+        message: emailResult.success
+          ? "Account created! Please check your email to verify your account."
+          : "Account created successfully!",
+        userId: user.id,
+      },
       { status: 201 }
     );
   } catch {

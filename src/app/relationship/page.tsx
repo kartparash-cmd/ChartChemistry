@@ -14,7 +14,10 @@ import {
   Loader2,
   AlertTriangle,
   TrendingUp,
+  RefreshCw,
+  LayoutDashboard,
 } from "lucide-react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -613,12 +616,47 @@ export default function RelationshipPage() {
               exit={{ opacity: 0, y: -10 }}
               className="mb-8"
             >
-              <Card className="border-destructive/30 bg-destructive/[0.05]">
-                <CardContent className="flex items-center gap-3 py-4">
-                  <AlertTriangle className="h-5 w-5 flex-shrink-0 text-destructive" />
-                  <p className="text-sm text-destructive">{error}</p>
-                </CardContent>
-              </Card>
+              <div className="rounded-xl border border-white/10 bg-white/[0.03] p-6 text-center backdrop-blur-sm">
+                <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-cosmic-purple/10">
+                  <AlertTriangle className="h-6 w-6 text-cosmic-purple-light" />
+                </div>
+                <h3 className="font-heading text-base font-semibold mb-1">
+                  {error.toLowerCase().includes("unreachable") ||
+                  error.toLowerCase().includes("unavailable") ||
+                  error.toLowerCase().includes("service")
+                    ? "Service Temporarily Unavailable"
+                    : "Unable to Load Insights"}
+                </h3>
+                <p className="text-sm text-muted-foreground mb-4 max-w-md mx-auto">
+                  {error.toLowerCase().includes("unreachable") ||
+                  error.toLowerCase().includes("unavailable") ||
+                  error.toLowerCase().includes("service")
+                    ? "Our astrology calculation service is currently being updated. Please try again shortly."
+                    : error}
+                </p>
+                <div className="flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
+                  <Button
+                    size="sm"
+                    onClick={handleGetInsights}
+                    disabled={!canSubmit}
+                    className="bg-cosmic-purple text-white hover:bg-cosmic-purple-dark"
+                  >
+                    <RefreshCw className="mr-2 h-3.5 w-3.5" />
+                    Try Again
+                  </Button>
+                  <Button
+                    asChild
+                    size="sm"
+                    variant="outline"
+                    className="border-white/10"
+                  >
+                    <Link href="/dashboard">
+                      <LayoutDashboard className="mr-2 h-3.5 w-3.5" />
+                      Go to Dashboard
+                    </Link>
+                  </Button>
+                </div>
+              </div>
             </motion.div>
           )}
         </AnimatePresence>

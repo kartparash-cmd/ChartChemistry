@@ -14,6 +14,8 @@ import {
   Loader2,
   Calendar,
   Sparkles,
+  AlertTriangle,
+  RefreshCw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -516,17 +518,43 @@ export default function ConnectionsPage() {
                       initial={{ opacity: 0, y: -5 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -5 }}
-                      className="rounded-lg border border-red-400/20 bg-red-400/5 p-4 text-center"
+                      className="rounded-xl border border-white/10 bg-white/[0.03] p-6 text-center backdrop-blur-sm"
                     >
-                      <p className="text-sm text-red-400">{error}</p>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setError("")}
-                        className="mt-2 text-xs text-muted-foreground hover:text-foreground"
-                      >
-                        Dismiss
-                      </Button>
+                      <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-cosmic-purple/10">
+                        <AlertTriangle className="h-6 w-6 text-cosmic-purple-light" />
+                      </div>
+                      <h4 className="font-heading text-base font-semibold mb-1">
+                        {error.toLowerCase().includes("unreachable") ||
+                        error.toLowerCase().includes("unavailable") ||
+                        error.toLowerCase().includes("service")
+                          ? "Service Temporarily Unavailable"
+                          : "Compatibility Check Failed"}
+                      </h4>
+                      <p className="text-sm text-muted-foreground mb-4 max-w-sm mx-auto">
+                        {error.toLowerCase().includes("unreachable") ||
+                        error.toLowerCase().includes("unavailable") ||
+                        error.toLowerCase().includes("service")
+                          ? "Our astrology calculation service is currently being updated. Please try again shortly."
+                          : error}
+                      </p>
+                      <div className="flex items-center justify-center gap-3">
+                        <Button
+                          size="sm"
+                          onClick={handleCompare}
+                          className="bg-cosmic-purple text-white hover:bg-cosmic-purple-dark"
+                        >
+                          <RefreshCw className="mr-2 h-3.5 w-3.5" />
+                          Try Again
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setError("")}
+                          className="text-xs text-muted-foreground hover:text-foreground"
+                        >
+                          Dismiss
+                        </Button>
+                      </div>
                     </motion.div>
                   )}
                 </AnimatePresence>

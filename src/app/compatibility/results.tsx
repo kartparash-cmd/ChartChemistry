@@ -1,14 +1,24 @@
 "use client";
 
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { Lock, Share2, Bookmark } from "lucide-react";
+import {
+  Lock,
+  Share2,
+  Bookmark,
+  Sparkles,
+  Loader2,
+  Check,
+  AlertCircle,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CompatibilityScoreCard } from "@/components/compatibility-score-card";
 import { CompatibilityRadarChart } from "@/components/radar-chart";
 import { ScoreBar } from "@/components/score-bar";
 import { cn } from "@/lib/utils";
+import type { BirthData } from "@/components/birth-data-form";
 
 /* -------------------------------------------------------------------------- */
 /*  Types                                                                     */
@@ -34,8 +44,16 @@ export interface CompatibilityResult {
   narrative: string;
 }
 
+interface PremiumReport {
+  sections: Record<string, string>;
+  redFlags: string[];
+  growthAreas: string[];
+}
+
 interface CompatibilityResultsProps {
   result: CompatibilityResult;
+  personAData?: BirthData | null;
+  personBData?: BirthData | null;
   className?: string;
 }
 
@@ -67,8 +85,18 @@ const fadeInUp = {
   visible: { opacity: 1, y: 0 },
 };
 
+const PREMIUM_SECTION_LABELS: Record<string, string> = {
+  theBigPicture: "The Big Picture",
+  communicationStyle: "Communication Style",
+  emotionalLandscape: "Emotional Landscape",
+  passionAndAttraction: "Passion & Attraction",
+  longTermPotential: "Long-Term Potential",
+  challengeZones: "Challenge Zones",
+  cosmicAdvice: "Cosmic Advice",
+};
+
 /* -------------------------------------------------------------------------- */
-/*  Blurred Premium Section                                                    */
+/*  Blurred Premium Section (for free users)                                   */
 /* -------------------------------------------------------------------------- */
 
 function LockedSection({
@@ -78,9 +106,10 @@ function LockedSection({
   title: string;
   description: string;
 }) {
+  const router = useRouter();
+
   return (
     <div className="relative overflow-hidden rounded-2xl">
-      {/* Blurred placeholder content */}
       <div className="glass-card select-none rounded-2xl p-6 blur-sm">
         <h3 className="mb-3 text-lg font-semibold">{title}</h3>
         <div className="space-y-2">
@@ -91,8 +120,6 @@ function LockedSection({
           <div className="h-4 w-3/6 rounded bg-muted/30" />
         </div>
       </div>
-
-      {/* Overlay */}
       <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-background/60 backdrop-blur-sm">
         <div className="flex h-12 w-12 items-center justify-center rounded-full bg-cosmic-purple/20">
           <Lock className="h-5 w-5 text-cosmic-purple-light" />
@@ -103,6 +130,7 @@ function LockedSection({
         </p>
         <Button
           size="sm"
+          onClick={() => router.push("/pricing")}
           className="mt-1 rounded-full bg-gradient-to-r from-cosmic-purple to-gold px-6 text-sm font-semibold text-white hover:brightness-110"
         >
           Unlock with Premium
@@ -113,15 +141,70 @@ function LockedSection({
 }
 
 /* -------------------------------------------------------------------------- */
+/*  Helper: geocode + create profile + generate full report                    */
+/* -------------------------------------------------------------------------- */
+
+async function geocodeBirthData(
+  data: BirthData
+): Promise<BirthData & { latitude: number; longitude: number; timezone: string }> {
+  if (data.latitude && data.longitude && data.timezone) {
+    return data as BirthData & { latitude: number; longitude: number; timezone: string };
+  }
+
+  const res = await fetch(
+    `/api/geocode?city=${encodeURIComponent(data.birthCity)}&country=${encodeURIComponent(data.birthCountry)}`
+  );
+  if (!res.ok) throw new Error(`Could not geocode "${data.birthCity}"`);
+  const geo = await res.json();
+  return { ...data, latitude: geo.latitude, longitude: geo.longitude, timezone: geo.timezone };
+}
+
+async function createProfile(data: BirthData & { latitude: number; longitude: number; timezone: string }): Promise<string> {
+  const res = await fetch("/api/profile", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      name: data.name,
+      birthDate: data.birthDate,
+      birthTime: data.birthTime || null,
+      birthCity: data.birthCity,
+      birthCountry: data.birthCountry,
+      latitude: data.latitude,
+      longitude: data.longitude,
+      timezone: data.timezone,
+    }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || `Failed to save profile for ${data.name}`);
+  }
+  const json = await res.json();
+  return json.profile.id;
+}
+
+/* -------------------------------------------------------------------------- */
 /*  Main Results Component                                                     */
 /* -------------------------------------------------------------------------- */
 
 export function CompatibilityResults({
   result,
+  personAData,
+  personBData,
   className,
 }: CompatibilityResultsProps) {
   const { data: session } = useSession();
   const router = useRouter();
+
+  const isPremium =
+    session?.user?.plan === "PREMIUM" || session?.user?.plan === "ANNUAL";
+
+  // Premium report state
+  const [premiumReport, setPremiumReport] = useState<PremiumReport | null>(null);
+  const [premiumLoading, setPremiumLoading] = useState(false);
+  const [premiumError, setPremiumError] = useState("");
+
+  // Save state
+  const [saved, setSaved] = useState(false);
 
   const radarData = [
     { dimension: "Emotional", score: result.dimensions.emotional },
@@ -156,6 +239,78 @@ export function CompatibilityResults({
       await navigator.clipboard.writeText(
         `${shareText}\n${window.location.href}`
       );
+    }
+  };
+
+  const handleGenerateFullReport = async () => {
+    if (!personAData || !personBData) return;
+    setPremiumLoading(true);
+    setPremiumError("");
+
+    try {
+      // Geocode both persons if coordinates are missing
+      const [geoA, geoB] = await Promise.all([
+        geocodeBirthData(personAData),
+        geocodeBirthData(personBData),
+      ]);
+
+      // Create birth profiles
+      const [person1Id, person2Id] = await Promise.all([
+        createProfile(geoA),
+        createProfile(geoB),
+      ]);
+
+      // Generate full premium report
+      const res = await fetch("/api/compatibility/full", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ person1Id, person2Id }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.message || "Failed to generate premium report");
+      }
+
+      const data = await res.json();
+      setPremiumReport({
+        sections: data.sections || {},
+        redFlags: data.redFlags || [],
+        growthAreas: data.growthAreas || [],
+      });
+      setSaved(true); // Full report is auto-saved by the API
+    } catch (e) {
+      setPremiumError(
+        e instanceof Error ? e.message : "Something went wrong"
+      );
+    } finally {
+      setPremiumLoading(false);
+    }
+  };
+
+  const handleSave = async () => {
+    if (!session) {
+      router.push("/auth/signin");
+      return;
+    }
+
+    if (premiumReport) {
+      setSaved(true);
+      return;
+    }
+
+    if (isPremium && personAData && personBData) {
+      await handleGenerateFullReport();
+      return;
+    }
+
+    // Free user — save to localStorage as bookmark
+    try {
+      const key = `cc_report_${Date.now()}`;
+      localStorage.setItem(key, JSON.stringify(result));
+      setSaved(true);
+    } catch {
+      // localStorage might be full or unavailable
     }
   };
 
@@ -256,7 +411,7 @@ export function CompatibilityResults({
         </div>
       </motion.div>
 
-      {/* Locked Premium Sections */}
+      {/* Premium Sections */}
       <motion.div
         className="space-y-6"
         initial="hidden"
@@ -264,18 +419,114 @@ export function CompatibilityResults({
         variants={fadeInUp}
         transition={{ duration: 0.5, delay: 1 }}
       >
-        <LockedSection
-          title="Full Synastry Report"
-          description="Detailed analysis of every planetary aspect between your charts, house overlays, and composite chart interpretation."
-        />
-        <LockedSection
-          title="Red Flags & Green Flags"
-          description="Specific patterns in your charts that indicate potential challenges and natural strengths in your connection."
-        />
-        <LockedSection
-          title="Growth Areas"
-          description="Personalized recommendations for how to nurture your connection and navigate difficult transits together."
-        />
+        {premiumReport ? (
+          /* ---- Premium content unlocked ---- */
+          <>
+            {Object.entries(premiumReport.sections)
+              .filter(([key]) => key !== "theBigPicture")
+              .map(([key, content]) => (
+                <div key={key} className="glass-card rounded-2xl p-6">
+                  <h3 className="mb-3 text-lg font-semibold">
+                    {PREMIUM_SECTION_LABELS[key] || key}
+                  </h3>
+                  <div className="prose prose-sm prose-invert max-w-none">
+                    <p className="leading-relaxed text-muted-foreground whitespace-pre-line">
+                      {content}
+                    </p>
+                  </div>
+                </div>
+              ))}
+
+            {premiumReport.redFlags.length > 0 && (
+              <div className="glass-card rounded-2xl p-6">
+                <h3 className="mb-3 text-lg font-semibold text-red-400">
+                  Red Flags
+                </h3>
+                <ul className="space-y-2">
+                  {premiumReport.redFlags.map((flag, i) => (
+                    <li
+                      key={i}
+                      className="flex items-start gap-2 text-sm text-muted-foreground"
+                    >
+                      <span className="mt-0.5 text-red-400">&#9679;</span>
+                      {flag}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {premiumReport.growthAreas.length > 0 && (
+              <div className="glass-card rounded-2xl p-6">
+                <h3 className="mb-3 text-lg font-semibold text-green-400">
+                  Growth Areas
+                </h3>
+                <ul className="space-y-2">
+                  {premiumReport.growthAreas.map((area, i) => (
+                    <li
+                      key={i}
+                      className="flex items-start gap-2 text-sm text-muted-foreground"
+                    >
+                      <span className="mt-0.5 text-green-400">&#9679;</span>
+                      {area}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </>
+        ) : isPremium ? (
+          /* ---- Premium user: show generate button ---- */
+          <div className="glass-card rounded-2xl p-8 text-center">
+            <Sparkles className="mx-auto mb-3 h-8 w-8 text-cosmic-purple-light" />
+            <h3 className="mb-2 text-lg font-semibold">
+              Full Premium Report Available
+            </h3>
+            <p className="mb-5 text-sm text-muted-foreground max-w-md mx-auto">
+              Get detailed synastry analysis, red flags, green flags, growth
+              areas, and personalized cosmic advice.
+            </p>
+            {premiumError && (
+              <div className="mb-4 flex items-center justify-center gap-2 text-sm text-red-400">
+                <AlertCircle className="h-4 w-4" />
+                {premiumError}
+              </div>
+            )}
+            <Button
+              onClick={handleGenerateFullReport}
+              disabled={premiumLoading || !personAData || !personBData}
+              className="rounded-full bg-gradient-to-r from-cosmic-purple to-gold px-8 text-sm font-semibold text-white hover:brightness-110"
+            >
+              {premiumLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Generating Report...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="mr-2 h-4 w-4" />
+                  Generate Full Report
+                </>
+              )}
+            </Button>
+          </div>
+        ) : (
+          /* ---- Free user: show locked sections ---- */
+          <>
+            <LockedSection
+              title="Full Synastry Report"
+              description="Detailed analysis of every planetary aspect between your charts, house overlays, and composite chart interpretation."
+            />
+            <LockedSection
+              title="Red Flags & Green Flags"
+              description="Specific patterns in your charts that indicate potential challenges and natural strengths in your connection."
+            />
+            <LockedSection
+              title="Growth Areas"
+              description="Personalized recommendations for how to nurture your connection and navigate difficult transits together."
+            />
+          </>
+        )}
       </motion.div>
 
       {/* Action Buttons */}
@@ -297,16 +548,20 @@ export function CompatibilityResults({
         <Button
           variant="outline"
           className="w-full rounded-full sm:w-auto"
-          onClick={() => {
-            if (!session) {
-              router.push("/auth/signin");
-            } else {
-              router.push("/dashboard");
-            }
-          }}
+          disabled={saved}
+          onClick={handleSave}
         >
-          <Bookmark className="mr-2 h-4 w-4" />
-          Save This Report
+          {saved ? (
+            <>
+              <Check className="mr-2 h-4 w-4 text-green-500" />
+              Report Saved
+            </>
+          ) : (
+            <>
+              <Bookmark className="mr-2 h-4 w-4" />
+              Save This Report
+            </>
+          )}
         </Button>
       </motion.div>
     </div>

@@ -78,7 +78,7 @@ export function Navigation() {
                     : "text-muted-foreground hover:text-foreground"
                 )}
               >
-                {link.label}
+                <span className="relative z-10">{link.label}</span>
                 {isActive && (
                   <motion.div
                     layoutId="nav-indicator"

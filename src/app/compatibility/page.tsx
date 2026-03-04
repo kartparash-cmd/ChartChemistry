@@ -78,7 +78,30 @@ export default function CompatibilityPage() {
       }
 
       const data = await response.json();
-      setResult(data);
+
+      // Map API response shape to CompatibilityResult format
+      const mappedResult: CompatibilityResult = {
+        personA: {
+          name: personA.name,
+          sunSign: getSunSign(personA.birthDate),
+        },
+        personB: {
+          name: personB.name,
+          sunSign: getSunSign(personB.birthDate),
+        },
+        overallScore: data.scores?.overall ?? 0,
+        dimensions: {
+          emotional: data.scores?.emotional ?? 0,
+          chemistry: data.scores?.chemistry ?? 0,
+          communication: data.scores?.communication ?? 0,
+          stability: data.scores?.stability ?? 0,
+          harmony: data.scores?.conflict != null
+            ? Math.round(100 - data.scores.conflict)
+            : 0,
+        },
+        narrative: data.narrative ?? "",
+      };
+      setResult(mappedResult);
       setPageState("results");
     } catch (err) {
       // If the API isn't ready yet, generate mock results for demo
@@ -214,7 +237,11 @@ export default function CompatibilityPage() {
               exit={{ opacity: 0 }}
               transition={{ duration: 0.3 }}
             >
-              <CompatibilityResults result={result} />
+              <CompatibilityResults
+                result={result}
+                personAData={personA}
+                personBData={personB}
+              />
 
               <div className="mt-10 flex justify-center">
                 <Button

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion, useMotionValue, useTransform, animate } from "framer-motion";
 import { cn } from "@/lib/utils";
 
@@ -44,7 +44,7 @@ export function CompatibilityScoreCard({
   size = "md",
   className,
 }: CompatibilityScoreCardProps) {
-  const [hasAnimated, setHasAnimated] = useState(false);
+  const hasAnimatedRef = useRef(false);
   const motionScore = useMotionValue(0);
   const displayScore = useTransform(motionScore, (v) => Math.round(v));
   const [displayValue, setDisplayValue] = useState(0);
@@ -57,8 +57,8 @@ export function CompatibilityScoreCard({
   const gradientId = `score-gradient-${score}-${size}`;
 
   useEffect(() => {
-    if (hasAnimated) return;
-    setHasAnimated(true);
+    if (hasAnimatedRef.current) return;
+    hasAnimatedRef.current = true;
 
     const controls = animate(motionScore, score, {
       duration: 1.5,
@@ -73,7 +73,7 @@ export function CompatibilityScoreCard({
       controls.stop();
       unsubscribe();
     };
-  }, [score, hasAnimated, motionScore]);
+  }, [score, motionScore]);
 
   return (
     <motion.div

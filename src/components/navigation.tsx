@@ -7,13 +7,14 @@ import { useSession, signOut } from "next-auth/react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Menu,
-  X,
   Sparkles,
   User,
   Settings,
   LogOut,
   LayoutDashboard,
   LogIn,
+  Shield,
+  HelpCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -23,12 +24,16 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { cn } from "@/lib/utils";
 
 const navLinks = [
   { href: "/", label: "Home" },
   { href: "/compatibility", label: "Compatibility" },
+  { href: "/connections", label: "Connections" },
   { href: "/horoscope", label: "Daily Horoscope" },
+  { href: "/transits", label: "Transits" },
+  { href: "/learn", label: "Learn" },
   { href: "/pricing", label: "Pricing" },
   { href: "/dashboard", label: "Dashboard" },
 ];
@@ -47,7 +52,7 @@ export function Navigation() {
       initial={{ y: -20, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.4, ease: "easeOut" }}
-      className="sticky top-0 z-50 w-full border-b border-white/10 bg-navy/80 backdrop-blur-xl supports-[backdrop-filter]:bg-navy/60"
+      className="sticky top-0 z-50 w-full border-b border-border bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60"
     >
       <nav className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         {/* Logo */}
@@ -77,7 +82,7 @@ export function Navigation() {
                 {isActive && (
                   <motion.div
                     layoutId="nav-indicator"
-                    className="absolute inset-0 rounded-lg bg-white/5"
+                    className="absolute inset-0 rounded-lg bg-muted"
                     transition={{ type: "spring", bounce: 0.2, duration: 0.5 }}
                   />
                 )}
@@ -88,13 +93,14 @@ export function Navigation() {
 
         {/* Auth / User Section */}
         <div className="hidden md:flex items-center gap-3">
+          <ThemeToggle />
           {status === "loading" ? (
             <div className="h-8 w-8 animate-pulse rounded-full bg-white/10" />
           ) : session?.user ? (
             <div className="relative">
               <button
                 onClick={() => setDropdownOpen(!dropdownOpen)}
-                className="flex items-center gap-2 rounded-full p-1 pr-3 transition-colors hover:bg-white/5"
+                className="flex items-center gap-2 rounded-full p-1 pr-3 transition-colors hover:bg-muted"
               >
                 {session.user.image ? (
                   <img
@@ -124,9 +130,9 @@ export function Navigation() {
                       animate={{ opacity: 1, scale: 1, y: 0 }}
                       exit={{ opacity: 0, scale: 0.95, y: -5 }}
                       transition={{ duration: 0.15 }}
-                      className="absolute right-0 top-full z-50 mt-2 w-56 rounded-xl border border-white/10 bg-navy-light/95 backdrop-blur-xl p-1 shadow-xl"
+                      className="absolute right-0 top-full z-50 mt-2 w-56 rounded-xl border border-border bg-popover/95 backdrop-blur-xl p-1 shadow-xl"
                     >
-                      <div className="px-3 py-2 border-b border-white/10 mb-1">
+                      <div className="px-3 py-2 border-b border-border mb-1">
                         <p className="text-sm font-medium truncate">
                           {session.user.name}
                         </p>
@@ -137,7 +143,7 @@ export function Navigation() {
                       <Link
                         href="/dashboard"
                         onClick={() => setDropdownOpen(false)}
-                        className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-white/5"
+                        className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-muted"
                       >
                         <LayoutDashboard className="h-4 w-4" />
                         Dashboard
@@ -145,17 +151,35 @@ export function Navigation() {
                       <Link
                         href="/dashboard?tab=settings"
                         onClick={() => setDropdownOpen(false)}
-                        className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-white/5"
+                        className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-muted"
                       >
                         <Settings className="h-4 w-4" />
                         Settings
                       </Link>
+                      <Link
+                        href="/support"
+                        onClick={() => setDropdownOpen(false)}
+                        className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-muted"
+                      >
+                        <HelpCircle className="h-4 w-4" />
+                        Support
+                      </Link>
+                      {session.user.role === "ADMIN" && (
+                        <Link
+                          href="/admin"
+                          onClick={() => setDropdownOpen(false)}
+                          className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-amber-500 transition-colors hover:bg-muted"
+                        >
+                          <Shield className="h-4 w-4" />
+                          Admin Dashboard
+                        </Link>
+                      )}
                       <button
                         onClick={() => {
                           setDropdownOpen(false);
                           signOut({ callbackUrl: "/" });
                         }}
-                        className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-red-400 transition-colors hover:bg-white/5"
+                        className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-red-400 transition-colors hover:bg-muted"
                       >
                         <LogOut className="h-4 w-4" />
                         Sign Out
@@ -186,7 +210,7 @@ export function Navigation() {
             </SheetTrigger>
             <SheetContent
               side="right"
-              className="w-[300px] bg-navy-light/95 backdrop-blur-xl border-white/10"
+              className="w-[300px] bg-popover/95 backdrop-blur-xl border-border"
             >
               <SheetHeader>
                 <SheetTitle className="flex items-center gap-2">
@@ -206,8 +230,8 @@ export function Navigation() {
                       className={cn(
                         "rounded-lg px-4 py-3 text-sm font-medium transition-colors",
                         isActive
-                          ? "bg-white/5 text-cosmic-purple-light"
-                          : "text-muted-foreground hover:bg-white/5 hover:text-foreground"
+                          ? "bg-muted text-cosmic-purple-light"
+                          : "text-muted-foreground hover:bg-muted hover:text-foreground"
                       )}
                     >
                       {link.label}
@@ -215,7 +239,12 @@ export function Navigation() {
                   );
                 })}
 
-                <div className="my-4 border-t border-white/10" />
+                <div className="flex items-center gap-2 px-4 py-2">
+                  <ThemeToggle />
+                  <span className="text-sm text-muted-foreground">Toggle theme</span>
+                </div>
+
+                <div className="my-4 border-t border-border" />
 
                 {session?.user ? (
                   <>
@@ -240,12 +269,30 @@ export function Navigation() {
                         </p>
                       </div>
                     </div>
+                    <Link
+                      href="/support"
+                      onClick={() => setMobileOpen(false)}
+                      className="flex items-center gap-2 rounded-lg px-4 py-3 text-sm transition-colors hover:bg-muted text-muted-foreground hover:text-foreground"
+                    >
+                      <HelpCircle className="h-4 w-4" />
+                      Support
+                    </Link>
+                    {session.user.role === "ADMIN" && (
+                      <Link
+                        href="/admin"
+                        onClick={() => setMobileOpen(false)}
+                        className="flex items-center gap-2 rounded-lg px-4 py-3 text-sm text-amber-500 transition-colors hover:bg-muted"
+                      >
+                        <Shield className="h-4 w-4" />
+                        Admin Dashboard
+                      </Link>
+                    )}
                     <button
                       onClick={() => {
                         setMobileOpen(false);
                         signOut({ callbackUrl: "/" });
                       }}
-                      className="flex items-center gap-2 rounded-lg px-4 py-3 text-sm text-red-400 transition-colors hover:bg-white/5"
+                      className="flex items-center gap-2 rounded-lg px-4 py-3 text-sm text-red-400 transition-colors hover:bg-muted"
                     >
                       <LogOut className="h-4 w-4" />
                       Sign Out
@@ -255,7 +302,7 @@ export function Navigation() {
                   <Link
                     href="/auth/signin"
                     onClick={() => setMobileOpen(false)}
-                    className="flex items-center gap-2 rounded-lg px-4 py-3 text-sm font-medium text-cosmic-purple-light transition-colors hover:bg-white/5"
+                    className="flex items-center gap-2 rounded-lg px-4 py-3 text-sm font-medium text-cosmic-purple-light transition-colors hover:bg-muted"
                   >
                     <LogIn className="h-4 w-4" />
                     Sign In

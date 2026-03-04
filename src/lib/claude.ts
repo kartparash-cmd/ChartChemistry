@@ -691,10 +691,308 @@ export async function explainChartElement(
   return textBlock ? textBlock.text.trim() : "";
 }
 
+// ============================================================
+// Wellness & Timing Suggestions
+// ============================================================
+
+const WELLNESS_PROMPT = `You are an expert astrologer specializing in electional astrology and personal timing. You analyze natal charts and current transits to suggest optimal timing for various life activities.
+
+You will receive the user's natal chart and today's planetary transits. Based on this data, generate practical wellness and timing suggestions across 6 life categories.
+
+CATEGORIES (provide exactly one suggestion per category):
+1. career — Work, professional moves, negotiations, presentations
+2. relationships — Love, friendships, social gatherings, important conversations
+3. health — Exercise, rest, medical appointments, diet changes
+4. creativity — Art, writing, music, brainstorming, starting creative projects
+5. finances — Investments, purchases, contract signing, budget planning
+6. spirituality — Meditation, journaling, introspection, energy work
+
+GUIDELINES:
+- Reference specific transits and aspects affecting the user's chart today.
+- Be practical and actionable — give concrete advice, not vague platitudes.
+- Include timing recommendations (morning, afternoon, evening, or specific windows).
+- Confidence should reflect how strongly the transits support the suggestion (0.0-1.0).
+- Be warm, encouraging, and non-deterministic. Frame as "favorable energy" not "you must."
+- Each description should be 2-3 sentences.
+- Each title should be concise (3-7 words).
+
+OUTPUT FORMAT:
+Return a JSON array with exactly 6 objects:
+[
+  {
+    "category": "career",
+    "title": "Short actionable title",
+    "description": "2-3 sentence description referencing specific transits",
+    "timing": "Optimal time window (e.g., 'Morning hours, 9-11 AM' or 'Late afternoon')",
+    "confidence": 0.85
+  }
+]
+
+Return ONLY the JSON array. No preamble, no markdown, no explanation outside the JSON.`;
+
+/**
+ * Generate wellness and timing suggestions based on natal chart and current transits.
+ */
+export async function generateWellnessSuggestions(
+  natalChartData: NatalChart,
+  transitData: { aspectsToNatal: { transitingPlanet: string; natalPlanet: string; aspect: string; orb: number; keywords: string }[]; transitingPositions: PlanetPosition[] },
+  userName: string,
+  date: string
+): Promise<
+  {
+    category: string;
+    title: string;
+    description: string;
+    timing: string;
+    confidence: number;
+  }[]
+> {
+  const chartLines: string[] = [];
+
+  chartLines.push(`=== ${userName.toUpperCase()}'S NATAL CHART ===`);
+  for (const p of natalChartData.planets) {
+    chartLines.push(formatPlanet(p));
+  }
+  chartLines.push(`Dominant Planet: ${natalChartData.dominantPlanet}`);
+  chartLines.push(
+    `Elements: Fire ${natalChartData.elementBalance.fire}, Earth ${natalChartData.elementBalance.earth}, Air ${natalChartData.elementBalance.air}, Water ${natalChartData.elementBalance.water}`
+  );
+  chartLines.push("");
+
+  chartLines.push(`=== TODAY'S TRANSITS TO NATAL (${date}) ===`);
+  for (const t of transitData.aspectsToNatal) {
+    chartLines.push(`Transit ${t.transitingPlanet} ${t.aspect} Natal ${t.natalPlanet} (orb: ${t.orb.toFixed(1)}°) — ${t.keywords}`);
+  }
+  chartLines.push("");
+
+  chartLines.push("=== CURRENT PLANETARY POSITIONS ===");
+  for (const p of transitData.transitingPositions) {
+    chartLines.push(formatPlanet(p));
+  }
+
+  const response = await getClient().messages.create({
+    model: CLAUDE_MODEL,
+    max_tokens: 2048,
+    system: WELLNESS_PROMPT,
+    messages: [
+      {
+        role: "user",
+        content: `Generate wellness and timing suggestions for ${userName} for ${date}.\n\n${chartLines.join("\n")}`,
+      },
+    ],
+  });
+
+  const textBlock = response.content.find((block) => block.type === "text");
+  const raw = textBlock ? textBlock.text.trim() : "";
+
+  try {
+    const jsonMatch = raw.match(/\[[\s\S]*\]/);
+    if (jsonMatch) {
+      const parsed = JSON.parse(jsonMatch[0]);
+      if (Array.isArray(parsed)) {
+        return parsed.map((item) => ({
+          category: String(item.category || "career"),
+          title: String(item.title || "Cosmic guidance"),
+          description: String(item.description || ""),
+          timing: String(item.timing || "Throughout the day"),
+          confidence: typeof item.confidence === "number" ? Math.min(1, Math.max(0, item.confidence)) : 0.5,
+        }));
+      }
+    }
+  } catch {
+    // Fallback below
+  }
+
+  // Fallback if parsing fails
+  return [
+    { category: "career", title: "Stay focused and plan ahead", description: "The current planetary alignments suggest a day for steady progress. Focus on completing existing tasks rather than starting new ventures.", timing: "Morning hours", confidence: 0.5 },
+    { category: "relationships", title: "Open heart, open mind", description: "Favorable energy for meaningful conversations. Reach out to someone you care about and share your authentic feelings.", timing: "Evening", confidence: 0.5 },
+    { category: "health", title: "Balance activity and rest", description: "Listen to your body's signals today. A mix of gentle movement and rest will serve you well.", timing: "Afternoon", confidence: 0.5 },
+    { category: "creativity", title: "Let inspiration flow", description: "Creative energy is accessible today. Try free-form expression without judgment — let ideas emerge naturally.", timing: "Late morning", confidence: 0.5 },
+    { category: "finances", title: "Review before committing", description: "A good day for reviewing your financial plans rather than making major decisions. Gather information and reflect.", timing: "Midday", confidence: 0.5 },
+    { category: "spirituality", title: "Quiet reflection time", description: "Set aside a few minutes for stillness. Meditation or journaling can help you connect with your inner guidance.", timing: "Early morning or before bed", confidence: 0.5 },
+  ];
+}
+
+// ============================================================
+// Relationship Insights
+// ============================================================
+
+const RELATIONSHIP_INSIGHTS_PROMPT = `You are an expert relationship astrologer specializing in romantic compatibility and dating dynamics. You combine traditional synastry analysis with modern attachment theory and love language frameworks.
+
+Analyze the two natal charts provided and generate dating-specific relationship insights. This is a focused "relationship mode" analysis — deeper and more practical than a general compatibility report.
+
+GUIDELINES:
+- Be warm, specific, and actionable. Ground every insight in actual chart data.
+- Use accessible language. Briefly explain astrological terms.
+- Frame everything as tendencies, not predictions.
+- Be honest about challenges but always constructive.
+- Reference specific planetary placements and aspects.
+
+OUTPUT FORMAT:
+Return a JSON object with these exact fields:
+{
+  "compatibility_style": "A 2-3 sentence description of how these two people naturally relate as romantic partners. What archetype does this relationship embody? (e.g., 'The Adventurous Duo', 'The Slow-Burn Romance'). Include the archetype name and explain it.",
+  "love_language_prediction": {
+    "person1": { "primary": "One of the 5 love languages", "reason": "1-2 sentences explaining why, based on Venus/Moon placements" },
+    "person2": { "primary": "One of the 5 love languages", "reason": "1-2 sentences explaining why, based on Venus/Moon placements" },
+    "synergy": "1-2 sentences on how their love languages interact — do they naturally speak each other's language or will they need to learn?"
+  },
+  "potential_challenges": [
+    "A specific challenge grounded in chart aspects (1-2 sentences each)",
+    "Another specific challenge",
+    "A third challenge"
+  ],
+  "growth_areas": [
+    "A specific area where this relationship can help both people grow (1-2 sentences each)",
+    "Another growth opportunity",
+    "A third growth area"
+  ],
+  "date_night_suggestions": [
+    { "idea": "A specific date idea", "reason": "Why this works for this specific pairing based on their charts (1 sentence)" },
+    { "idea": "Another date idea", "reason": "Astrological reason" },
+    { "idea": "A third date idea", "reason": "Astrological reason" },
+    { "idea": "A fourth date idea", "reason": "Astrological reason" }
+  ],
+  "communication_tips": [
+    "A specific, actionable communication tip grounded in Mercury/air sign placements (1-2 sentences)",
+    "Another communication tip",
+    "A third communication tip",
+    "A fourth communication tip"
+  ]
+}`;
+
+/**
+ * Response shape for relationship insights.
+ */
+export interface RelationshipInsightsResult {
+  compatibility_style: string;
+  love_language_prediction: {
+    person1: { primary: string; reason: string };
+    person2: { primary: string; reason: string };
+    synergy: string;
+  };
+  potential_challenges: string[];
+  growth_areas: string[];
+  date_night_suggestions: { idea: string; reason: string }[];
+  communication_tips: string[];
+}
+
+/**
+ * Generate relationship-specific dating insights from two natal charts.
+ */
+export async function generateRelationshipInsights(
+  chart1: NatalChart,
+  chart2: NatalChart,
+  name1: string,
+  name2: string
+): Promise<RelationshipInsightsResult> {
+  const chartLines: string[] = [];
+
+  chartLines.push(`=== ${name1.toUpperCase()}'S NATAL CHART ===`);
+  for (const p of chart1.planets) {
+    chartLines.push(formatPlanet(p));
+  }
+  chartLines.push(`Dominant Planet: ${chart1.dominantPlanet}`);
+  chartLines.push(
+    `Elements: Fire ${chart1.elementBalance.fire}, Earth ${chart1.elementBalance.earth}, Air ${chart1.elementBalance.air}, Water ${chart1.elementBalance.water}`
+  );
+  chartLines.push("");
+
+  chartLines.push(`=== ${name2.toUpperCase()}'S NATAL CHART ===`);
+  for (const p of chart2.planets) {
+    chartLines.push(formatPlanet(p));
+  }
+  chartLines.push(`Dominant Planet: ${chart2.dominantPlanet}`);
+  chartLines.push(
+    `Elements: Fire ${chart2.elementBalance.fire}, Earth ${chart2.elementBalance.earth}, Air ${chart2.elementBalance.air}, Water ${chart2.elementBalance.water}`
+  );
+
+  const response = await getClient().messages.create({
+    model: CLAUDE_MODEL,
+    max_tokens: 2048,
+    system: RELATIONSHIP_INSIGHTS_PROMPT,
+    messages: [
+      {
+        role: "user",
+        content: `Generate romantic relationship insights for ${name1} and ${name2} based on their natal charts:\n\n${chartLines.join("\n")}`,
+      },
+    ],
+  });
+
+  const textBlock = response.content.find((block) => block.type === "text");
+  const raw = textBlock ? textBlock.text.trim() : "";
+
+  try {
+    const jsonMatch = raw.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      return JSON.parse(jsonMatch[0]) as RelationshipInsightsResult;
+    }
+  } catch {
+    // Fallback below
+  }
+
+  // Fallback if JSON parsing fails
+  return {
+    compatibility_style:
+      "A unique pairing with complementary energies that create both attraction and room for growth.",
+    love_language_prediction: {
+      person1: {
+        primary: "Quality Time",
+        reason:
+          "Based on their chart emphasis, they value presence and shared experiences.",
+      },
+      person2: {
+        primary: "Words of Affirmation",
+        reason:
+          "Their Mercury and Venus placements suggest verbal expressions of love resonate most.",
+      },
+      synergy:
+        "Learning to express love in each other's preferred style will deepen this connection over time.",
+    },
+    potential_challenges: [
+      "Different emotional processing speeds may require patience from both sides.",
+      "Finding a balance between independence and togetherness could be an ongoing negotiation.",
+      "Communication styles may differ — one more direct, the other more reflective.",
+    ],
+    growth_areas: [
+      "This relationship encourages both people to step outside their comfort zones.",
+      "Together, you can develop a deeper emotional vocabulary.",
+      "The partnership naturally builds resilience and mutual understanding.",
+    ],
+    date_night_suggestions: [
+      {
+        idea: "Stargazing picnic",
+        reason: "Connects with the cosmic energy of this pairing.",
+      },
+      {
+        idea: "Cooking class together",
+        reason: "Nurtures the emotional bond through shared creation.",
+      },
+      {
+        idea: "Live music event",
+        reason: "Stimulates the creative and social energies in both charts.",
+      },
+      {
+        idea: "Nature hike or garden visit",
+        reason: "Grounds the relationship in earth-element energy.",
+      },
+    ],
+    communication_tips: [
+      "Lead with curiosity rather than assumptions when tensions arise.",
+      "Schedule regular check-ins to share feelings before they build up.",
+      "Acknowledge each other's communication style as valid, even when it differs from your own.",
+      "Use 'I feel' statements to express needs without triggering defensiveness.",
+    ],
+  };
+}
+
 // Re-export prompts for testing or direct use
 export const SYSTEM_PROMPTS = {
   free: FREE_REPORT_PROMPT,
   premium: PREMIUM_REPORT_PROMPT,
   chat: CHAT_PROMPT,
   horoscope: HOROSCOPE_PROMPT,
+  wellness: WELLNESS_PROMPT,
+  relationshipInsights: RELATIONSHIP_INSIGHTS_PROMPT,
 } as const;

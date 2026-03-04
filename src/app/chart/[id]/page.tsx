@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
@@ -12,11 +12,38 @@ import {
   Clock,
   MapPin,
   Calendar,
+  Sparkles,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ChartWheel, type PlanetPosition, type HouseCusp, type Aspect } from "@/components/chart-wheel";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from "@/components/ui/sheet";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  ChartWheel,
+  type PlanetPosition,
+  type HouseCusp,
+  type Aspect,
+} from "@/components/chart-wheel";
 import { cn } from "@/lib/utils";
+import {
+  type HouseSystem,
+  HOUSE_SYSTEM_LABELS,
+  HOUSE_SYSTEM_TO_API,
+} from "@/types/astrology";
 
 // Types
 interface ChartData {
@@ -49,8 +76,22 @@ interface BirthChartProfile {
   birthTime?: string | null;
   birthCity: string;
   birthCountry: string;
+  latitude?: number;
+  longitude?: number;
+  timezone?: string;
   chartData: ChartData | null;
 }
+
+const HOUSE_SYSTEMS: HouseSystem[] = [
+  "placidus",
+  "whole-sign",
+  "equal",
+  "koch",
+  "campanus",
+  "regiomontanus",
+];
+
+const LS_HOUSE_SYSTEM_KEY = "chartchemistry-house-system";
 
 const PLANET_SYMBOLS: Record<string, string> = {
   Sun: "\u2609",
@@ -84,18 +125,85 @@ const HOUSE_RULERS: Record<string, string> = {
   Pisces: "Neptune",
 };
 
+const ASPECT_LABELS: Record<string, string> = {
+  conjunction: "Conjunction",
+  sextile: "Sextile",
+  square: "Square",
+  trine: "Trine",
+  opposition: "Opposition",
+  quincunx: "Quincunx",
+  semisextile: "Semi-Sextile",
+};
+
 function formatDegree(degree: number): string {
-  const sign = Math.floor(degree / 30);
   const signDeg = degree % 30;
   const deg = Math.floor(signDeg);
   const min = Math.floor((signDeg - deg) * 60);
   return `${deg}\u00B0${min.toString().padStart(2, "0")}'`;
 }
 
+/**
+ * A clickable inline element that triggers an AI explanation when tapped.
+ * Renders as a styled button with a sparkle icon on hover.
+ */
+function ExplainableElement({
+  element,
+  children,
+  onExplain,
+  className,
+}: {
+  element: string;
+  children: React.ReactNode;
+  onExplain: (element: string) => void;
+  className?: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={() => onExplain(element)}
+      className={cn(
+        "group/explain inline-flex items-center gap-1 rounded-md px-1 -mx-1 transition-all duration-200",
+        "hover:bg-cosmic-purple/10 hover:text-cosmic-purple-light",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cosmic-purple/50 focus-visible:ring-offset-1 focus-visible:ring-offset-background",
+        "cursor-pointer",
+        className
+      )}
+      title={`Tap to explain: ${element}`}
+    >
+      {children}
+      <Sparkles className="h-3 w-3 opacity-0 group-hover/explain:opacity-70 transition-opacity duration-200 text-cosmic-purple-light flex-shrink-0" />
+    </button>
+  );
+}
+
 export default function ChartPage() {
   const params = useParams();
   const [profile, setProfile] = useState<BirthChartProfile | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // House system state
+  const [houseSystem, setHouseSystem] = useState<HouseSystem>("placidus");
+  const [recalculating, setRecalculating] = useState(false);
+
+  // Load house system preference from localStorage on mount
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(LS_HOUSE_SYSTEM_KEY);
+      if (stored && Object.keys(HOUSE_SYSTEM_LABELS).includes(stored)) {
+        setHouseSystem(stored as HouseSystem);
+      }
+    } catch {
+      // localStorage may be unavailable
+    }
+  }, []);
+
+  // Explain panel state
+  const [explainOpen, setExplainOpen] = useState(false);
+  const [explainElement, setExplainElement] = useState("");
+  const [explainLoading, setExplainLoading] = useState(false);
+  const [explainText, setExplainText] = useState("");
+  const [explainError, setExplainError] = useState("");
+  const explanationCache = useRef<Map<string, string>>(new Map());
 
   const chartId = params.id as string;
 
@@ -118,6 +226,105 @@ export default function ChartPage() {
 
     fetchChart();
   }, [chartId]);
+
+  const handleExplain = useCallback(
+    async (element: string) => {
+      setExplainElement(element);
+      setExplainOpen(true);
+      setExplainError("");
+
+      // Check cache first
+      const cached = explanationCache.current.get(element);
+      if (cached) {
+        setExplainText(cached);
+        setExplainLoading(false);
+        return;
+      }
+
+      setExplainText("");
+      setExplainLoading(true);
+
+      try {
+        const res = await fetch("/api/chart/explain", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ profileId: chartId, element }),
+        });
+
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(
+            errData.error || `Request failed (${res.status})`
+          );
+        }
+
+        const data = await res.json();
+        const explanation = data.explanation || "No explanation available.";
+        explanationCache.current.set(element, explanation);
+        setExplainText(explanation);
+      } catch (err) {
+        const message =
+          err instanceof Error ? err.message : "Failed to load explanation.";
+        setExplainError(message);
+      } finally {
+        setExplainLoading(false);
+      }
+    },
+    [chartId]
+  );
+
+  /**
+   * Change the house system: persist to localStorage and recalculate the chart
+   * via the natal-chart API endpoint, then update the local profile state.
+   */
+  const handleHouseSystemChange = useCallback(
+    async (value: string) => {
+      const newSystem = value as HouseSystem;
+      setHouseSystem(newSystem);
+
+      try {
+        localStorage.setItem(LS_HOUSE_SYSTEM_KEY, newSystem);
+      } catch {
+        // localStorage may be unavailable
+      }
+
+      // Only recalculate when we have profile birth data for API call
+      if (
+        !profile?.birthTime ||
+        profile?.latitude == null ||
+        profile?.longitude == null ||
+        !profile?.timezone
+      ) {
+        return;
+      }
+
+      setRecalculating(true);
+      try {
+        const res = await fetch("/api/natal-chart/recalculate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            profileId: chartId,
+            houseSystem: HOUSE_SYSTEM_TO_API[newSystem] ?? newSystem,
+          }),
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          if (data.chartData) {
+            setProfile((prev) =>
+              prev ? { ...prev, chartData: data.chartData } : prev
+            );
+          }
+        }
+      } catch {
+        // Silently fail -- keep existing chart data
+      } finally {
+        setRecalculating(false);
+      }
+    },
+    [chartId, profile]
+  );
 
   if (loading) {
     return (
@@ -241,6 +448,20 @@ export default function ChartPage() {
           </motion.div>
         )}
 
+        {/* Tap-to-explain hint */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.15 }}
+          className="mb-6 flex items-center gap-2 text-xs text-muted-foreground"
+        >
+          <Sparkles className="h-3.5 w-3.5 text-cosmic-purple-light" />
+          <span>
+            Tap any planet placement, house, or aspect to get an AI-powered
+            explanation.
+          </span>
+        </motion.div>
+
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Chart Wheel */}
           <motion.div
@@ -249,9 +470,43 @@ export default function ChartPage() {
             transition={{ duration: 0.5 }}
             className="rounded-xl border border-white/10 bg-white/[0.03] p-6 backdrop-blur-sm"
           >
-            <h2 className="font-heading text-lg font-semibold mb-4 text-center">
-              Chart Wheel
-            </h2>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-heading text-lg font-semibold text-center flex-1">
+                Chart Wheel
+              </h2>
+              {hasBirthTime && (
+                <div className="flex items-center gap-2">
+                  <Label
+                    htmlFor="house-system"
+                    className="text-xs text-muted-foreground whitespace-nowrap"
+                  >
+                    Houses
+                  </Label>
+                  <Select
+                    value={houseSystem}
+                    onValueChange={handleHouseSystemChange}
+                  >
+                    <SelectTrigger
+                      id="house-system"
+                      size="sm"
+                      className="w-[140px] text-xs"
+                    >
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {HOUSE_SYSTEMS.map((sys) => (
+                        <SelectItem key={sys} value={sys}>
+                          {HOUSE_SYSTEM_LABELS[sys]}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {recalculating && (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin text-cosmic-purple-light" />
+                  )}
+                </div>
+              )}
+            </div>
             <ChartWheel
               planets={wheelPlanets}
               houses={wheelHouses}
@@ -292,10 +547,21 @@ export default function ChartPage() {
                       </div>
                     );
                   if (!planet) return null;
+
+                  const elementDesc = `${planet.planet} in ${planet.sign}${planet.house ? ` in House ${planet.house}` : ""}`;
+
                   return (
-                    <div
+                    <button
+                      type="button"
                       key={planetName}
-                      className="rounded-lg border border-white/10 bg-white/[0.03] p-3 text-center"
+                      onClick={() => handleExplain(elementDesc)}
+                      className={cn(
+                        "group/card rounded-lg border border-white/10 bg-white/[0.03] p-3 text-center transition-all duration-200",
+                        "hover:border-cosmic-purple/30 hover:bg-cosmic-purple/[0.06] hover:shadow-[0_0_15px_rgba(124,58,237,0.1)]",
+                        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cosmic-purple/50",
+                        "cursor-pointer"
+                      )}
+                      title={`Explain ${elementDesc}`}
                     >
                       <p className="text-lg mb-0.5">
                         {PLANET_SYMBOLS[planetName] || planetName}
@@ -309,7 +575,8 @@ export default function ChartPage() {
                         {planet.house && ` | House ${planet.house}`}
                         {planet.retrograde && " R"}
                       </p>
-                    </div>
+                      <Sparkles className="mx-auto mt-1.5 h-3 w-3 text-cosmic-purple-light opacity-0 group-hover/card:opacity-70 transition-opacity duration-200" />
+                    </button>
                   );
                 })}
               </div>
@@ -375,8 +642,10 @@ export default function ChartPage() {
                 </tr>
               </thead>
               <tbody>
-                {chartData?.planets?.map((planet, i) => {
+                {chartData?.planets?.map((planet) => {
                   const isKey = KEY_PLACEMENTS.includes(planet.planet);
+                  const elementDesc = `${planet.planet} in ${planet.sign}${planet.house ? ` in House ${planet.house}` : ""}${planet.retrograde ? " (retrograde)" : ""}`;
+
                   return (
                     <tr
                       key={planet.planet}
@@ -386,27 +655,41 @@ export default function ChartPage() {
                       )}
                     >
                       <td className="px-3 py-3">
-                        <span className="flex items-center gap-2">
-                          <span className="text-lg">
-                            {PLANET_SYMBOLS[planet.planet] || ""}
+                        <ExplainableElement
+                          element={elementDesc}
+                          onExplain={handleExplain}
+                        >
+                          <span className="flex items-center gap-2">
+                            <span className="text-lg">
+                              {PLANET_SYMBOLS[planet.planet] || ""}
+                            </span>
+                            <span
+                              className={cn(
+                                "text-sm",
+                                isKey &&
+                                  "font-semibold text-cosmic-purple-light"
+                              )}
+                            >
+                              {planet.planet}
+                            </span>
                           </span>
-                          <span
-                            className={cn(
-                              "text-sm",
-                              isKey && "font-semibold text-cosmic-purple-light"
-                            )}
-                          >
-                            {planet.planet}
-                          </span>
-                        </span>
+                        </ExplainableElement>
                       </td>
-                      <td className="px-3 py-3 text-sm">{planet.sign}</td>
+                      <td className="px-3 py-3">
+                        <ExplainableElement
+                          element={elementDesc}
+                          onExplain={handleExplain}
+                          className="text-sm"
+                        >
+                          {planet.sign}
+                        </ExplainableElement>
+                      </td>
                       <td className="px-3 py-3 text-sm font-mono text-muted-foreground">
                         {formatDegree(planet.degree)}
                       </td>
                       {hasBirthTime && (
                         <td className="px-3 py-3 text-sm text-muted-foreground">
-                          {planet.house || "—"}
+                          {planet.house || "\u2014"}
                         </td>
                       )}
                       <td className="px-3 py-3">
@@ -419,7 +702,7 @@ export default function ChartPage() {
                           </Badge>
                         ) : (
                           <span className="text-xs text-muted-foreground/40">
-                            —
+                            \u2014
                           </span>
                         )}
                       </td>
@@ -430,6 +713,92 @@ export default function ChartPage() {
             </table>
           </div>
         </motion.div>
+
+        {/* Aspects Table */}
+        {chartData?.aspects && chartData.aspects.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.35 }}
+            className="mt-8 rounded-xl border border-white/10 bg-white/[0.03] p-6 backdrop-blur-sm"
+          >
+            <h2 className="font-heading text-lg font-semibold mb-4">
+              Aspects
+            </h2>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-white/10">
+                    <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                      Aspect
+                    </th>
+                    <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                      Type
+                    </th>
+                    <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                      Orb
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {chartData.aspects.map((aspect, i) => {
+                    const aspectLabel =
+                      ASPECT_LABELS[aspect.type] || aspect.type;
+                    const elementDesc = `${aspect.planet1} ${aspectLabel} ${aspect.planet2} (orb ${aspect.orb.toFixed(1)}\u00B0)`;
+                    const isHarmonious =
+                      aspect.type === "trine" ||
+                      aspect.type === "sextile" ||
+                      aspect.type === "conjunction";
+
+                    return (
+                      <tr
+                        key={`${aspect.planet1}-${aspect.planet2}-${i}`}
+                        className="border-b border-white/5 transition-colors hover:bg-white/[0.02]"
+                      >
+                        <td className="px-3 py-3">
+                          <ExplainableElement
+                            element={elementDesc}
+                            onExplain={handleExplain}
+                          >
+                            <span className="flex items-center gap-1.5 text-sm">
+                              <span>
+                                {PLANET_SYMBOLS[aspect.planet1] || ""}{" "}
+                                {aspect.planet1}
+                              </span>
+                              <span className="text-muted-foreground">
+                                &ndash;
+                              </span>
+                              <span>
+                                {PLANET_SYMBOLS[aspect.planet2] || ""}{" "}
+                                {aspect.planet2}
+                              </span>
+                            </span>
+                          </ExplainableElement>
+                        </td>
+                        <td className="px-3 py-3">
+                          <Badge
+                            variant="outline"
+                            className={cn(
+                              "text-[10px]",
+                              isHarmonious
+                                ? "border-emerald-500/30 text-emerald-400"
+                                : "border-red-500/30 text-red-400"
+                            )}
+                          >
+                            {aspectLabel}
+                          </Badge>
+                        </td>
+                        <td className="px-3 py-3 text-sm font-mono text-muted-foreground">
+                          {aspect.orb.toFixed(1)}&deg;
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </motion.div>
+        )}
 
         {/* House Placements Table */}
         {hasBirthTime && chartData?.houses && (
@@ -458,40 +827,127 @@ export default function ChartPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {chartData.houses.map((house) => (
-                    <tr
-                      key={house.house}
-                      className={cn(
-                        "border-b border-white/5 transition-colors hover:bg-white/[0.02]",
-                        (house.house === 1 || house.house === 10) &&
-                          "bg-cosmic-purple/[0.03]"
-                      )}
-                    >
-                      <td className="px-3 py-3">
-                        <span
-                          className={cn(
-                            "text-sm",
-                            (house.house === 1 || house.house === 10) &&
-                              "font-semibold text-cosmic-purple-light"
-                          )}
-                        >
-                          House {house.house}
-                          {house.house === 1 && " (ASC)"}
-                          {house.house === 10 && " (MC)"}
-                        </span>
-                      </td>
-                      <td className="px-3 py-3 text-sm">{house.sign}</td>
-                      <td className="px-3 py-3 text-sm text-muted-foreground">
-                        {house.ruler || HOUSE_RULERS[house.sign] || "—"}
-                      </td>
-                    </tr>
-                  ))}
+                  {chartData.houses.map((house) => {
+                    const ruler =
+                      house.ruler || HOUSE_RULERS[house.sign] || "\u2014";
+                    const elementDesc = `House ${house.house} in ${house.sign}${house.house === 1 ? " (Ascendant)" : ""}${house.house === 10 ? " (Midheaven)" : ""}, ruled by ${ruler}`;
+
+                    return (
+                      <tr
+                        key={house.house}
+                        className={cn(
+                          "border-b border-white/5 transition-colors hover:bg-white/[0.02]",
+                          (house.house === 1 || house.house === 10) &&
+                            "bg-cosmic-purple/[0.03]"
+                        )}
+                      >
+                        <td className="px-3 py-3">
+                          <ExplainableElement
+                            element={elementDesc}
+                            onExplain={handleExplain}
+                          >
+                            <span
+                              className={cn(
+                                "text-sm",
+                                (house.house === 1 || house.house === 10) &&
+                                  "font-semibold text-cosmic-purple-light"
+                              )}
+                            >
+                              House {house.house}
+                              {house.house === 1 && " (ASC)"}
+                              {house.house === 10 && " (MC)"}
+                            </span>
+                          </ExplainableElement>
+                        </td>
+                        <td className="px-3 py-3">
+                          <ExplainableElement
+                            element={elementDesc}
+                            onExplain={handleExplain}
+                            className="text-sm"
+                          >
+                            {house.sign}
+                          </ExplainableElement>
+                        </td>
+                        <td className="px-3 py-3 text-sm text-muted-foreground">
+                          {ruler}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
           </motion.div>
         )}
       </div>
+
+      {/* AI Explanation Sheet */}
+      <Sheet open={explainOpen} onOpenChange={setExplainOpen}>
+        <SheetContent
+          side="right"
+          className="w-full sm:max-w-md border-white/10 bg-background/95 backdrop-blur-xl"
+        >
+          <SheetHeader className="border-b border-white/10 pb-4">
+            <SheetTitle className="flex items-center gap-2 text-base font-heading">
+              <Sparkles className="h-4 w-4 text-cosmic-purple-light" />
+              AI Explanation
+            </SheetTitle>
+            <SheetDescription className="text-sm text-cosmic-purple-light/80 font-medium">
+              {explainElement}
+            </SheetDescription>
+          </SheetHeader>
+
+          <ScrollArea className="flex-1 pr-4">
+            <div className="py-4">
+              {explainLoading && (
+                <div className="flex flex-col items-center justify-center py-12 gap-3">
+                  <div className="relative">
+                    <Loader2 className="h-8 w-8 animate-spin text-cosmic-purple-light" />
+                    <Sparkles className="absolute -top-1 -right-1 h-3 w-3 text-gold animate-pulse" />
+                  </div>
+                  <p className="text-sm text-muted-foreground animate-pulse">
+                    Consulting the stars...
+                  </p>
+                </div>
+              )}
+
+              {explainError && !explainLoading && (
+                <div className="rounded-lg border border-red-500/20 bg-red-500/[0.05] p-4">
+                  <p className="text-sm text-red-400">{explainError}</p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="mt-3 border-red-500/30 text-red-400 hover:bg-red-500/10"
+                    onClick={() => handleExplain(explainElement)}
+                  >
+                    Try Again
+                  </Button>
+                </div>
+              )}
+
+              {explainText && !explainLoading && (
+                <motion.div
+                  initial={{ opacity: 0, y: 5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="prose prose-invert prose-sm max-w-none"
+                >
+                  {explainText.split("\n").map((paragraph, i) =>
+                    paragraph.trim() ? (
+                      <p
+                        key={i}
+                        className="text-sm leading-relaxed text-foreground/90 mb-3"
+                      >
+                        {paragraph}
+                      </p>
+                    ) : null
+                  )}
+                </motion.div>
+              )}
+            </div>
+          </ScrollArea>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }
@@ -507,18 +963,90 @@ function getDemoProfile(id: string): BirthChartProfile {
     birthCountry: "United States",
     chartData: {
       planets: [
-        { planet: "Sun", sign: "Aries", degree: 0.5, house: 10, retrograde: false },
-        { planet: "Moon", sign: "Cancer", degree: 105.2, house: 1, retrograde: false },
-        { planet: "Mercury", sign: "Pisces", degree: 345.8, house: 9, retrograde: true },
-        { planet: "Venus", sign: "Taurus", degree: 42.3, house: 11, retrograde: false },
-        { planet: "Mars", sign: "Leo", degree: 138.7, house: 2, retrograde: false },
-        { planet: "Jupiter", sign: "Sagittarius", degree: 255.1, house: 6, retrograde: false },
-        { planet: "Saturn", sign: "Pisces", degree: 338.4, house: 9, retrograde: true },
-        { planet: "Uranus", sign: "Aquarius", degree: 305.9, house: 8, retrograde: false },
-        { planet: "Neptune", sign: "Capricorn", degree: 295.2, house: 7, retrograde: false },
-        { planet: "Pluto", sign: "Scorpio", degree: 230.6, house: 5, retrograde: false },
-        { planet: "Ascendant", sign: "Cancer", degree: 97.0, house: 1, retrograde: false },
-        { planet: "Midheaven", sign: "Aries", degree: 7.0, house: 10, retrograde: false },
+        {
+          planet: "Sun",
+          sign: "Aries",
+          degree: 0.5,
+          house: 10,
+          retrograde: false,
+        },
+        {
+          planet: "Moon",
+          sign: "Cancer",
+          degree: 105.2,
+          house: 1,
+          retrograde: false,
+        },
+        {
+          planet: "Mercury",
+          sign: "Pisces",
+          degree: 345.8,
+          house: 9,
+          retrograde: true,
+        },
+        {
+          planet: "Venus",
+          sign: "Taurus",
+          degree: 42.3,
+          house: 11,
+          retrograde: false,
+        },
+        {
+          planet: "Mars",
+          sign: "Leo",
+          degree: 138.7,
+          house: 2,
+          retrograde: false,
+        },
+        {
+          planet: "Jupiter",
+          sign: "Sagittarius",
+          degree: 255.1,
+          house: 6,
+          retrograde: false,
+        },
+        {
+          planet: "Saturn",
+          sign: "Pisces",
+          degree: 338.4,
+          house: 9,
+          retrograde: true,
+        },
+        {
+          planet: "Uranus",
+          sign: "Aquarius",
+          degree: 305.9,
+          house: 8,
+          retrograde: false,
+        },
+        {
+          planet: "Neptune",
+          sign: "Capricorn",
+          degree: 295.2,
+          house: 7,
+          retrograde: false,
+        },
+        {
+          planet: "Pluto",
+          sign: "Scorpio",
+          degree: 230.6,
+          house: 5,
+          retrograde: false,
+        },
+        {
+          planet: "Ascendant",
+          sign: "Cancer",
+          degree: 97.0,
+          house: 1,
+          retrograde: false,
+        },
+        {
+          planet: "Midheaven",
+          sign: "Aries",
+          degree: 7.0,
+          house: 10,
+          retrograde: false,
+        },
       ],
       houses: [
         { house: 1, sign: "Cancer", degree: 97 },
@@ -538,7 +1066,12 @@ function getDemoProfile(id: string): BirthChartProfile {
         { planet1: "Sun", planet2: "Mars", type: "trine", orb: 1.8 },
         { planet1: "Sun", planet2: "Jupiter", type: "trine", orb: 2.4 },
         { planet1: "Moon", planet2: "Venus", type: "sextile", orb: 2.1 },
-        { planet1: "Mercury", planet2: "Saturn", type: "conjunction", orb: 0.6 },
+        {
+          planet1: "Mercury",
+          planet2: "Saturn",
+          type: "conjunction",
+          orb: 0.6,
+        },
         { planet1: "Venus", planet2: "Mars", type: "square", orb: 3.6 },
         { planet1: "Mars", planet2: "Pluto", type: "square", orb: 1.9 },
         { planet1: "Jupiter", planet2: "Neptune", type: "sextile", orb: 1.1 },

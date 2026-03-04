@@ -11,7 +11,9 @@ import type {
   SynastryResult,
   CompositeChart,
   TransitResult,
+  HouseSystem,
 } from "@/types/astrology";
+import { HOUSE_SYSTEM_TO_API } from "@/types/astrology";
 
 const ASTRO_URL = process.env.ASTRO_SERVICE_URL || "http://localhost:8000";
 
@@ -61,13 +63,26 @@ async function request<T>(
  * Calculate a full natal chart for the given birth data.
  *
  * POST /api/natal-chart
+ *
+ * If `houseSystem` is provided as a frontend-style key (e.g. "whole-sign"),
+ * it is mapped to the Python service's expected value (e.g. "whole_sign").
+ * Defaults to "placidus" if not specified.
  */
 export async function calculateNatalChart(
-  input: NatalChartInput
+  input: NatalChartInput,
+  houseSystem?: HouseSystem
 ): Promise<NatalChart> {
+  const payload = { ...input };
+
+  if (houseSystem) {
+    payload.houseSystem = HOUSE_SYSTEM_TO_API[houseSystem] ?? houseSystem;
+  } else if (!payload.houseSystem) {
+    payload.houseSystem = "placidus";
+  }
+
   return request<NatalChart>("/api/natal-chart", {
     method: "POST",
-    body: JSON.stringify(input),
+    body: JSON.stringify(payload),
   });
 }
 

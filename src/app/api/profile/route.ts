@@ -187,6 +187,7 @@ export async function POST(request: Request) {
       latitude: body.latitude,
       longitude: body.longitude,
       timezone: body.timezone,
+      houseSystem: body.houseSystem,
     };
 
     let chartData: Prisma.NullableJsonNullValueInput | Prisma.InputJsonValue = Prisma.JsonNull;

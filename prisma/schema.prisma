@@ -15,6 +15,7 @@ model User {
   password         String?
   emailVerified    DateTime?
   plan             Plan      @default(FREE)
+  role             Role      @default(USER)
   stripeCustomerId String?
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
@@ -24,6 +25,13 @@ model User {
   birthProfiles  BirthProfile[]
   reports        CompatibilityReport[]
   chatSessions   ChatSession[]
+  supportTickets SupportTicket[]
+  ticketReplies  TicketReply[]
+}
+
+enum Role {
+  USER
+  ADMIN
 }
 
 model Account {
@@ -131,4 +139,35 @@ model ChatSession {
   messages  Json
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+model SupportTicket {
+  id          String       @id @default(cuid())
+  userId      String
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subject     String
+  description String       @db.Text
+  status      TicketStatus @default(OPEN)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  replies TicketReply[]
+}
+
+model TicketReply {
+  id        String   @id @default(cuid())
+  ticketId  String
+  ticket    SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  message   String   @db.Text
+  isAdmin   Boolean  @default(false)
+  createdAt DateTime @default(now())
 }

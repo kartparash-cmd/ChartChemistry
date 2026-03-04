@@ -1,8 +1,9 @@
 /**
  * /api/profile/[id]
  *
- * GET  — fetch a single birth profile by ID
- * PUT  — update a birth profile
+ * GET    — fetch a single birth profile by ID
+ * PUT    — update a birth profile
+ * DELETE — delete a birth profile
  */
 
 import { NextResponse, type NextRequest } from "next/server";
@@ -162,7 +163,8 @@ export async function PUT(
       body.birthTime !== undefined ||
       body.latitude !== undefined ||
       body.longitude !== undefined ||
-      body.timezone !== undefined;
+      body.timezone !== undefined ||
+      body.houseSystem !== undefined;
 
     if (birthDataChanged) {
       const chartInput: NatalChartInput = {
@@ -175,6 +177,7 @@ export async function PUT(
         latitude: (updateData.latitude as number) || existing.latitude,
         longitude: (updateData.longitude as number) || existing.longitude,
         timezone: (updateData.timezone as string) || existing.timezone,
+        houseSystem: body.houseSystem as string | undefined,
       };
 
       try {
@@ -208,6 +211,65 @@ export async function PUT(
     });
   } catch (error) {
     console.error("[PUT /api/profile/[id]] Error:", error);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
+  }
+}
+
+// ============================================================
+// DELETE — delete a profile
+// ============================================================
+
+export async function DELETE(
+  _request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const session = await getServerSession(authOptions);
+
+    if (!session?.user?.id) {
+      return NextResponse.json(
+        { error: "Authentication required" },
+        { status: 401 }
+      );
+    }
+
+    const { id } = await params;
+
+    const profile = await prisma.birthProfile.findUnique({
+      where: { id },
+    });
+
+    if (!profile) {
+      return NextResponse.json(
+        { error: "Profile not found" },
+        { status: 404 }
+      );
+    }
+
+    if (profile.userId !== session.user.id) {
+      return NextResponse.json(
+        { error: "You do not own this profile" },
+        { status: 403 }
+      );
+    }
+
+    if (profile.isOwner) {
+      return NextResponse.json(
+        { error: "Cannot delete your owner profile" },
+        { status: 400 }
+      );
+    }
+
+    await prisma.birthProfile.delete({
+      where: { id },
+    });
+
+    return NextResponse.json({ success: true, deletedId: id });
+  } catch (error) {
+    console.error("[DELETE /api/profile/[id]] Error:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

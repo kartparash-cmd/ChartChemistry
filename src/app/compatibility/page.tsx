@@ -156,12 +156,12 @@ export default function CompatibilityPage() {
               <div className="grid gap-6 md:grid-cols-2">
                 <BirthDataForm
                   label="Your Details"
-                  onSubmit={(data) => setPersonA(data)}
+                  onSubmit={setPersonA}
                   defaultValues={personA ?? undefined}
                 />
                 <BirthDataForm
                   label="Their Details"
-                  onSubmit={(data) => setPersonB(data)}
+                  onSubmit={setPersonB}
                   defaultValues={personB ?? undefined}
                 />
               </div>

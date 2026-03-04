@@ -246,10 +246,21 @@
    Utility Classes
    ============================================================================ */
 .cosmic-gradient {
+  background: linear-gradient(135deg, #7C3AED 0%, #F1E8FF 50%, #F59E0B 100%);
+}
+
+.dark .cosmic-gradient {
   background: linear-gradient(135deg, #7C3AED 0%, #0F172A 50%, #F59E0B 100%);
 }
 
 .cosmic-text {
+  background: linear-gradient(135deg, #7C3AED, #D97706);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.dark .cosmic-text {
   background: linear-gradient(135deg, #A78BFA, #F59E0B);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -257,9 +268,9 @@
 }
 
 .glass-card {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(124, 58, 237, 0.04);
   backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(124, 58, 237, 0.1);
 }
 
 .dark .glass-card {
@@ -283,4 +294,306 @@
 
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(124, 58, 237, 0.5);
+}
+
+/* ============================================================================
+   Print-only elements (hidden on screen)
+   ============================================================================ */
+.print-header,
+.print-footer,
+.print-score-text,
+.print-score-table {
+  display: none;
+}
+
+/* ============================================================================
+   Print Styles — Report PDF Export
+   ============================================================================ */
+@page {
+  margin: 0.75in 1in;
+  size: letter;
+}
+
+@media print {
+  /* --- Global overrides --- */
+  html, body {
+    background: white !important;
+    color: #0F172A !important;
+    font-size: 11pt !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Force all text to dark for readability */
+  * {
+    color: #0F172A !important;
+    border-color: #E2E8F0 !important;
+  }
+
+  /* --- Hide non-essential UI elements --- */
+  /* Navigation and footer from layout.tsx */
+  nav,
+  footer {
+    display: none !important;
+  }
+
+  /* Hide elements marked with data-print-hidden */
+  [data-print-hidden] {
+    display: none !important;
+  }
+
+  /* Hide animated SVG elements that won't render well in print */
+  .print-report svg {
+    display: none !important;
+  }
+
+  /* --- Show print-only branding header --- */
+  .print-header {
+    display: block !important;
+    text-align: center;
+    padding-bottom: 16pt;
+    margin-bottom: 16pt;
+    border-bottom: 2px solid #7C3AED;
+  }
+
+  .print-header-brand {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8pt;
+    margin-bottom: 4pt;
+  }
+
+  .print-header-logo {
+    font-size: 20pt;
+  }
+
+  .print-header-title {
+    font-family: Georgia, serif;
+    font-size: 22pt;
+    font-weight: 700;
+    color: #7C3AED !important;
+  }
+
+  .print-header-subtitle {
+    font-size: 9pt;
+    color: #64748B !important;
+    text-transform: uppercase;
+    letter-spacing: 2pt;
+  }
+
+  /* --- Show print-only footer --- */
+  .print-footer {
+    display: block !important;
+    text-align: center;
+    padding-top: 16pt;
+    margin-top: 24pt;
+    border-top: 1px solid #E2E8F0;
+    page-break-inside: avoid;
+  }
+
+  .print-footer p {
+    font-size: 8pt;
+    color: #94A3B8 !important;
+    margin: 2pt 0;
+  }
+
+  /* --- Show plain text overall score (replaces SVG circle) --- */
+  .print-score-text {
+    display: block !important;
+    text-align: center;
+    padding: 8pt 0;
+  }
+
+  .print-score-text .text-4xl {
+    font-size: 32pt;
+    color: #7C3AED !important;
+  }
+
+  .print-score-text .text-sm {
+    color: #64748B !important;
+  }
+
+  /* --- Show print score table (replaces animated bars) --- */
+  .print-score-table {
+    display: block !important;
+  }
+
+  .print-score-row {
+    display: flex;
+    align-items: center;
+    gap: 8pt;
+    padding: 4pt 0;
+    border-bottom: 1px solid #F1F5F9;
+  }
+
+  .print-score-row:last-child {
+    border-bottom: none;
+  }
+
+  .print-score-label {
+    width: 100pt;
+    font-size: 9pt;
+    font-weight: 500;
+  }
+
+  .print-score-bar-container {
+    flex: 1;
+    height: 8pt;
+    background: #F1F5F9;
+    border-radius: 4pt;
+    overflow: hidden;
+  }
+
+  .print-score-bar-fill {
+    display: block;
+    height: 100%;
+    background: #7C3AED !important;
+    border-radius: 4pt;
+  }
+
+  .print-score-value {
+    width: 24pt;
+    text-align: right;
+    font-size: 9pt;
+    font-weight: 700;
+    color: #7C3AED !important;
+  }
+
+  /* Hide the animated score bars on print (the motion divs) */
+  .print-report .space-y-4 > .space-y-2 {
+    display: none !important;
+  }
+
+  /* --- Report layout adjustments --- */
+  .print-report {
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  .print-report section {
+    border: none !important;
+    background: none !important;
+    padding-top: 0 !important;
+  }
+
+  /* Grid: stack vertically on print for better flow */
+  .print-report .grid {
+    display: block !important;
+  }
+
+  .print-report .grid > div {
+    margin-bottom: 16pt;
+  }
+
+  /* --- Card styling for print --- */
+  .print-report .rounded-xl {
+    border: 1px solid #E2E8F0 !important;
+    border-radius: 6pt !important;
+    background: white !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    margin-bottom: 10pt;
+    page-break-inside: avoid;
+  }
+
+  /* --- Narrative section cards --- */
+  /* Force all collapsible sections to be visible */
+  .print-report [class*="rounded-xl"][class*="border"][class*="overflow-hidden"] {
+    page-break-inside: avoid;
+    margin-bottom: 8pt;
+  }
+
+  /* Remove blur and lock overlays for print */
+  .print-report .blur-sm {
+    filter: none !important;
+  }
+
+  .print-report [data-print-hidden] {
+    display: none !important;
+  }
+
+  /* Section headings */
+  .print-report .font-heading {
+    color: #0F172A !important;
+  }
+
+  /* Badge styling */
+  .print-report [data-slot="badge"] {
+    border: 1px solid #7C3AED !important;
+    color: #7C3AED !important;
+    background: white !important;
+    padding: 2pt 8pt;
+    font-size: 9pt;
+  }
+
+  /* --- Typography --- */
+  .print-report h1 {
+    font-size: 20pt !important;
+    color: #0F172A !important;
+  }
+
+  .print-report h3 {
+    font-size: 10pt !important;
+    color: #64748B !important;
+  }
+
+  .print-report p {
+    font-size: 10pt !important;
+    line-height: 1.6 !important;
+    color: #334155 !important;
+  }
+
+  /* Muted foreground text for print */
+  .print-report .text-muted-foreground {
+    color: #64748B !important;
+  }
+
+  /* --- Page break hints --- */
+  .print-report .space-y-4 > div {
+    page-break-inside: avoid;
+  }
+
+  /* --- Hide interactive elements --- */
+  .print-report button:not(.print-score-row *) {
+    /* Keep the section header buttons visible (they show titles) but hide action buttons */
+  }
+
+  .print-report .fixed {
+    display: none !important;
+  }
+
+  /* Hide all motion/animation wrappers but keep content */
+  .print-report [style*="transform"],
+  .print-report [style*="opacity"] {
+    transform: none !important;
+    opacity: 1 !important;
+  }
+
+  /* Separator */
+  .print-report [data-slot="separator"] {
+    background: #E2E8F0 !important;
+  }
+
+  /* Links should not show underlines in print */
+  a {
+    text-decoration: none !important;
+  }
+
+  /* Warning / growth variant section colors for print */
+  .print-report [data-variant="warning"] {
+    border-color: #FCA5A5 !important;
+  }
+
+  .print-report [data-variant="growth"] {
+    border-color: #6EE7B7 !important;
+  }
+
+  .print-report .text-red-400 {
+    color: #EF4444 !important;
+  }
+
+  .print-report .text-emerald-400 {
+    color: #10B981 !important;
+  }
 }

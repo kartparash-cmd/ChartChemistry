@@ -11,7 +11,6 @@ import {
   Lock,
   MessageCircle,
   Share2,
-  FileDown,
   Heart,
   MessageSquare,
   Flame,
@@ -19,19 +18,14 @@ import {
   AlertTriangle,
   Sprout,
   Eye,
-  Sparkles,
   Loader2,
   ArrowLeft,
+  Printer,
+  Download,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
 // Types
@@ -474,8 +468,6 @@ export default function ReportPage() {
     session?.user?.plan === "PREMIUM" ||
     session?.user?.plan === "ANNUAL";
 
-  const isBoutique = report.tier === "BOUTIQUE";
-
   const scores = [
     {
       label: "Communication",
@@ -518,14 +510,32 @@ export default function ReportPage() {
     }
   };
 
+  const handlePrint = () => {
+    window.print();
+  };
+
+  const handleDownloadHTML = () => {
+    // Open the server-rendered HTML version in a new tab for saving/printing
+    window.open(`/api/report/${reportId}/pdf`, "_blank");
+  };
+
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen print-report">
+      {/* Print-only branding header */}
+      <div className="print-header">
+        <div className="print-header-brand">
+          <span className="print-header-logo">&#x2728;</span>
+          <span className="print-header-title">ChartChemistry</span>
+        </div>
+        <p className="print-header-subtitle">AI-Powered Astrological Compatibility Report</p>
+      </div>
+
       {/* Header */}
       <section className="border-b border-white/10 bg-gradient-to-b from-cosmic-purple/5 to-transparent">
         <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
           <Link
             href="/dashboard"
-            className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors mb-6"
+            className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors mb-6 print:hidden"
           >
             <ArrowLeft className="h-4 w-4" />
             Back to Dashboard
@@ -539,7 +549,7 @@ export default function ReportPage() {
             <div>
               <h1 className="font-heading text-2xl sm:text-3xl font-bold">
                 {report.person1.name}{" "}
-                <span className="text-cosmic-purple-light">&</span>{" "}
+                <span className="text-cosmic-purple-light print:text-black">&</span>{" "}
                 {report.person2.name}
               </h1>
               <p className="text-sm text-muted-foreground mt-1">
@@ -574,10 +584,15 @@ export default function ReportPage() {
                 Overall Score
               </h3>
               <ScoreCircle score={report.overallScore} />
+              {/* Print-only plain text score */}
+              <div className="print-score-text">
+                <span className="text-4xl font-bold">{report.overallScore}</span>
+                <span className="text-sm text-gray-500 uppercase tracking-wider ml-1">/ 100</span>
+              </div>
             </div>
 
             {/* Radar Chart */}
-            <div className="rounded-xl border border-white/10 bg-white/[0.03] p-6 backdrop-blur-sm">
+            <div className="rounded-xl border border-white/10 bg-white/[0.03] p-6 backdrop-blur-sm print:hidden">
               <h3 className="font-heading text-sm font-semibold mb-4 text-muted-foreground uppercase tracking-wider text-center">
                 Dimension Breakdown
               </h3>
@@ -603,6 +618,21 @@ export default function ReportPage() {
                   delay={i * 0.1}
                 />
               ))}
+              {/* Print-only score table */}
+              <div className="print-score-table">
+                {scores.map((s) => (
+                  <div key={s.label} className="print-score-row">
+                    <span className="print-score-label">{s.label}</span>
+                    <span className="print-score-bar-container">
+                      <span
+                        className="print-score-bar-fill"
+                        style={{ width: `${s.value}%` }}
+                      />
+                    </span>
+                    <span className="print-score-value">{s.value}</span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
 
@@ -618,7 +648,7 @@ export default function ReportPage() {
             ))}
 
             {/* Action Buttons */}
-            <div className="flex flex-wrap gap-3 pt-4">
+            <div className="flex flex-wrap gap-3 pt-4 print:hidden">
               <Button
                 asChild
                 className="bg-cosmic-purple hover:bg-cosmic-purple-dark text-white"
@@ -636,28 +666,31 @@ export default function ReportPage() {
                 <Share2 className="mr-2 h-4 w-4" />
                 Share
               </Button>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <span>
-                    <Button
-                      variant="outline"
-                      className="border-white/10"
-                      disabled={!isBoutique}
-                    >
-                      <FileDown className="mr-2 h-4 w-4" />
-                      Download PDF
-                    </Button>
-                  </span>
-                </TooltipTrigger>
-                {!isBoutique && (
-                  <TooltipContent>
-                    <p>Available with Boutique Reports</p>
-                  </TooltipContent>
-                )}
-              </Tooltip>
+              <Button
+                variant="outline"
+                className="border-white/10"
+                onClick={handlePrint}
+              >
+                <Printer className="mr-2 h-4 w-4" />
+                Print / Save PDF
+              </Button>
+              <Button
+                variant="outline"
+                className="border-white/10"
+                onClick={handleDownloadHTML}
+              >
+                <Download className="mr-2 h-4 w-4" />
+                Export HTML
+              </Button>
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Print-only footer */}
+      <div className="print-footer">
+        <p>Generated by ChartChemistry &mdash; chartchemistry.io</p>
+        <p>Report ID: {reportId} &bull; {new Date().toLocaleDateString()}</p>
       </div>
 
       {/* Share toast */}

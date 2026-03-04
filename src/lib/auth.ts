@@ -4,6 +4,7 @@ import GoogleProvider from "next-auth/providers/google";
 import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
+import { getImpersonation } from "@/lib/impersonation";
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma) as NextAuthOptions["adapter"],
@@ -46,6 +47,7 @@ export const authOptions: NextAuthOptions = {
           name: user.name,
           image: user.image,
           plan: user.plan,
+          role: user.role,
         };
       },
     }),
@@ -56,28 +58,39 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async session({ session, token }) {
       if (session.user && token.sub) {
-        session.user.id = token.sub;
+        const adminId = token.sub;
+        const impersonatedId = getImpersonation(adminId);
+
+        if (impersonatedId) {
+          session.user.id = impersonatedId;
+          session.user.realId = adminId;
+        } else {
+          session.user.id = token.sub;
+        }
+
         session.user.plan = token.plan as string;
+        session.user.role = token.role as string;
       }
       return session;
     },
     async jwt({ token, user, trigger }) {
       if (user) {
         token.plan = (user as { plan?: string }).plan ?? "FREE";
+        token.role = (user as { role?: string }).role ?? "USER";
       }
-      // Refresh plan from DB on session update or periodically
+      // Refresh plan and role from DB on session update or periodically
       if (trigger === "update" || (token.sub && !user)) {
-        // Re-read plan from DB every time to catch Stripe webhook updates
         try {
           const dbUser = await prisma.user.findUnique({
             where: { id: token.sub },
-            select: { plan: true },
+            select: { plan: true, role: true },
           });
           if (dbUser) {
             token.plan = dbUser.plan;
+            token.role = dbUser.role;
           }
         } catch {
-          // Keep existing plan on DB error
+          // Keep existing values on DB error
         }
       }
       return token;

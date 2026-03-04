@@ -11,6 +11,39 @@
 // Natal Chart
 // ============================================================
 
+/** Supported house systems for natal chart calculation. */
+export type HouseSystem =
+  | "placidus"
+  | "whole-sign"
+  | "equal"
+  | "koch"
+  | "campanus"
+  | "regiomontanus";
+
+/** Display labels for each house system. */
+export const HOUSE_SYSTEM_LABELS: Record<HouseSystem, string> = {
+  placidus: "Placidus",
+  "whole-sign": "Whole Sign",
+  equal: "Equal",
+  koch: "Koch",
+  campanus: "Campanus",
+  regiomontanus: "Regiomontanus",
+};
+
+/**
+ * Map frontend house system keys to the Python astro-service's expected values.
+ * The astro-service uses underscores (e.g. "whole_sign") while the frontend
+ * uses hyphens (e.g. "whole-sign") for URL/localStorage friendliness.
+ */
+export const HOUSE_SYSTEM_TO_API: Record<HouseSystem, string> = {
+  placidus: "placidus",
+  "whole-sign": "whole_sign",
+  equal: "equal",
+  koch: "koch",
+  campanus: "campanus",
+  regiomontanus: "regiomontanus",
+};
+
 /** Input for natal chart calculation (sent to Python service). */
 export interface NatalChartInput {
   birthDate: string; // YYYY-MM-DD
@@ -243,4 +276,5 @@ export interface CreateProfileRequest {
   longitude: number;
   timezone: string;
   isOwner?: boolean;
+  houseSystem?: string;
 }

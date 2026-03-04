@@ -104,36 +104,14 @@ export default function CompatibilityPage() {
       setResult(mappedResult);
       setPageState("results");
     } catch (err) {
-      // If the API isn't ready yet, generate mock results for demo
-      const mockResult: CompatibilityResult = {
-        personA: {
-          name: personA.name,
-          sunSign: getSunSign(personA.birthDate),
-        },
-        personB: {
-          name: personB.name,
-          sunSign: getSunSign(personB.birthDate),
-        },
-        overallScore: Math.floor(Math.random() * 40) + 55,
-        dimensions: {
-          emotional: Math.floor(Math.random() * 35) + 50,
-          chemistry: Math.floor(Math.random() * 40) + 45,
-          communication: Math.floor(Math.random() * 35) + 50,
-          stability: Math.floor(Math.random() * 30) + 55,
-          harmony: Math.floor(Math.random() * 35) + 50,
-        },
-        narrative: `The connection between ${personA.name} and ${personB.name} shows a compelling blend of complementary energies. As a ${getSunSign(personA.birthDate)} and ${getSunSign(personB.birthDate)} pairing, there is a natural dynamic that balances initiative with receptivity. The planetary aspects suggest strong emotional resonance, particularly through Moon and Venus interactions. Communication flows with ease when both partners lean into vulnerability, though there are moments where different processing styles may create temporary friction. The composite chart reveals a relationship that has real potential for growth, with Jupiter aspects indicating that you expand each other's worldview. Overall, this is a connection worth investing in \u2014 one that deepens meaningfully over time when both people show up authentically.`,
-      };
-
-      // Simulate loading delay for demo
-      await new Promise((resolve) => setTimeout(resolve, 4000));
-      setResult(mockResult);
-      setPageState("results");
-
-      // If there was a real error (not just missing API), store it
-      if (err instanceof Error && !err.message.includes("Failed to fetch")) {
-        console.warn("API not available, using demo results:", err.message);
-      }
+      const message =
+        err instanceof Error ? err.message : "Something went wrong";
+      setError(
+        message.includes("fetch")
+          ? "Our astrology calculation service is temporarily unavailable. Please try again in a moment."
+          : message
+      );
+      setPageState("error");
     }
   }, [personA, personB]);
 

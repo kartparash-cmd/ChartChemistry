@@ -80,9 +80,9 @@ function EmptyProfileState() {
         asChild
         className="bg-cosmic-purple hover:bg-cosmic-purple-dark text-white"
       >
-        <Link href="/compatibility">
+        <Link href="/dashboard/profiles">
           <Sparkles className="mr-2 h-4 w-4" />
-          Create Your Birth Chart
+          Create Your Birth Profile
         </Link>
       </Button>
     </motion.div>

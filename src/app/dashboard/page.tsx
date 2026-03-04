@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
+import { useSession, signOut } from "next-auth/react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -22,6 +22,10 @@ import {
   ArrowRight,
   Orbit,
   Lightbulb,
+  Settings,
+  LogOut,
+  Mail,
+  Shield,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -214,11 +218,28 @@ function ReportCard({ report }: { report: CompatibilityReport }) {
 }
 
 export default function DashboardPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="mx-auto h-8 w-8 animate-spin text-cosmic-purple-light" />
+          <p className="mt-3 text-sm text-muted-foreground">Loading your cosmic dashboard...</p>
+        </div>
+      </div>
+    }>
+      <DashboardContent />
+    </Suspense>
+  );
+}
+
+function DashboardContent() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState("chart");
+  const initialTab = searchParams.get("tab") || "chart";
+  const [activeTab, setActiveTab] = useState(initialTab);
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -358,6 +379,13 @@ export default function DashboardPage() {
                 >
                   <Heart className="mr-2 h-4 w-4" />
                   My Connections
+                </TabsTrigger>
+                <TabsTrigger
+                  value="settings"
+                  className="data-[state=active]:bg-cosmic-purple/20 data-[state=active]:text-cosmic-purple-light"
+                >
+                  <Settings className="mr-2 h-4 w-4" />
+                  Settings
                 </TabsTrigger>
               </TabsList>
 
@@ -539,6 +567,72 @@ export default function DashboardPage() {
                     )}
                   </motion.div>
                 </AnimatePresence>
+              </TabsContent>
+
+              {/* Settings Tab */}
+              <TabsContent value="settings">
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="space-y-6"
+                >
+                  {/* Account Info */}
+                  <div className="rounded-xl border border-white/10 bg-white/[0.03] p-6 backdrop-blur-sm">
+                    <h3 className="font-heading text-lg font-semibold mb-4">Account</h3>
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-3">
+                        <Mail className="h-4 w-4 text-muted-foreground" />
+                        <div>
+                          <p className="text-xs text-muted-foreground">Email</p>
+                          <p className="text-sm font-medium">{session?.user?.email}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <Shield className="h-4 w-4 text-muted-foreground" />
+                        <div>
+                          <p className="text-xs text-muted-foreground">Name</p>
+                          <p className="text-sm font-medium">{session?.user?.name || "Not set"}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Subscription */}
+                  <div className="rounded-xl border border-white/10 bg-white/[0.03] p-6 backdrop-blur-sm">
+                    <h3 className="font-heading text-lg font-semibold mb-4">Subscription</h3>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <Crown className="h-5 w-5 text-cosmic-purple-light" />
+                        <div>
+                          <p className="text-sm font-medium">{planLabel} Plan</p>
+                          <p className="text-xs text-muted-foreground">
+                            {data?.stats.plan === "FREE"
+                              ? "Upgrade to unlock full reports, AI chat, and more"
+                              : "You have access to all premium features"}
+                          </p>
+                        </div>
+                      </div>
+                      {data?.stats.plan === "FREE" && (
+                        <Button asChild size="sm" className="bg-cosmic-purple hover:bg-cosmic-purple-dark text-white">
+                          <Link href="/pricing">Upgrade</Link>
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Sign Out */}
+                  <div className="rounded-xl border border-white/10 bg-white/[0.03] p-6 backdrop-blur-sm">
+                    <h3 className="font-heading text-lg font-semibold mb-4">Session</h3>
+                    <Button
+                      variant="outline"
+                      className="border-red-500/30 text-red-400 hover:bg-red-500/10"
+                      onClick={() => signOut({ callbackUrl: "/" })}
+                    >
+                      <LogOut className="mr-2 h-4 w-4" />
+                      Sign Out
+                    </Button>
+                  </div>
+                </motion.div>
               </TabsContent>
             </Tabs>
           </div>

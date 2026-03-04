@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: chartchemistry-astro
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: EPHE_PATH
+        value: /app/ephe

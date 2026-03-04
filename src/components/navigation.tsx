@@ -27,15 +27,20 @@ import {
 import { ThemeToggle } from "@/components/theme-toggle";
 import { cn } from "@/lib/utils";
 
-const navLinks = [
+const publicNavLinks = [
   { href: "/", label: "Home" },
   { href: "/compatibility", label: "Compatibility" },
-  { href: "/connections", label: "Connections" },
-  { href: "/horoscope", label: "Daily Horoscope" },
-  { href: "/transits", label: "Transits" },
   { href: "/learn", label: "Learn" },
   { href: "/pricing", label: "Pricing" },
+];
+
+const authedNavLinks = [
   { href: "/dashboard", label: "Dashboard" },
+  { href: "/compatibility", label: "Compatibility" },
+  { href: "/horoscope", label: "Horoscope" },
+  { href: "/transits", label: "Transits" },
+  { href: "/chat", label: "AI Chat" },
+  { href: "/learn", label: "Learn" },
 ];
 
 export function Navigation() {
@@ -65,7 +70,7 @@ export function Navigation() {
 
         {/* Desktop Navigation */}
         <div className="hidden md:flex items-center gap-1">
-          {navLinks.map((link) => {
+          {(session ? authedNavLinks : publicNavLinks).map((link) => {
             const isActive = pathname === link.href;
             return (
               <Link
@@ -220,7 +225,7 @@ export function Navigation() {
               </SheetHeader>
 
               <div className="mt-8 flex flex-col gap-1">
-                {navLinks.map((link) => {
+                {(session ? authedNavLinks : publicNavLinks).map((link) => {
                   const isActive = pathname === link.href;
                   return (
                     <Link

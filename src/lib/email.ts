@@ -13,7 +13,7 @@ function getResend(): Resend | null {
   return _resend;
 }
 
-const FROM_EMAIL = process.env.EMAIL_FROM || "ChartChemistry <noreply@chartchemistry.io>";
+const FROM_EMAIL = process.env.EMAIL_FROM || "ChartChemistry <noreply@chartchemistry.com>";
 const APP_URL = process.env.NEXTAUTH_URL || "http://localhost:3000";
 
 export async function sendPasswordResetEmail(email: string, token: string): Promise<{ success: boolean }> {

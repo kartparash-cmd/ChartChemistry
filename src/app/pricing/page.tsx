@@ -26,8 +26,6 @@ interface PricingTier {
   description: string;
   monthlyPrice: number;
   annualPrice: number;
-  oneTimePrice?: string;
-  isOneTime?: boolean;
   popular?: boolean;
   features: string[];
   cta: string;
@@ -69,22 +67,20 @@ const tiers: PricingTier[] = [
     ctaVariant: "default",
   },
   {
-    name: "Boutique Reports",
+    name: "Annual",
     icon: <Crown className="h-5 w-5" />,
-    description: "Premium hand-crafted detailed analysis",
-    monthlyPrice: 0,
-    annualPrice: 0,
-    oneTimePrice: "$14.99 - $29.99",
-    isOneTime: true,
+    description: "Best value — save over 30% with annual billing",
+    monthlyPrice: 6.67,
+    annualPrice: 79.99,
     features: [
       "Everything in Premium",
-      "Composite chart analysis",
-      "Downloadable PDF report",
-      "Transit forecast for your relationship",
-      "Personalized growth roadmap",
-      "30-day relationship forecast",
+      "Daily personalized horoscope",
+      "Transit alerts & timeline",
+      "AI Astrologer chat",
+      "Wellness insights",
+      "Priority support",
     ],
-    cta: "Purchase Report",
+    cta: "Save with Annual",
     ctaVariant: "secondary",
   },
 ];
@@ -92,63 +88,63 @@ const tiers: PricingTier[] = [
 const comparisonFeatures = [
   {
     feature: "Compatibility checks",
-    free: "1 per day",
+    free: "3 per day",
     premium: "Unlimited",
-    boutique: "Unlimited",
+    annual: "Unlimited",
   },
   {
     feature: "Sun/Moon/Rising comparison",
     free: true,
     premium: true,
-    boutique: true,
+    annual: true,
   },
   {
     feature: "AI summary",
     free: "Short",
     premium: "Full",
-    boutique: "Full + Extended",
+    annual: "Full",
   },
   {
     feature: "Synastry report sections",
     free: "1 of 7",
     premium: "All 7",
-    boutique: "All 7",
+    annual: "All 7",
   },
   {
     feature: "AI Astrologer chat",
     free: false,
     premium: true,
-    boutique: true,
+    annual: true,
   },
   {
     feature: "Save profiles",
     free: "1",
     premium: "Unlimited",
-    boutique: "Unlimited",
+    annual: "Unlimited",
   },
   {
     feature: "Red flags & growth insights",
     free: false,
     premium: true,
-    boutique: true,
+    annual: true,
   },
   {
-    feature: "Composite chart",
+    feature: "Daily horoscope",
     free: false,
     premium: false,
-    boutique: true,
+    annual: true,
   },
   {
-    feature: "PDF download",
+    feature: "Transit alerts",
     free: false,
     premium: false,
-    boutique: true,
+    annual: true,
   },
   {
-    feature: "Transit forecast",
+    feature: "Wellness insights",
     free: false,
     premium: false,
-    boutique: true,
+    annual: true,
   },
 ];
 
@@ -186,9 +182,9 @@ export default function PricingPage() {
     }
 
     // For paid tiers, create a Stripe checkout session
-    const plan = tierName === "Premium"
-      ? (billing === "annual" ? "ANNUAL" : "PREMIUM")
-      : "PREMIUM"; // Boutique falls back to Premium for now
+    const plan = tierName === "Annual" || billing === "annual"
+      ? "ANNUAL"
+      : "PREMIUM";
 
     setLoading(true);
     try {
@@ -345,35 +341,24 @@ export default function PricingPage() {
 
               {/* Price */}
               <div className="mb-6">
-                {tier.isOneTime ? (
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-3xl font-bold">{tier.oneTimePrice}</span>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-4xl font-bold">
+                    ${billing === "annual" ? tier.annualPrice : tier.monthlyPrice}
+                  </span>
+                  {tier.monthlyPrice > 0 && (
                     <span className="text-sm text-muted-foreground">
-                      one-time
+                      /{billing === "annual" ? "year" : "month"}
                     </span>
-                  </div>
-                ) : (
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-4xl font-bold">
-                      ${billing === "annual" ? tier.annualPrice : tier.monthlyPrice}
-                    </span>
-                    {tier.monthlyPrice > 0 && (
-                      <span className="text-sm text-muted-foreground">
-                        /{billing === "annual" ? "year" : "month"}
-                      </span>
-                    )}
-                  </div>
-                )}
-                {billing === "annual" &&
-                  tier.monthlyPrice > 0 &&
-                  !tier.isOneTime && (
-                    <p className="mt-1 text-xs text-gold">
-                      That is ${(tier.annualPrice / 12).toFixed(2)}/month, saving
-                      you $
-                      {(tier.monthlyPrice * 12 - tier.annualPrice).toFixed(2)}{" "}
-                      per year
-                    </p>
                   )}
+                </div>
+                {billing === "annual" && tier.monthlyPrice > 0 && (
+                  <p className="mt-1 text-xs text-gold">
+                    That is ${(tier.annualPrice / 12).toFixed(2)}/month, saving
+                    you $
+                    {(tier.monthlyPrice * 12 - tier.annualPrice).toFixed(2)}{" "}
+                    per year
+                  </p>
+                )}
               </div>
 
               {/* Features */}
@@ -427,7 +412,7 @@ export default function PricingPage() {
                     Premium
                   </th>
                   <th className="px-4 py-4 text-center text-sm font-medium text-gold">
-                    Boutique
+                    Annual
                   </th>
                 </tr>
               </thead>
@@ -453,7 +438,7 @@ export default function PricingPage() {
                     </td>
                     <td className="px-4 py-3 text-center">
                       <div className="flex justify-center">
-                        <FeatureValue value={row.boutique} />
+                        <FeatureValue value={row.annual} />
                       </div>
                     </td>
                   </tr>

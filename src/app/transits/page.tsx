@@ -15,7 +15,6 @@ import {
   Loader2,
   Orbit,
   Sparkles,
-  Clock,
   Heart,
   Compass,
   Lock,
@@ -34,49 +33,6 @@ interface TransitResponse {
   transitCount: number;
   highSignificance: number;
   error?: string;
-}
-
-/**
- * Estimate how long a transit remains active based on the transiting planet's
- * average speed (days per degree of ecliptic longitude) and the current orb.
- * The orb tells us roughly how far the transiting planet is from exact -- we
- * use half the remaining orb travel as an approximation of "time left" since
- * the transit is already active (orb is shrinking or has passed exact).
- */
-const PLANET_DAYS_PER_DEGREE: Record<string, number> = {
-  Sun: 1,
-  Moon: 0.083, // ~2 hours per degree
-  Mercury: 1.5,
-  Venus: 1.5,
-  Mars: 2.5,
-  Jupiter: 12,
-  Saturn: 14,
-  Uranus: 20,
-  Neptune: 25,
-  Pluto: 30,
-};
-
-const OUTER_PLANETS = new Set(["Jupiter", "Saturn", "Uranus", "Neptune", "Pluto"]);
-
-function getTransitDurationLabel(planet: string, orb: number): string {
-  const daysPerDeg = PLANET_DAYS_PER_DEGREE[planet] ?? 2;
-  // Estimate remaining active time: the orb is the current distance from exact.
-  // The transit stays active while the orb is within the allowed threshold.
-  // We approximate remaining time as orb * daysPerDeg (how long to traverse the current orb).
-  const totalDays = orb * daysPerDeg;
-
-  if (planet === "Moon") {
-    const hours = Math.max(1, Math.round(totalDays * 24));
-    return `~${hours} more hour${hours !== 1 ? "s" : ""}`;
-  }
-
-  if (OUTER_PLANETS.has(planet)) {
-    const weeks = Math.max(1, Math.round(totalDays / 7));
-    return `~${weeks} more week${weeks !== 1 ? "s" : ""}`;
-  }
-
-  const days = Math.max(1, Math.round(totalDays));
-  return `~${days} more day${days !== 1 ? "s" : ""}`;
 }
 
 function TransitSkeleton() {
@@ -244,6 +200,36 @@ function TransitLegend() {
         <Separator className="bg-white/10" />
         <div className="space-y-2">
           <p className="text-xs font-medium text-foreground uppercase tracking-wider mb-2">
+            Timing Indicators
+          </p>
+          <div className="flex items-center gap-2">
+            <span className="inline-block h-2 w-2 rounded-full bg-red-400 animate-pulse" />
+            <span className="text-xs">
+              <strong className="text-red-300">Peak now</strong> -- Orb under 1&deg;, transit at maximum intensity.
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="inline-block h-2 w-2 rounded-full bg-amber-400" />
+            <span className="text-xs">
+              <strong className="text-amber-300">Active</strong> -- Orb 1-3&deg;, strongly felt right now.
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="inline-block h-2 w-2 rounded-full bg-muted-foreground" />
+            <span className="text-xs">
+              <strong className="text-muted-foreground">Building</strong> -- Orb 3-5&deg;, influence is gathering or fading.
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="inline-block h-2 w-2 rounded-full bg-muted-foreground/50" />
+            <span className="text-xs">
+              <strong className="text-muted-foreground/60">Approaching</strong> -- Orb over 5&deg;, not yet in full effect.
+            </span>
+          </div>
+        </div>
+        <Separator className="bg-white/10" />
+        <div className="space-y-2">
+          <p className="text-xs font-medium text-foreground uppercase tracking-wider mb-2">
             Common Aspects
           </p>
           <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
@@ -256,16 +242,6 @@ function TransitLegend() {
         </div>
       </CardContent>
     </Card>
-  );
-}
-
-function TransitDuration({ planet, orb }: { planet: string; orb: number }) {
-  const label = getTransitDurationLabel(planet, orb);
-  return (
-    <div className="flex items-center gap-1 mt-2 ml-5">
-      <Clock className="h-3 w-3 text-muted-foreground" />
-      <span className="text-xs text-muted-foreground">Active for {label}</span>
-    </div>
   );
 }
 
@@ -589,13 +565,11 @@ export default function TransitsPage() {
                   <HighImpactNote />
                   <div className="space-y-3 mt-4">
                     {highTransits.map((transit, i) => (
-                      <div key={`high-${transit.transitingPlanet}-${transit.aspect}-${transit.natalPlanet}`}>
-                        <TransitCard
-                          transit={transit}
-                          index={i}
-                        />
-                        <TransitDuration planet={transit.transitingPlanet} orb={transit.orb} />
-                      </div>
+                      <TransitCard
+                        key={`high-${transit.transitingPlanet}-${transit.aspect}-${transit.natalPlanet}`}
+                        transit={transit}
+                        index={i}
+                      />
                     ))}
                   </div>
                 </div>
@@ -623,13 +597,11 @@ export default function TransitsPage() {
                   </motion.div>
                   <div className="space-y-3">
                     {mediumTransits.map((transit, i) => (
-                      <div key={`med-${transit.transitingPlanet}-${transit.aspect}-${transit.natalPlanet}`}>
-                        <TransitCard
-                          transit={transit}
-                          index={i + highTransits.length}
-                        />
-                        <TransitDuration planet={transit.transitingPlanet} orb={transit.orb} />
-                      </div>
+                      <TransitCard
+                        key={`med-${transit.transitingPlanet}-${transit.aspect}-${transit.natalPlanet}`}
+                        transit={transit}
+                        index={i + highTransits.length}
+                      />
                     ))}
                   </div>
                 </div>
@@ -657,13 +629,11 @@ export default function TransitsPage() {
                   </motion.div>
                   <div className="space-y-3">
                     {lowTransits.map((transit, i) => (
-                      <div key={`low-${transit.transitingPlanet}-${transit.aspect}-${transit.natalPlanet}`}>
-                        <TransitCard
-                          transit={transit}
-                          index={i + highTransits.length + mediumTransits.length}
-                        />
-                        <TransitDuration planet={transit.transitingPlanet} orb={transit.orb} />
-                      </div>
+                      <TransitCard
+                        key={`low-${transit.transitingPlanet}-${transit.aspect}-${transit.natalPlanet}`}
+                        transit={transit}
+                        index={i + highTransits.length + mediumTransits.length}
+                      />
                     ))}
                   </div>
                 </div>

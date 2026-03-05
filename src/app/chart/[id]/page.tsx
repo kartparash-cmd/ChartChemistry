@@ -14,6 +14,9 @@ import {
   MapPin,
   Calendar,
   Sparkles,
+  Heart,
+  Sun,
+  BookOpen,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -937,6 +940,55 @@ export default function ChartPage() {
             </div>
           </motion.div>
         )}
+
+        {/* What's Next */}
+        <motion.div
+          {...fadeUp}
+          {...(prefersReducedMotion ? {} : { transition: { delay: 0.45 } })}
+          className="mt-8 rounded-xl border border-white/10 bg-white/[0.03] p-6 backdrop-blur-sm"
+        >
+          <h2 className="font-heading text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-4">
+            What&apos;s Next
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <Link
+              href="/compatibility"
+              className="group glass-card rounded-xl border border-white/10 p-4 flex flex-col items-center text-center gap-2 transition-all hover:border-cosmic-purple/50 hover:bg-cosmic-purple/5"
+            >
+              <Heart className="h-5 w-5 text-cosmic-purple-light group-hover:text-cosmic-purple transition-colors" />
+              <span className="text-sm font-medium leading-tight">
+                Check Compatibility
+              </span>
+              <span className="text-[11px] leading-snug text-muted-foreground">
+                See how your chart aligns with someone
+              </span>
+            </Link>
+            <Link
+              href="/horoscope"
+              className="group glass-card rounded-xl border border-white/10 p-4 flex flex-col items-center text-center gap-2 transition-all hover:border-cosmic-purple/50 hover:bg-cosmic-purple/5"
+            >
+              <Sun className="h-5 w-5 text-cosmic-purple-light group-hover:text-cosmic-purple transition-colors" />
+              <span className="text-sm font-medium leading-tight">
+                Daily Horoscope
+              </span>
+              <span className="text-[11px] leading-snug text-muted-foreground">
+                Your personalized cosmic guidance today
+              </span>
+            </Link>
+            <Link
+              href="/learn"
+              className="group glass-card rounded-xl border border-white/10 p-4 flex flex-col items-center text-center gap-2 transition-all hover:border-cosmic-purple/50 hover:bg-cosmic-purple/5"
+            >
+              <BookOpen className="h-5 w-5 text-cosmic-purple-light group-hover:text-cosmic-purple transition-colors" />
+              <span className="text-sm font-medium leading-tight">
+                Explore Your Placements
+              </span>
+              <span className="text-[11px] leading-snug text-muted-foreground">
+                Learn what your chart positions mean
+              </span>
+            </Link>
+          </div>
+        </motion.div>
       </div>
 
       {/* AI Explanation Sheet */}

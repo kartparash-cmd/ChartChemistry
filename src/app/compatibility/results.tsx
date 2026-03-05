@@ -18,6 +18,9 @@ import {
   Copy,
   UserPlus,
   Compass,
+  Send,
+  Star,
+  RefreshCw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -229,6 +232,9 @@ export function CompatibilityResults({
   // Link-copy toast state
   const [linkCopied, setLinkCopied] = useState(false);
 
+  // "Send to them" copy state
+  const [sendCopied, setSendCopied] = useState(false);
+
   const radarData = [
     { dimension: "Emotional", score: result.dimensions.emotional },
     { dimension: "Chemistry", score: result.dimensions.chemistry },
@@ -275,6 +281,34 @@ export function CompatibilityResults({
       setTimeout(() => setLinkCopied(false), 2000);
     } catch {
       // Clipboard not available
+    }
+  };
+
+  const handleSendToThem = async () => {
+    const origin = typeof window !== "undefined" ? window.location.origin : "https://chartchemistry.com";
+    const url = reportId
+      ? `${origin}/report/${reportId}`
+      : `${origin}/compatibility`;
+    const shareText = `I just checked our compatibility on ChartChemistry \u2014 we scored ${result.overallScore}%! Check it out: ${url}`;
+
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: `${result.personA.name} & ${result.personB.name} \u2014 ChartChemistry`,
+          text: shareText,
+          url,
+        });
+      } catch {
+        // User cancelled or error
+      }
+    } else {
+      try {
+        await navigator.clipboard.writeText(shareText);
+        setSendCopied(true);
+        setTimeout(() => setSendCopied(false), 2500);
+      } catch {
+        // Clipboard not available
+      }
     }
   };
 
@@ -645,88 +679,153 @@ export function CompatibilityResults({
 
       {/* "Send to them" viral CTA */}
       <motion.div
-        className="glass-card rounded-2xl border border-cosmic-purple/30 p-6 text-center"
+        className="relative overflow-hidden rounded-2xl border border-cosmic-purple/40 bg-gradient-to-br from-cosmic-purple/10 via-pink-500/5 to-gold/10 p-8 text-center"
         initial={prefersReducedMotion ? "visible" : "hidden"}
         animate="visible"
         variants={fadeInUp}
         transition={{ duration: prefersReducedMotion ? 0 : 0.5, delay: prefersReducedMotion ? 0 : 1.2 }}
       >
-        <Heart className="mx-auto mb-3 h-8 w-8 text-pink-400" />
-        <h3 className="mb-1 text-lg font-semibold">
-          Want to see their reaction?
-        </h3>
-        <p className="mx-auto mb-5 max-w-md text-sm text-muted-foreground">
-          Send this to {result.personB.name} and discover if they feel the
-          cosmic connection too.
-        </p>
-        <div className="flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
-          <Button
-            onClick={handleCopyLink}
-            variant="outline"
-            className="w-full rounded-full border-cosmic-purple/30 sm:w-auto"
-          >
-            {linkCopied ? (
-              <>
-                <Check className="mr-2 h-4 w-4 text-green-500" />
-                Link Copied!
-              </>
-            ) : (
-              <>
-                <Copy className="mr-2 h-4 w-4" />
-                Copy Link
-              </>
-            )}
-          </Button>
-          <Button
-            onClick={handleShare}
-            className="w-full rounded-full bg-cosmic-purple text-white hover:bg-cosmic-purple-dark sm:w-auto"
-          >
-            <Share2 className="mr-2 h-4 w-4" />
-            Share
-          </Button>
-        </div>
-      </motion.div>
-
-      {/* Unauthenticated user CTAs */}
-      {!session && (
-        <motion.div
-          className="glass-card rounded-2xl p-6 text-center"
-          initial={prefersReducedMotion ? "visible" : "hidden"}
-          animate="visible"
-          variants={fadeInUp}
-          transition={{ duration: prefersReducedMotion ? 0 : 0.5, delay: prefersReducedMotion ? 0 : 1.3 }}
-        >
-          <UserPlus className="mx-auto mb-3 h-7 w-7 text-cosmic-purple-light" />
-          <h3 className="mb-1 text-lg font-semibold">
-            Create a free account to save this report
+        <div className="absolute inset-0 bg-gradient-to-r from-cosmic-purple/5 via-transparent to-pink-500/5 pointer-events-none" />
+        <div className="relative">
+          <Heart className="mx-auto mb-3 h-10 w-10 text-pink-400" />
+          <h3 className="mb-1 text-xl font-bold">
+            Curious what {result.personB.name} thinks?
           </h3>
-          <p className="mx-auto mb-5 max-w-md text-sm text-muted-foreground">
-            Unlock deeper insights, save unlimited reports, and explore your full
-            birth chart.
+          <p className="mx-auto mb-2 max-w-md text-sm text-muted-foreground">
+            Send {result.personB.name} your results and see if they feel the
+            cosmic connection too.
+          </p>
+          <p className="mx-auto mb-6 max-w-sm rounded-lg border border-white/5 bg-white/[0.03] px-4 py-2 text-xs italic text-muted-foreground/70">
+            &ldquo;I just checked our compatibility on ChartChemistry &mdash; we
+            scored {result.overallScore}%! Check it out&rdquo;
           </p>
           <div className="flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
             <Button
-              asChild
-              className="w-full rounded-full bg-gradient-to-r from-cosmic-purple to-gold text-white hover:brightness-110 sm:w-auto"
+              onClick={handleSendToThem}
+              className="w-full rounded-full bg-gradient-to-r from-cosmic-purple to-pink-500 px-8 text-sm font-semibold text-white shadow-lg shadow-cosmic-purple/20 hover:brightness-110 sm:w-auto"
             >
-              <Link href="/auth/signup">
-                <UserPlus className="mr-2 h-4 w-4" />
-                Create Free Account
-              </Link>
+              {sendCopied ? (
+                <>
+                  <Check className="mr-2 h-4 w-4" />
+                  Message Copied!
+                </>
+              ) : (
+                <>
+                  <Send className="mr-2 h-4 w-4" />
+                  Send to {result.personB.name}
+                </>
+              )}
             </Button>
             <Button
-              asChild
+              onClick={handleCopyLink}
               variant="outline"
-              className="w-full rounded-full sm:w-auto"
+              className="w-full rounded-full border-cosmic-purple/30 sm:w-auto"
             >
-              <Link href="/compatibility">
-                <Compass className="mr-2 h-4 w-4" />
-                Explore Your Birth Chart
-              </Link>
+              {linkCopied ? (
+                <>
+                  <Check className="mr-2 h-4 w-4 text-green-500" />
+                  Link Copied!
+                </>
+              ) : (
+                <>
+                  <Copy className="mr-2 h-4 w-4" />
+                  Copy Link
+                </>
+              )}
             </Button>
           </div>
-        </motion.div>
-      )}
+        </div>
+      </motion.div>
+
+      {/* What to do next */}
+      <motion.div
+        className="glass-card rounded-2xl p-6"
+        initial={prefersReducedMotion ? "visible" : "hidden"}
+        animate="visible"
+        variants={fadeInUp}
+        transition={{ duration: prefersReducedMotion ? 0 : 0.5, delay: prefersReducedMotion ? 0 : 1.3 }}
+      >
+        <h3 className="mb-5 text-center text-lg font-semibold">
+          What to Do Next
+        </h3>
+        <div className="grid gap-3 sm:grid-cols-2">
+          {/* Sign up to save (unauthenticated only) */}
+          {!session && (
+            <Link
+              href={`/auth/signup?callbackUrl=${encodeURIComponent("/compatibility?restored=true")}`}
+              className="group flex items-start gap-3 rounded-xl border border-white/10 bg-white/[0.03] p-4 transition-colors hover:border-cosmic-purple/30 hover:bg-white/[0.06]"
+            >
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-cosmic-purple/15">
+                <UserPlus className="h-4 w-4 text-cosmic-purple-light" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold group-hover:text-cosmic-purple-light">
+                  Sign up to save this result
+                </p>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  Create a free account and never lose your compatibility reports.
+                </p>
+              </div>
+            </Link>
+          )}
+
+          {/* Get full premium report (logged in + free tier, no premium report yet) */}
+          {session && !isPremium && !premiumReport && (
+            <Link
+              href="/pricing"
+              className="group flex items-start gap-3 rounded-xl border border-white/10 bg-white/[0.03] p-4 transition-colors hover:border-gold/30 hover:bg-white/[0.06]"
+            >
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gold/15">
+                <Star className="h-4 w-4 text-gold" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold group-hover:text-gold">
+                  Get the full premium report
+                </p>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  Unlock 7 detailed dimensions, red flags, growth insights, and cosmic advice.
+                </p>
+              </div>
+            </Link>
+          )}
+
+          {/* Explore your natal chart */}
+          <Link
+            href="/chart/new"
+            className="group flex items-start gap-3 rounded-xl border border-white/10 bg-white/[0.03] p-4 transition-colors hover:border-cosmic-purple/30 hover:bg-white/[0.06]"
+          >
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-cosmic-purple/15">
+              <Compass className="h-4 w-4 text-cosmic-purple-light" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold group-hover:text-cosmic-purple-light">
+                Explore your natal chart
+              </p>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                Discover your full birth chart with planetary positions, houses, and aspects.
+              </p>
+            </div>
+          </Link>
+
+          {/* Check another pairing */}
+          <Link
+            href="/compatibility"
+            className="group flex items-start gap-3 rounded-xl border border-white/10 bg-white/[0.03] p-4 transition-colors hover:border-cosmic-purple/30 hover:bg-white/[0.06]"
+          >
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-pink-500/15">
+              <RefreshCw className="h-4 w-4 text-pink-400" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold group-hover:text-pink-400">
+                Check another pairing
+              </p>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                Curious about someone else? Run another compatibility check.
+              </p>
+            </div>
+          </Link>
+        </div>
+      </motion.div>
 
       {/* Remaining checks badge */}
       {typeof remainingChecks === "number" && (

@@ -17,7 +17,6 @@ import {
   RotateCcw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
@@ -49,7 +48,7 @@ interface ReportSummary {
   overallScore: number;
 }
 
-const SUGGESTED_QUESTIONS = [
+const INITIAL_SUGGESTED_QUESTIONS = [
   "Why do we argue about money?",
   "What are our strongest connection points?",
   "Is this relationship meant to last?",
@@ -78,6 +77,88 @@ function deserializeMessages(raw: string): Message[] | null {
   } catch {
     return null;
   }
+}
+
+/**
+ * Derive context-aware follow-up suggestions from the last assistant message.
+ * These are deterministic (no AI call) and based on simple keyword heuristics
+ * from the conversation so far.
+ */
+function generateFollowUpSuggestions(messages: Message[]): string[] {
+  // Find the last assistant message (excluding welcome)
+  const lastAssistant = [...messages]
+    .reverse()
+    .find((m) => m.role === "assistant" && m.id !== "welcome");
+  const lastUser = [...messages]
+    .reverse()
+    .find((m) => m.role === "user");
+
+  if (!lastAssistant || !lastUser) return INITIAL_SUGGESTED_QUESTIONS;
+
+  const content = lastAssistant.content.toLowerCase();
+  const userContent = lastUser.content.toLowerCase();
+  const suggestions: string[] = [];
+
+  // Communication-related follow-ups
+  if (content.includes("communicat") || content.includes("mercury") || content.includes("talk")) {
+    suggestions.push("How can we handle disagreements more constructively?");
+    suggestions.push("What communication style works best for us?");
+  }
+
+  // Emotional / Moon-related follow-ups
+  if (content.includes("emotion") || content.includes("moon") || content.includes("feel")) {
+    suggestions.push("How can we better support each other emotionally?");
+    suggestions.push("What triggers emotional distance between us?");
+  }
+
+  // Chemistry / Venus / Mars follow-ups
+  if (content.includes("venus") || content.includes("mars") || content.includes("chemist") || content.includes("attract")) {
+    suggestions.push("How can we keep the spark alive long-term?");
+    suggestions.push("What does our physical compatibility look like?");
+  }
+
+  // Conflict / Saturn follow-ups
+  if (content.includes("conflict") || content.includes("saturn") || content.includes("challenge") || content.includes("difficult")) {
+    suggestions.push("What are the biggest challenges we need to overcome?");
+    suggestions.push("How can we turn our conflicts into growth opportunities?");
+  }
+
+  // Money / Taurus / 2nd house follow-ups
+  if (content.includes("money") || content.includes("financ") || content.includes("taurus") || content.includes("security")) {
+    suggestions.push("How do our values around money and security differ?");
+    suggestions.push("What shared goals can help us align financially?");
+  }
+
+  // General astrology follow-ups
+  if (content.includes("sun") || content.includes("sign") || content.includes("zodiac")) {
+    suggestions.push("How do our sun signs interact day to day?");
+    suggestions.push("What role do our rising signs play in this dynamic?");
+  }
+
+  // If we still have room, add context-aware generic follow-ups
+  if (suggestions.length < 3) {
+    if (!suggestions.includes("Tell me more about our strengths as a couple.")) {
+      suggestions.push("Tell me more about our strengths as a couple.");
+    }
+    if (!suggestions.includes("What should we watch out for in the coming months?")) {
+      suggestions.push("What should we watch out for in the coming months?");
+    }
+    if (!suggestions.includes("Can you explain that in simpler terms?")) {
+      suggestions.push("Can you explain that in simpler terms?");
+    }
+  }
+
+  // Avoid suggesting something the user already asked
+  const askedTopics = messages
+    .filter((m) => m.role === "user")
+    .map((m) => m.content.toLowerCase());
+
+  const filtered = suggestions.filter(
+    (s) => !askedTopics.some((asked) => asked === s.toLowerCase())
+  );
+
+  // Return at most 4 unique suggestions
+  return [...new Set(filtered)].slice(0, 4);
 }
 
 // ---------------------------------------------------------------------------
@@ -189,11 +270,17 @@ function ChatPageContent() {
   const [sessionId, setSessionId] = useState<string | undefined>();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [suggestionsOpen, setSuggestionsOpen] = useState(true);
+  const [isRestoringSession, setIsRestoringSession] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
   /** True once there has been at least one user message in this conversation */
   const hasUserMessage = messages.some((m) => m.role === "user");
+
+  /** Compute follow-up suggestions based on conversation state */
+  const currentSuggestions = hasUserMessage
+    ? generateFollowUpSuggestions(messages)
+    : INITIAL_SUGGESTED_QUESTIONS;
 
   const isPremium =
     session?.user?.plan === "PREMIUM" || session?.user?.plan === "ANNUAL";
@@ -215,13 +302,13 @@ function ChatPageContent() {
       try {
         localStorage.setItem(storageKey, serializeMessages(messages));
       } catch {
-        // localStorage full or unavailable – silently ignore
+        // localStorage full or unavailable -- silently ignore
       }
     }
   }, [messages, storageKey, isPremium]);
 
   // -------------------------------------------------------------------
-  // Restore messages from localStorage when report selection changes
+  // Restore messages: DB first, then localStorage fallback
   // -------------------------------------------------------------------
 
   const buildWelcomeMessage = useCallback((): Message => ({
@@ -235,29 +322,87 @@ function ChatPageContent() {
   useEffect(() => {
     if (!isPremium) return;
 
-    // Try restoring from localStorage
-    try {
-      const stored = localStorage.getItem(storageKey);
-      if (stored) {
-        const restored = deserializeMessages(stored);
-        if (restored && restored.length > 0) {
-          setMessages(restored);
-          // Collapse suggestions when there is already conversation history
-          setSuggestionsOpen(false);
-          return;
-        }
-      }
-    } catch {
-      // localStorage unavailable
-    }
+    let cancelled = false;
 
-    // No stored history – show welcome message
-    setMessages([buildWelcomeMessage()]);
-    setSuggestionsOpen(true);
-  }, [storageKey, isPremium, buildWelcomeMessage]);
+    const restoreSession = async () => {
+      setIsRestoringSession(true);
+
+      // --- 1. Try loading from the database (source of truth) ---
+      try {
+        const params = new URLSearchParams();
+        if (selectedReportId) {
+          params.set("reportId", selectedReportId);
+        }
+        const res = await fetch(`/api/chat?${params.toString()}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (!cancelled && data.messages && Array.isArray(data.messages) && data.messages.length > 0) {
+            // Convert DB messages (ChatMessage format) into our Message format
+            const restored: Message[] = data.messages.map(
+              (m: { role: "user" | "assistant"; content: string; timestamp: string }, i: number) => ({
+                id: `${m.role}-restored-${i}`,
+                role: m.role,
+                content: m.content,
+                timestamp: new Date(m.timestamp),
+              })
+            );
+            // Prepend the welcome message for context
+            setMessages([buildWelcomeMessage(), ...restored]);
+            setSessionId(data.sessionId);
+            setSuggestionsOpen(false);
+            setIsRestoringSession(false);
+            // Update localStorage cache with the DB data
+            try {
+              localStorage.setItem(
+                storageKey,
+                serializeMessages([buildWelcomeMessage(), ...restored])
+              );
+            } catch {
+              // ignore
+            }
+            return;
+          }
+        }
+      } catch {
+        // DB fetch failed -- fall through to localStorage
+      }
+
+      if (cancelled) return;
+
+      // --- 2. Fallback: try restoring from localStorage ---
+      try {
+        const stored = localStorage.getItem(storageKey);
+        if (stored) {
+          const restored = deserializeMessages(stored);
+          if (restored && restored.length > 0) {
+            setMessages(restored);
+            // Try to recover the sessionId from the localStorage key if messages have user content
+            setSuggestionsOpen(false);
+            setIsRestoringSession(false);
+            return;
+          }
+        }
+      } catch {
+        // localStorage unavailable
+      }
+
+      if (cancelled) return;
+
+      // --- 3. No stored history -- show welcome message ---
+      setMessages([buildWelcomeMessage()]);
+      setSuggestionsOpen(true);
+      setIsRestoringSession(false);
+    };
+
+    restoreSession();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [storageKey, selectedReportId, isPremium, buildWelcomeMessage]);
 
   // -------------------------------------------------------------------
-  // "New Conversation" handler – clear stored messages and reset
+  // "New Conversation" handler -- clear stored messages and reset
   // -------------------------------------------------------------------
 
   const handleNewConversation = () => {
@@ -569,6 +714,16 @@ function ChatPageContent() {
 
         {/* Messages */}
         <div className="flex-1 overflow-y-auto p-4 space-y-4" aria-live="polite" aria-relevant="additions">
+          {/* Session restore loading indicator */}
+          {isRestoringSession && (
+            <div className="flex justify-center py-4">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span>Restoring your conversation...</span>
+              </div>
+            </div>
+          )}
+
           {messages.map((message) => (
             <ChatBubble key={message.id} message={message} />
           ))}
@@ -611,7 +766,7 @@ function ChatPageContent() {
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Collapsible Suggested Questions */}
+        {/* Collapsible Suggested Questions (dynamic after first exchange) */}
         <div className="px-4 pb-2">
           <button
             type="button"
@@ -621,7 +776,7 @@ function ChatPageContent() {
             aria-controls="suggested-questions"
           >
             <Lightbulb className="h-3.5 w-3.5" />
-            <span>Suggestions</span>
+            <span>{hasUserMessage ? "Follow-up questions" : "Suggestions"}</span>
             <ChevronDown
               className={cn(
                 "h-3 w-3 transition-transform",
@@ -641,7 +796,7 @@ function ChatPageContent() {
                 className="overflow-hidden"
               >
                 <div className="flex flex-wrap gap-2 pb-1">
-                  {SUGGESTED_QUESTIONS.map((q) => (
+                  {currentSuggestions.map((q) => (
                     <button
                       key={q}
                       onClick={() => sendMessage(q)}

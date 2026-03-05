@@ -1,10 +1,94 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Clock, Zap, Activity, TrendingUp, CircleDot } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+
+// ---------------------------------------------------------------------------
+// Orb-based urgency classification
+// ---------------------------------------------------------------------------
+
+type UrgencyLevel = "peak" | "active" | "building" | "approaching";
+
+interface UrgencyConfig {
+  label: string;
+  icon: typeof Zap;
+  badgeClass: string;
+  dotClass: string;
+}
+
+function getUrgencyLevel(orb: number): UrgencyLevel {
+  if (orb < 1) return "peak";
+  if (orb <= 3) return "active";
+  if (orb <= 5) return "building";
+  return "approaching";
+}
+
+const urgencyConfigs: Record<UrgencyLevel, UrgencyConfig> = {
+  peak: {
+    label: "Peak now",
+    icon: Zap,
+    badgeClass: "border-red-400/40 bg-red-400/15 text-red-300",
+    dotClass: "bg-red-400 animate-pulse",
+  },
+  active: {
+    label: "Active",
+    icon: Activity,
+    badgeClass: "border-amber-400/30 bg-amber-400/10 text-amber-300",
+    dotClass: "bg-amber-400",
+  },
+  building: {
+    label: "Building",
+    icon: TrendingUp,
+    badgeClass: "border-white/15 bg-white/5 text-muted-foreground",
+    dotClass: "bg-muted-foreground",
+  },
+  approaching: {
+    label: "Approaching",
+    icon: CircleDot,
+    badgeClass: "border-white/10 bg-white/[0.03] text-muted-foreground/60",
+    dotClass: "bg-muted-foreground/50",
+  },
+};
+
+// ---------------------------------------------------------------------------
+// Duration estimate based on planet speed and orb
+// ---------------------------------------------------------------------------
+
+const PLANET_DAYS_PER_DEGREE: Record<string, number> = {
+  Sun: 1,
+  Moon: 0.083, // ~2 hours per degree
+  Mercury: 1.5,
+  Venus: 1.5,
+  Mars: 2.5,
+  Jupiter: 12,
+  Saturn: 14,
+  Uranus: 20,
+  Neptune: 25,
+  Pluto: 30,
+};
+
+const OUTER_PLANETS = new Set(["Jupiter", "Saturn", "Uranus", "Neptune", "Pluto"]);
+
+function getDurationLabel(planet: string, orb: number): string {
+  const daysPerDeg = PLANET_DAYS_PER_DEGREE[planet] ?? 2;
+  const totalDays = orb * daysPerDeg;
+
+  if (planet === "Moon") {
+    const hours = Math.max(1, Math.round(totalDays * 24));
+    return `~${hours}h remaining`;
+  }
+
+  if (OUTER_PLANETS.has(planet)) {
+    const weeks = Math.max(1, Math.round(totalDays / 7));
+    return `~${weeks}w remaining`;
+  }
+
+  const days = Math.max(1, Math.round(totalDays));
+  return `~${days}d remaining`;
+}
 
 // Planet glyphs for astrological display
 const planetGlyphs: Record<string, string> = {
@@ -121,6 +205,12 @@ export function TransitCard({ transit, index }: TransitCardProps) {
   const aspectSymbol = aspectSymbols[transit.aspect] || transit.aspect;
   const description = getTransitDescription(transit.aspect, transit.transitingPlanet);
 
+  // Orb-based urgency
+  const urgencyLevel = getUrgencyLevel(transit.orb);
+  const urgency = urgencyConfigs[urgencyLevel];
+  const UrgencyIcon = urgency.icon;
+  const durationLabel = getDurationLabel(transit.transitingPlanet, transit.orb);
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 15 }}
@@ -142,7 +232,7 @@ export function TransitCard({ transit, index }: TransitCardProps) {
         />
 
         <CardContent className="relative p-5">
-          {/* Top row: planets + aspect + badge */}
+          {/* Top row: planets + aspect + badges */}
           <div className="flex items-start justify-between gap-3 mb-3">
             <div className="flex items-center gap-2 min-w-0">
               {/* Transiting planet */}
@@ -176,29 +266,45 @@ export function TransitCard({ transit, index }: TransitCardProps) {
               </div>
             </div>
 
-            {/* Significance badge */}
-            <Badge
-              variant="outline"
-              className={cn("text-xs shrink-0", config.badgeClass)}
-            >
-              <span
-                className={cn("inline-block h-1.5 w-1.5 rounded-full mr-1", config.dotClass)}
-              />
-              {config.badge}
-            </Badge>
+            {/* Badges: significance + urgency */}
+            <div className="flex flex-col items-end gap-1.5 shrink-0">
+              <Badge
+                variant="outline"
+                className={cn("text-xs", config.badgeClass)}
+              >
+                <span
+                  className={cn("inline-block h-1.5 w-1.5 rounded-full mr-1", config.dotClass)}
+                />
+                {config.badge}
+              </Badge>
+              <Badge
+                variant="outline"
+                className={cn("text-[11px] px-2 py-0.5", urgency.badgeClass)}
+              >
+                <UrgencyIcon className="h-3 w-3 mr-1" aria-hidden="true" />
+                {urgency.label}
+              </Badge>
+            </div>
           </div>
 
-          {/* Orb display */}
-          <div className="flex items-center gap-2 mb-3">
-            <span className="text-xs text-muted-foreground">Orb:</span>
-            <span className="text-xs font-medium text-foreground">
-              {transit.orb.toFixed(1)}&deg;
-            </span>
-            {transit.orb <= 1 && (
-              <span className="text-xs text-gold">
-                (exact)
+          {/* Orb + duration row */}
+          <div className="flex items-center gap-3 mb-3">
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs text-muted-foreground">Orb:</span>
+              <span className="text-xs font-medium text-foreground">
+                {transit.orb.toFixed(1)}&deg;
               </span>
-            )}
+              {transit.orb < 1 && (
+                <span className="text-xs text-gold font-medium">
+                  (exact)
+                </span>
+              )}
+            </div>
+            <span className="text-muted-foreground/30">|</span>
+            <div className="flex items-center gap-1">
+              <Clock className="h-3 w-3 text-muted-foreground/70" aria-hidden="true" />
+              <span className="text-xs text-muted-foreground/70">{durationLabel}</span>
+            </div>
           </div>
 
           {/* Description */}

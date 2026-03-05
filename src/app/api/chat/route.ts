@@ -1,14 +1,14 @@
 /**
- * POST /api/chat
+ * GET  /api/chat  — Load the most recent chat session (optionally by reportId)
+ * POST /api/chat  — Send a message to the AI astrologer
  *
- * AI astrologer chat endpoint.
  * Requires authenticated user with PREMIUM plan.
  *
- * Optionally accepts a reportId for chart-aware conversation
+ * POST optionally accepts a reportId for chart-aware conversation
  * and a sessionId to continue an existing conversation.
  */
 
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -24,7 +24,60 @@ import type { Prisma } from "@/generated/prisma/client";
 const chatRateLimiter = createRateLimiter(20, 60 * 60 * 1000, "chat");
 
 // ============================================================
-// Route handler
+// GET — Load existing chat session
+// ============================================================
+
+export async function GET(request: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions);
+
+    if (!session?.user?.id) {
+      return NextResponse.json(
+        { error: "Authentication required" },
+        { status: 401 }
+      );
+    }
+
+    const isPremium =
+      session.user.plan === "PREMIUM" || session.user.plan === "ANNUAL";
+
+    if (!isPremium) {
+      return NextResponse.json(
+        { error: "Premium plan required" },
+        { status: 403 }
+      );
+    }
+
+    const reportId = request.nextUrl.searchParams.get("reportId") || undefined;
+
+    // Find the most recent chat session for this user, optionally scoped to a report
+    const chatSession = await prisma.chatSession.findFirst({
+      where: {
+        userId: session.user.id,
+        reportId: reportId ?? null,
+      },
+      orderBy: { updatedAt: "desc" },
+    });
+
+    if (!chatSession) {
+      return NextResponse.json({ messages: [], sessionId: null });
+    }
+
+    return NextResponse.json({
+      messages: chatSession.messages as unknown as ChatMessage[],
+      sessionId: chatSession.id,
+    });
+  } catch (error) {
+    console.error("[GET /api/chat] Error:", error);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
+  }
+}
+
+// ============================================================
+// POST — Send message
 // ============================================================
 
 export async function POST(request: Request) {

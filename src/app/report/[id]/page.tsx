@@ -29,6 +29,7 @@ import {
   UserPlus,
   Link as LinkIcon,
   Check,
+  Compass,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -1143,36 +1144,42 @@ export default function ReportPage() {
               </Button>
             </div>
 
-            {/* Continue Your Journey */}
+            {/* Continue Exploring */}
             <div className="pt-6 print:hidden">
               <h3 className="font-heading text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-4">
-                Continue Your Journey
+                Continue Exploring
               </h3>
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+              <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
                 {[
                   {
                     href: `/chat?reportId=${reportId}`,
                     icon: <MessageCircle className="h-5 w-5" />,
-                    label: "Ask AI About This",
+                    label: "Ask AI About This Report",
                     description: "Dive deeper with your AI astrologer",
-                  },
-                  {
-                    href: "/transits",
-                    icon: <TrendingUp className="h-5 w-5" />,
-                    label: "Check Your Transits",
-                    description: "See what the stars say right now",
-                  },
-                  {
-                    href: "/horoscope",
-                    icon: <Sun className="h-5 w-5" />,
-                    label: "View Your Horoscope",
-                    description: "Your daily cosmic guidance",
                   },
                   {
                     href: "/compatibility",
                     icon: <Heart className="h-5 w-5" />,
-                    label: "Run Another Check",
-                    description: "Test a different pairing",
+                    label: "Check Another Pairing",
+                    description: "Test a different match",
+                  },
+                  {
+                    href: `/chart/${report.person1.id}`,
+                    icon: <Compass className="h-5 w-5" />,
+                    label: `${report.person1.name}\u2019s Chart`,
+                    description: "View the natal chart",
+                  },
+                  {
+                    href: "/transits",
+                    icon: <TrendingUp className="h-5 w-5" />,
+                    label: "View Today\u2019s Transits",
+                    description: "See what the stars say now",
+                  },
+                  {
+                    href: "/horoscope",
+                    icon: <Sun className="h-5 w-5" />,
+                    label: "Daily Horoscope",
+                    description: "Your cosmic guidance today",
                   },
                 ].map((card) => (
                   <Link

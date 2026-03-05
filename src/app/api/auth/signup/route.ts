@@ -3,6 +3,7 @@ import crypto from "crypto";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { sendVerificationEmail } from "@/lib/email";
+import { sendWelcomeEmail } from "@/lib/emails";
 import { getClientIp } from "@/lib/rate-limit";
 
 // ============================================================
@@ -89,6 +90,12 @@ export async function POST(request: Request) {
     if (!emailResult.success) {
       console.warn("Verification email was not sent for user:", user.id);
     }
+
+    // Fire-and-forget: send the welcome email without blocking the signup response.
+    // Errors are logged internally by sendWelcomeEmail; we intentionally do not await.
+    sendWelcomeEmail(normalizedEmail, name || "").catch(() => {
+      // Swallow — sendWelcomeEmail already logs on failure.
+    });
 
     return NextResponse.json(
       {

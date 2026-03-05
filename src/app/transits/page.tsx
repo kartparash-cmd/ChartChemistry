@@ -569,6 +569,7 @@ export default function TransitsPage() {
                         key={`high-${transit.transitingPlanet}-${transit.aspect}-${transit.natalPlanet}`}
                         transit={transit}
                         index={i}
+                        isPremium={session?.user?.plan !== "FREE"}
                       />
                     ))}
                   </div>
@@ -601,6 +602,7 @@ export default function TransitsPage() {
                         key={`med-${transit.transitingPlanet}-${transit.aspect}-${transit.natalPlanet}`}
                         transit={transit}
                         index={i + highTransits.length}
+                        isPremium={session?.user?.plan !== "FREE"}
                       />
                     ))}
                   </div>
@@ -633,6 +635,7 @@ export default function TransitsPage() {
                         key={`low-${transit.transitingPlanet}-${transit.aspect}-${transit.natalPlanet}`}
                         transit={transit}
                         index={i + highTransits.length + mediumTransits.length}
+                        isPremium={session?.user?.plan !== "FREE"}
                       />
                     ))}
                   </div>

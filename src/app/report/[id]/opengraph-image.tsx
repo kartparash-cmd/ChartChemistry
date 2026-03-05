@@ -21,6 +21,25 @@ function getSunSign(chartData: unknown): string | null {
   return sun?.sign ?? null;
 }
 
+/** Map zodiac sign names to their Unicode symbols. */
+function getSignSymbol(sign: string): string {
+  const symbols: Record<string, string> = {
+    aries: "\u2648",
+    taurus: "\u2649",
+    gemini: "\u264A",
+    cancer: "\u264B",
+    leo: "\u264C",
+    virgo: "\u264D",
+    libra: "\u264E",
+    scorpio: "\u264F",
+    sagittarius: "\u2650",
+    capricorn: "\u2651",
+    aquarius: "\u2652",
+    pisces: "\u2653",
+  };
+  return symbols[sign.toLowerCase()] ?? "";
+}
+
 export default async function Image({
   params,
 }: {
@@ -67,51 +86,62 @@ export default async function Image({
     console.error("[opengraph-image] Failed to fetch report:", error);
   }
 
-  // Fallback: generic ChartChemistry card
+  // ----- Fallback: generic ChartChemistry card -----
   if (!found) {
     return new ImageResponse(
       (
         <div
           style={{
-            background: "linear-gradient(135deg, #0f0a1a 0%, #1a1040 50%, #0f0a1a 100%)",
+            background: "linear-gradient(135deg, #0f0a1e 0%, #1a1035 40%, #2d1b69 100%)",
             width: "100%",
             height: "100%",
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
             justifyContent: "center",
-            fontFamily: "sans-serif",
+            fontFamily: "system-ui, sans-serif",
           }}
         >
           <div
             style={{
-              fontSize: 64,
-              fontWeight: 700,
-              color: "#FFFFFF",
+              display: "flex",
+              alignItems: "center",
+              gap: "16px",
+              marginBottom: "24px",
+            }}
+          >
+            <div style={{ fontSize: 64 }}>&#x2728;</div>
+            <div
+              style={{
+                fontSize: 48,
+                fontWeight: 700,
+                background: "linear-gradient(90deg, #a78bfa, #c084fc, #e9d5ff)",
+                backgroundClip: "text",
+                color: "transparent",
+              }}
+            >
+              ChartChemistry
+            </div>
+          </div>
+          <div
+            style={{
+              fontSize: 32,
+              color: "#e2e8f0",
               marginBottom: 16,
-              display: "flex",
+              fontWeight: 600,
             }}
           >
-            ChartChemistry
+            Compatibility Report
           </div>
           <div
             style={{
-              fontSize: 28,
-              color: "#7c3aed",
-              marginBottom: 32,
-              display: "flex",
+              fontSize: 20,
+              color: "#94a3b8",
+              maxWidth: 600,
+              textAlign: "center",
             }}
           >
-            AI-Powered Astrological Compatibility
-          </div>
-          <div
-            style={{
-              fontSize: 18,
-              color: "#94A3B8",
-              display: "flex",
-            }}
-          >
-            Discover your cosmic connection
+            Discover your cosmic connection through the stars
           </div>
         </div>
       ),
@@ -119,38 +149,37 @@ export default async function Image({
     );
   }
 
-  // Determine score color
+  // ----- Dynamic report card -----
+
+  // Determine score color based on compatibility level
   const scoreColor =
     overallScore >= 70
       ? "#10B981"
       : overallScore >= 50
-        ? "#d4a017"
+        ? "#FBBF24"
         : "#EF4444";
 
-  // Format person labels
-  const person1Label = person1Sun
-    ? `${person1Name} (${person1Sun})`
-    : person1Name;
-  const person2Label = person2Sun
-    ? `${person2Name} (${person2Sun})`
-    : person2Name;
+  // Build person labels with zodiac symbol
+  const person1Symbol = person1Sun ? getSignSymbol(person1Sun) : "";
+  const person2Symbol = person2Sun ? getSignSymbol(person2Sun) : "";
 
   return new ImageResponse(
     (
       <div
         style={{
-          background: "linear-gradient(135deg, #0f0a1a 0%, #1a1040 50%, #0f0a1a 100%)",
+          background: "linear-gradient(135deg, #0f0a1e 0%, #1a1035 40%, #2d1b69 100%)",
           width: "100%",
           height: "100%",
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
-          fontFamily: "sans-serif",
+          fontFamily: "system-ui, sans-serif",
           position: "relative",
+          overflow: "hidden",
         }}
       >
-        {/* Decorative top bar */}
+        {/* Decorative gradient top bar */}
         <div
           style={{
             position: "absolute",
@@ -163,57 +192,132 @@ export default async function Image({
           }}
         />
 
-        {/* Logo */}
+        {/* Subtle radial glow behind score */}
         <div
           style={{
-            fontSize: 36,
-            fontWeight: 700,
-            color: "#7c3aed",
-            marginBottom: 48,
-            letterSpacing: -0.5,
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -40%)",
+            width: 400,
+            height: 400,
+            borderRadius: "50%",
+            background: `radial-gradient(circle, ${scoreColor}15 0%, transparent 70%)`,
             display: "flex",
           }}
-        >
-          ChartChemistry
-        </div>
+        />
 
-        {/* Person 1 and Person 2 with arrow */}
+        {/* Branding */}
         <div
           style={{
             display: "flex",
             alignItems: "center",
-            gap: 24,
-            marginBottom: 40,
+            gap: 12,
+            marginBottom: 44,
           }}
         >
+          <div style={{ fontSize: 40 }}>&#x2728;</div>
           <div
             style={{
-              fontSize: 28,
-              fontWeight: 600,
-              color: "#FFFFFF",
-              display: "flex",
+              fontSize: 36,
+              fontWeight: 700,
+              background: "linear-gradient(90deg, #a78bfa, #c084fc, #e9d5ff)",
+              backgroundClip: "text",
+              color: "transparent",
+              letterSpacing: -0.5,
             }}
           >
-            {person1Label}
+            ChartChemistry
           </div>
+        </div>
+
+        {/* Person 1 and Person 2 names with sun signs */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 20,
+            marginBottom: 36,
+          }}
+        >
+          {/* Person 1 */}
           <div
             style={{
-              fontSize: 28,
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              gap: 4,
+            }}
+          >
+            <div
+              style={{
+                fontSize: 28,
+                fontWeight: 600,
+                color: "#FFFFFF",
+                display: "flex",
+              }}
+            >
+              {person1Name}
+            </div>
+            {person1Sun && (
+              <div
+                style={{
+                  fontSize: 18,
+                  color: "#a78bfa",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                }}
+              >
+                {person1Symbol} {person1Sun}
+              </div>
+            )}
+          </div>
+
+          {/* Heart / connector */}
+          <div
+            style={{
+              fontSize: 32,
               color: "#d4a017",
               display: "flex",
+              marginTop: -4,
             }}
           >
-            &harr;
+            &#x2764;
           </div>
+
+          {/* Person 2 */}
           <div
             style={{
-              fontSize: 28,
-              fontWeight: 600,
-              color: "#FFFFFF",
               display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              gap: 4,
             }}
           >
-            {person2Label}
+            <div
+              style={{
+                fontSize: 28,
+                fontWeight: 600,
+                color: "#FFFFFF",
+                display: "flex",
+              }}
+            >
+              {person2Name}
+            </div>
+            {person2Sun && (
+              <div
+                style={{
+                  fontSize: 18,
+                  color: "#a78bfa",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                }}
+              >
+                {person2Symbol} {person2Sun}
+              </div>
+            )}
           </div>
         </div>
 
@@ -228,7 +332,7 @@ export default async function Image({
             height: 180,
             borderRadius: "50%",
             border: `4px solid ${scoreColor}`,
-            marginBottom: 40,
+            marginBottom: 36,
             background: "rgba(255, 255, 255, 0.03)",
           }}
         >
@@ -257,18 +361,21 @@ export default async function Image({
           </div>
         </div>
 
-        {/* Tagline */}
+        {/* CTA */}
         <div
           style={{
             fontSize: 20,
-            color: "#94A3B8",
+            color: "#c084fc",
+            fontWeight: 600,
             display: "flex",
+            alignItems: "center",
+            gap: 8,
           }}
         >
-          Discover your cosmic connection
+          See full report &#x2192;
         </div>
 
-        {/* Decorative bottom bar */}
+        {/* Decorative gradient bottom bar */}
         <div
           style={{
             position: "absolute",

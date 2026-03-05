@@ -1,9 +1,11 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { ArrowRight, Clock, Zap, Activity, TrendingUp, CircleDot } from "lucide-react";
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { ArrowRight, Clock, Zap, Activity, TrendingUp, CircleDot, Sparkles, Loader2, ChevronDown, Lock } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 // ---------------------------------------------------------------------------
@@ -172,6 +174,7 @@ export interface TransitData {
 interface TransitCardProps {
   transit: TransitData;
   index: number;
+  isPremium?: boolean;
 }
 
 const significanceConfig = {
@@ -198,7 +201,7 @@ const significanceConfig = {
   },
 };
 
-export function TransitCard({ transit, index }: TransitCardProps) {
+export function TransitCard({ transit, index, isPremium = false }: TransitCardProps) {
   const config = significanceConfig[transit.significance];
   const planetGlyph = planetGlyphs[transit.transitingPlanet] || "";
   const natalGlyph = planetGlyphs[transit.natalPlanet] || "";
@@ -210,6 +213,53 @@ export function TransitCard({ transit, index }: TransitCardProps) {
   const urgency = urgencyConfigs[urgencyLevel];
   const UrgencyIcon = urgency.icon;
   const durationLabel = getDurationLabel(transit.transitingPlanet, transit.orb);
+
+  // AI explanation state
+  const [explanation, setExplanation] = useState<string | null>(null);
+  const [explanationLoading, setExplanationLoading] = useState(false);
+  const [explanationError, setExplanationError] = useState<string | null>(null);
+  const [showExplanation, setShowExplanation] = useState(false);
+
+  const handleExplain = async () => {
+    // If we already have an explanation, just toggle visibility
+    if (explanation) {
+      setShowExplanation((prev) => !prev);
+      return;
+    }
+
+    setExplanationLoading(true);
+    setExplanationError(null);
+
+    try {
+      const res = await fetch("/api/transits/explain", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          transitingPlanet: transit.transitingPlanet,
+          natalPlanet: transit.natalPlanet,
+          aspect: transit.aspect,
+          orb: transit.orb,
+        }),
+      });
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        setExplanationError(
+          errData.error || "Failed to generate explanation. Please try again."
+        );
+        setExplanationLoading(false);
+        return;
+      }
+
+      const data = await res.json();
+      setExplanation(data.explanation);
+      setShowExplanation(true);
+    } catch {
+      setExplanationError("Failed to connect. Please try again.");
+    } finally {
+      setExplanationLoading(false);
+    }
+  };
 
   return (
     <motion.div
@@ -319,6 +369,78 @@ export function TransitCard({ transit, index }: TransitCardProps) {
               <span className="italic">{transit.keywords}</span>
             </div>
           )}
+
+          {/* AI Explanation section */}
+          <div className="mt-3 pt-3 border-t border-white/5">
+            {isPremium ? (
+              <>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleExplain}
+                  disabled={explanationLoading}
+                  className="h-7 px-2 text-xs text-cosmic-purple-light hover:text-foreground hover:bg-white/5"
+                >
+                  {explanationLoading ? (
+                    <>
+                      <Loader2 className="h-3 w-3 mr-1.5 animate-spin" aria-hidden="true" />
+                      Generating...
+                    </>
+                  ) : explanation ? (
+                    <>
+                      <ChevronDown
+                        className={cn(
+                          "h-3 w-3 mr-1.5 transition-transform duration-200",
+                          showExplanation && "rotate-180"
+                        )}
+                        aria-hidden="true"
+                      />
+                      {showExplanation ? "Hide explanation" : "Show explanation"}
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="h-3 w-3 mr-1.5" aria-hidden="true" />
+                      Explain this transit
+                    </>
+                  )}
+                </Button>
+
+                {/* Error state */}
+                {explanationError && (
+                  <p className="mt-2 text-xs text-red-400">
+                    {explanationError}
+                  </p>
+                )}
+
+                {/* Explanation content */}
+                <AnimatePresence>
+                  {showExplanation && explanation && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                      transition={{ duration: 0.2, ease: "easeInOut" }}
+                      className="overflow-hidden"
+                    >
+                      <div className="mt-2 rounded-lg bg-cosmic-purple/[0.06] border border-cosmic-purple/10 p-3">
+                        <div className="flex items-start gap-2">
+                          <Sparkles className="h-3.5 w-3.5 text-cosmic-purple-light shrink-0 mt-0.5" aria-hidden="true" />
+                          <p className="text-sm text-muted-foreground leading-relaxed">
+                            {explanation}
+                          </p>
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </>
+            ) : (
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground/50">
+                <Lock className="h-3 w-3 shrink-0" aria-hidden="true" />
+                <span>Upgrade to unlock AI explanations</span>
+              </div>
+            )}
+          </div>
         </CardContent>
       </Card>
     </motion.div>

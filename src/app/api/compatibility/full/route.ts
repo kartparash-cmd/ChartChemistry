@@ -65,15 +65,30 @@ export async function POST(request: Request) {
     const isPremium =
       session.user.plan === "PREMIUM" || session.user.plan === "ANNUAL";
 
+    // --- Trial logic: allow ONE free premium report for free-plan users ---
+    let isTrial = false;
+
     if (!isPremium) {
-      return NextResponse.json(
-        {
-          error: "Premium plan required",
-          message:
-            "Full compatibility reports are available to Premium and Annual subscribers.",
+      const premiumReportCount = await prisma.compatibilityReport.count({
+        where: {
+          userId: session.user.id,
+          tier: "PREMIUM",
         },
-        { status: 403 }
-      );
+      });
+
+      if (premiumReportCount === 0) {
+        // This is the user's first premium report — allow it as a trial
+        isTrial = true;
+      } else {
+        return NextResponse.json(
+          {
+            error: "Premium plan required",
+            message:
+              "You have used your free trial report. Full compatibility reports are available to Premium and Annual subscribers.",
+          },
+          { status: 403 }
+        );
+      }
     }
 
     // --- 2. Parse + validate body ---
@@ -168,6 +183,7 @@ export async function POST(request: Request) {
           person2: { name: profile2.name, id: profile2.id },
           createdAt: existingReport.createdAt.toISOString(),
           cached: true,
+          isTrial,
         });
       }
     }
@@ -281,6 +297,7 @@ export async function POST(request: Request) {
       person1: { name: profile1.name, id: profile1.id },
       person2: { name: profile2.name, id: profile2.id },
       createdAt: report.createdAt.toISOString(),
+      isTrial,
     });
   } catch (error) {
     console.error("[POST /api/compatibility/full] Error:", error);

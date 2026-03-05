@@ -59,6 +59,7 @@ interface PremiumReport {
   sections: Record<string, string>;
   redFlags: string[];
   growthAreas: string[];
+  isTrial?: boolean;
 }
 
 interface CompatibilityResultsProps {
@@ -223,6 +224,11 @@ export function CompatibilityResults({
   const [premiumLoading, setPremiumLoading] = useState(false);
   const [premiumError, setPremiumError] = useState("");
 
+  // Trial report state: tracks whether the displayed report was a free trial
+  const [isTrialReport, setIsTrialReport] = useState(false);
+  // Tracks whether the free user has already used their trial (set when the API returns 403)
+  const [trialUsed, setTrialUsed] = useState(false);
+
   // Save state
   const [saved, setSaved] = useState(false);
 
@@ -339,6 +345,10 @@ export function CompatibilityResults({
 
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
+        // If user's free trial has been used, mark it so the UI can update
+        if (res.status === 403) {
+          setTrialUsed(true);
+        }
         throw new Error(err.message || "Failed to generate premium report");
       }
 
@@ -346,10 +356,14 @@ export function CompatibilityResults({
       if (data.id) {
         setReportId(data.id);
       }
+      if (data.isTrial) {
+        setIsTrialReport(true);
+      }
       setPremiumReport({
         sections: data.sections || {},
         redFlags: data.redFlags || [],
         growthAreas: data.growthAreas || [],
+        isTrial: data.isTrial || false,
       });
       setSaved(true); // Full report is auto-saved by the API
     } catch (e) {
@@ -534,6 +548,31 @@ export function CompatibilityResults({
         {premiumReport ? (
           /* ---- Premium content unlocked ---- */
           <>
+            {/* Trial report banner */}
+            {isTrialReport && (
+              <div className="rounded-2xl border border-gold/30 bg-gold/10 p-5 text-center">
+                <div className="flex items-center justify-center gap-2 mb-2">
+                  <Sparkles className="h-5 w-5 text-gold" />
+                  <h3 className="text-sm font-semibold text-gold">
+                    Free Trial Report
+                  </h3>
+                </div>
+                <p className="text-sm text-muted-foreground mb-3">
+                  This was your complimentary premium report. Upgrade for unlimited full reports, AI chat, and more.
+                </p>
+                <Button
+                  asChild
+                  size="sm"
+                  className="bg-cosmic-purple hover:bg-cosmic-purple-dark text-white"
+                >
+                  <Link href="/pricing">
+                    Upgrade for Unlimited Reports
+                    <ArrowRight className="ml-1 h-3 w-3" />
+                  </Link>
+                </Button>
+              </div>
+            )}
+
             {Object.entries(premiumReport.sections)
               .filter(([key]) => key !== "theBigPicture")
               .map(([key, content]) => (
@@ -622,9 +661,82 @@ export function CompatibilityResults({
               )}
             </Button>
           </div>
-        ) : (
-          /* ---- Free user: show locked sections ---- */
+        ) : !trialUsed ? (
+          /* ---- Free user eligible for trial: show trial CTA + locked sections ---- */
           <>
+            <div className="glass-card rounded-2xl p-8 text-center border border-gold/20">
+              <div className="inline-flex items-center gap-2 rounded-full border border-gold/30 bg-gold/10 px-4 py-1.5 mb-4">
+                <Star className="h-4 w-4 text-gold" />
+                <span className="text-xs font-semibold text-gold">Complimentary</span>
+              </div>
+              <h3 className="mb-2 text-lg font-semibold">
+                Get Your First Full Report &mdash; Free!
+              </h3>
+              <p className="mb-5 text-sm text-muted-foreground max-w-md mx-auto">
+                Experience the full premium compatibility report with all 7 synastry sections,
+                red flags, growth insights, and cosmic advice &mdash; on us.
+              </p>
+              {premiumError && (
+                <div className="mb-4 flex items-center justify-center gap-2 text-sm text-red-400">
+                  <AlertCircle className="h-4 w-4" />
+                  {premiumError}
+                </div>
+              )}
+              <Button
+                onClick={handleGenerateFullReport}
+                disabled={premiumLoading || !personAData || !personBData}
+                className="rounded-full bg-gradient-to-r from-gold to-cosmic-purple px-8 text-sm font-semibold text-white hover:brightness-110"
+              >
+                {premiumLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Generating Your Free Report...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="mr-2 h-4 w-4" />
+                    Generate Free Full Report
+                  </>
+                )}
+              </Button>
+            </div>
+
+            <LockedSection
+              title="Full Synastry Report"
+              icon={<Lock className="h-5 w-5 text-cosmic-purple-light" />}
+            />
+            <LockedSection
+              title="Red Flags & Growth Insights"
+              icon={<AlertCircle className="h-5 w-5 text-red-400" />}
+            />
+            <LockedSection
+              title="Growth Areas"
+              icon={<Sparkles className="h-5 w-5 text-green-400" />}
+            />
+          </>
+        ) : (
+          /* ---- Free user who has used their trial: show upgrade CTA + locked sections ---- */
+          <>
+            <div className="glass-card rounded-2xl p-8 text-center">
+              <Lock className="mx-auto mb-3 h-8 w-8 text-cosmic-purple-light" />
+              <h3 className="mb-2 text-lg font-semibold">
+                Upgrade to Premium for Unlimited Full Reports
+              </h3>
+              <p className="mb-5 text-sm text-muted-foreground max-w-md mx-auto">
+                You have used your free trial report. Upgrade to Premium for unlimited full
+                compatibility reports, AI Astrologer chat, daily horoscopes, and more.
+              </p>
+              <Button
+                asChild
+                className="rounded-full bg-cosmic-purple hover:bg-cosmic-purple-dark px-8 text-sm font-semibold text-white"
+              >
+                <Link href="/pricing">
+                  <Sparkles className="mr-2 h-4 w-4" />
+                  View Premium Plans
+                </Link>
+              </Button>
+            </div>
+
             <LockedSection
               title="Full Synastry Report"
               icon={<Lock className="h-5 w-5 text-cosmic-purple-light" />}
@@ -770,7 +882,26 @@ export function CompatibilityResults({
           )}
 
           {/* Get full premium report (logged in + free tier, no premium report yet) */}
-          {session && !isPremium && !premiumReport && (
+          {session && !isPremium && !premiumReport && !trialUsed && (
+            <button
+              onClick={handleGenerateFullReport}
+              disabled={premiumLoading || !personAData || !personBData}
+              className="group flex items-start gap-3 rounded-xl border border-gold/20 bg-gold/[0.05] p-4 transition-colors hover:border-gold/40 hover:bg-gold/[0.08] text-left w-full"
+            >
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gold/15">
+                <Star className="h-4 w-4 text-gold" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold group-hover:text-gold">
+                  Get your first full report &mdash; free!
+                </p>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  Your complimentary premium report with all 7 dimensions, red flags, and cosmic advice.
+                </p>
+              </div>
+            </button>
+          )}
+          {session && !isPremium && !premiumReport && trialUsed && (
             <Link
               href="/pricing"
               className="group flex items-start gap-3 rounded-xl border border-white/10 bg-white/[0.03] p-4 transition-colors hover:border-gold/30 hover:bg-white/[0.06]"
@@ -780,10 +911,10 @@ export function CompatibilityResults({
               </div>
               <div>
                 <p className="text-sm font-semibold group-hover:text-gold">
-                  Get the full premium report
+                  Upgrade to Premium for unlimited full reports
                 </p>
                 <p className="mt-0.5 text-xs text-muted-foreground">
-                  Unlock 7 detailed dimensions, red flags, growth insights, and cosmic advice.
+                  Unlock unlimited reports with all 7 dimensions, AI chat, daily horoscopes, and more.
                 </p>
               </div>
             </Link>

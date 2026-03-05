@@ -44,6 +44,7 @@ const tiers: PricingTier[] = [
       "3 compatibility checks per day",
       "Sun, Moon & Rising comparison",
       "Short AI summary",
+      "1 free premium compatibility report",
       "Save up to 3 profiles",
     ],
     cta: "Get Started",

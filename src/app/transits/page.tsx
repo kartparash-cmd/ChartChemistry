@@ -107,10 +107,12 @@ function TransitSkeleton() {
 }
 
 function EmptyProfileState() {
+  const prefersReducedMotion = useReducedMotion() ?? false;
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 0.98 }}
+      initial={prefersReducedMotion ? false : { opacity: 0, scale: 0.98 }}
       animate={{ opacity: 1, scale: 1 }}
+      transition={prefersReducedMotion ? { duration: 0 } : undefined}
       className="rounded-xl border border-dashed border-white/20 bg-white/[0.02] p-12 text-center"
     >
       <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-cosmic-purple/10">
@@ -143,6 +145,7 @@ function ErrorState({
   message: string;
   onRetry: () => void;
 }) {
+  const prefersReducedMotion = useReducedMotion() ?? false;
   const isServiceError =
     message.toLowerCase().includes("unreachable") ||
     message.toLowerCase().includes("unavailable") ||
@@ -152,14 +155,16 @@ function ErrorState({
 
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 0.98 }}
+      initial={prefersReducedMotion ? false : { opacity: 0, scale: 0.98 }}
       animate={{ opacity: 1, scale: 1 }}
+      transition={prefersReducedMotion ? { duration: 0 } : undefined}
+      role="alert"
       className="rounded-2xl border border-white/10 bg-white/[0.03] p-8 text-center backdrop-blur-sm"
     >
       <motion.div
-        initial={{ scale: 0.8, opacity: 0 }}
+        initial={prefersReducedMotion ? false : { scale: 0.8, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
-        transition={{ delay: 0.1, type: "spring", stiffness: 200 }}
+        transition={prefersReducedMotion ? { duration: 0 } : { delay: 0.1, type: "spring", stiffness: 200 }}
         className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-full bg-cosmic-purple/10"
       >
         <AlertTriangle className="h-7 w-7 text-amber-400" />
@@ -177,13 +182,14 @@ function ErrorState({
       <div className="flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
         <Button
           onClick={onRetry}
+          aria-label="Retry loading transits"
           className="bg-cosmic-purple text-white hover:bg-cosmic-purple-dark"
         >
           <Orbit className="mr-2 h-4 w-4" />
           Try Again
         </Button>
         <Button asChild variant="outline" className="border-white/10">
-          <Link href="/dashboard">
+          <Link href="/dashboard" aria-label="Go to Dashboard">
             <ArrowRight className="mr-2 h-4 w-4" />
             Go to Dashboard
           </Link>
@@ -272,6 +278,7 @@ function HighImpactNote() {
 }
 
 function RelatedInsights() {
+  const prefersReducedMotion = useReducedMotion() ?? false;
   const links = [
     {
       title: "Today\u2019s Horoscope",
@@ -295,21 +302,22 @@ function RelatedInsights() {
 
   return (
     <motion.section
-      initial={{ opacity: 0, y: 20 }}
+      initial={prefersReducedMotion ? false : { opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.5 }}
+      transition={prefersReducedMotion ? { duration: 0 } : { delay: 0.5 }}
       className="mt-12"
+      aria-label="Related insights"
     >
       <h2 className="font-heading text-lg font-semibold mb-4">Related Insights</h2>
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <nav className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" aria-label="Related features">
         {links.map((link) => {
           const Icon = link.icon;
           return (
-            <Link key={link.href} href={link.href}>
+            <Link key={link.href} href={link.href} aria-label={link.title}>
               <div className="glass-card rounded-xl border border-white/10 p-4 hover:border-white/20 transition-colors">
                 <div className="flex items-center gap-3 mb-2">
                   <div className="flex h-8 w-8 items-center justify-center rounded-full bg-cosmic-purple/10">
-                    <Icon className="h-4 w-4 text-cosmic-purple-light" />
+                    <Icon className="h-4 w-4 text-cosmic-purple-light" aria-hidden="true" />
                   </div>
                   <h3 className="text-sm font-medium text-foreground">{link.title}</h3>
                 </div>
@@ -318,7 +326,7 @@ function RelatedInsights() {
             </Link>
           );
         })}
-      </div>
+      </nav>
     </motion.section>
   );
 }

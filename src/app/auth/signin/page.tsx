@@ -23,6 +23,7 @@ export default function SignInPage() {
 function SignInContent() {
   const searchParams = useSearchParams();
   const error = searchParams.get("error");
+  const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -35,7 +36,7 @@ function SignInContent() {
   const handleGoogleSignIn = async () => {
     setIsLoadingGoogle(true);
     try {
-      await signIn("google", { callbackUrl: "/dashboard" });
+      await signIn("google", { callbackUrl });
     } catch {
       setIsLoadingGoogle(false);
     }
@@ -58,7 +59,7 @@ function SignInContent() {
         setErrorMessage("Invalid email or password");
         setIsLoadingCredentials(false);
       } else {
-        window.location.href = "/dashboard";
+        window.location.href = callbackUrl;
       }
     } catch {
       setErrorMessage("Something went wrong. Please try again.");

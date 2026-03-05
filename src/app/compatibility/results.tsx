@@ -4,6 +4,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import {
   Lock,
   Share2,
@@ -12,8 +13,10 @@ import {
   Loader2,
   Check,
   AlertCircle,
+  ArrowRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { CompatibilityScoreCard } from "@/components/compatibility-score-card";
 import { CompatibilityRadarChart } from "@/components/radar-chart";
 import { ScoreBar } from "@/components/score-bar";
@@ -99,41 +102,30 @@ const PREMIUM_SECTION_LABELS: Record<string, string> = {
 /*  Blurred Premium Section (for free users)                                   */
 /* -------------------------------------------------------------------------- */
 
-function LockedSection({
-  title,
-  description,
-}: {
-  title: string;
-  description: string;
-}) {
-  const router = useRouter();
-
+function LockedSection({ title, icon }: { title: string; icon: React.ReactNode }) {
   return (
-    <div className="relative overflow-hidden rounded-2xl">
-      <div className="glass-card select-none rounded-2xl p-6 blur-sm">
-        <h3 className="mb-3 text-lg font-semibold">{title}</h3>
-        <div className="space-y-2">
-          <div className="h-4 w-full rounded bg-muted/30" />
-          <div className="h-4 w-5/6 rounded bg-muted/30" />
-          <div className="h-4 w-4/6 rounded bg-muted/30" />
-          <div className="h-4 w-full rounded bg-muted/30" />
-          <div className="h-4 w-3/6 rounded bg-muted/30" />
-        </div>
+    <div className="relative rounded-2xl border border-white/10 bg-white/[0.03] p-6 overflow-hidden">
+      <div className="flex items-center gap-2 mb-3">
+        {icon}
+        <h3 className="font-heading text-lg font-semibold">{title}</h3>
+        <Badge variant="outline" className="ml-auto text-xs border-cosmic-purple/30 text-cosmic-purple-light">
+          Premium
+        </Badge>
       </div>
-      <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-background/60 backdrop-blur-sm">
-        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-cosmic-purple/20">
-          <Lock className="h-5 w-5 text-cosmic-purple-light" />
-        </div>
-        <p className="text-sm font-medium text-foreground">{title}</p>
-        <p className="max-w-xs text-center text-xs text-muted-foreground">
-          {description}
+      <div className="relative">
+        <p className="text-sm text-muted-foreground leading-relaxed">
+          {title.includes("Synastry") && "Your full synastry reveals 7 detailed dimensions of compatibility — from emotional bonds and communication patterns to long-term stability and challenge zones..."}
+          {title.includes("Red Flags") && "We found specific areas that need attention in your relationship. Understanding these patterns early can help you navigate challenges together..."}
+          {title.includes("Growth") && "Your charts reveal powerful growth opportunities. These cosmic connections can help you both evolve and deepen your bond..."}
         </p>
-        <Button
-          size="sm"
-          onClick={() => router.push("/pricing")}
-          className="mt-1 rounded-full bg-gradient-to-r from-cosmic-purple to-gold px-6 text-sm font-semibold text-white hover:brightness-110"
-        >
-          Unlock with Premium
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-background" />
+      </div>
+      <div className="mt-4 text-center">
+        <Button asChild size="sm" className="bg-cosmic-purple hover:bg-cosmic-purple-dark text-white">
+          <Link href="/pricing">
+            Unlock Full Report
+            <ArrowRight className="ml-1 h-3 w-3" />
+          </Link>
         </Button>
       </div>
     </div>
@@ -222,26 +214,23 @@ export function CompatibilityResults({
     { label: "Chemistry & Attraction", score: result.dimensions.chemistry },
     { label: "Communication Style", score: result.dimensions.communication },
     { label: "Long-Term Stability", score: result.dimensions.stability },
-    { label: "Harmony & Flow", score: result.dimensions.harmony },
+    { label: "Harmony", score: result.dimensions.harmony },
   ];
 
   const handleShare = async () => {
-    const shareText = `${result.personA.name} ${getZodiacSymbol(result.personA.sunSign)} & ${result.personB.name} ${getZodiacSymbol(result.personB.sunSign)} scored ${result.overallScore}/100 on ChartChemistry!`;
+    const shareText = `${result.personA.name} (${result.personA.sunSign}) & ${result.personB.name} (${result.personB.sunSign}) scored ${result.overallScore}/100 on ChartChemistry! Check your compatibility at chartchemistry.com`;
 
     if (navigator.share) {
       try {
         await navigator.share({
           title: "ChartChemistry Compatibility Results",
           text: shareText,
-          url: window.location.href,
         });
       } catch {
         // User cancelled or error
       }
     } else {
-      await navigator.clipboard.writeText(
-        `${shareText}\n${window.location.href}`
-      );
+      await navigator.clipboard.writeText(shareText);
       setShareToast(true);
       setTimeout(() => setShareToast(false), 2000);
     }
@@ -295,7 +284,13 @@ export function CompatibilityResults({
 
   const handleSave = async () => {
     if (!session) {
-      router.push("/auth/signin");
+      // Save results to sessionStorage before redirect
+      if (typeof window !== "undefined") {
+        sessionStorage.setItem("pendingCompatibilityResults", JSON.stringify({
+          personAData, personBData, result,
+        }));
+      }
+      router.push(`/auth/signin?callbackUrl=${encodeURIComponent("/compatibility?restored=true")}`);
       return;
     }
 
@@ -520,15 +515,15 @@ export function CompatibilityResults({
           <>
             <LockedSection
               title="Full Synastry Report"
-              description="Detailed analysis of every planetary aspect between your charts, house overlays, and composite chart interpretation."
+              icon={<Lock className="h-5 w-5 text-cosmic-purple-light" />}
             />
             <LockedSection
               title="Red Flags & Growth Insights"
-              description="Specific patterns in your charts that indicate potential challenges and natural strengths in your connection."
+              icon={<AlertCircle className="h-5 w-5 text-red-400" />}
             />
             <LockedSection
               title="Growth Areas"
-              description="Personalized recommendations for how to nurture your connection and navigate difficult transits together."
+              icon={<Sparkles className="h-5 w-5 text-green-400" />}
             />
           </>
         )}
@@ -580,7 +575,7 @@ export function CompatibilityResults({
             className="flex items-center gap-2 rounded-full border border-white/10 bg-background/90 px-4 py-2 text-sm font-medium shadow-lg backdrop-blur-sm"
           >
             <Check className="h-4 w-4 text-green-500" />
-            Link copied!
+            Results copied!
           </motion.div>
         </div>
       )}

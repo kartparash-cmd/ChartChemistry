@@ -1,4 +1,6 @@
-import type { Metadata } from "next";
+"use client";
+
+import { motion, useReducedMotion } from "framer-motion";
 import {
   Stars,
   Brain,
@@ -20,10 +22,16 @@ import {
   CardDescription,
 } from "@/components/ui/card";
 
-export const metadata: Metadata = {
-  title: "About",
-  description:
-    "Learn how ChartChemistry combines ancient astrological wisdom with modern AI to deliver deep, personalized compatibility insights powered by Swiss Ephemeris and Claude.",
+const fadeInUp = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0 },
+};
+
+const staggerContainer = {
+  hidden: {},
+  visible: {
+    transition: { staggerChildren: 0.1 },
+  },
 };
 
 const HOW_IT_WORKS = [
@@ -102,12 +110,20 @@ const OFFERINGS = [
 ];
 
 export default function AboutPage() {
+  const shouldReduceMotion = useReducedMotion();
+
   return (
     <div className="min-h-screen">
       {/* ========================= HERO ========================= */}
       <section className="relative overflow-hidden pt-24 pb-16 px-4">
         <div className="absolute inset-0 bg-gradient-to-b from-cosmic-purple/5 via-transparent to-transparent" />
-        <div className="relative mx-auto max-w-3xl text-center">
+        <motion.div
+          initial={shouldReduceMotion ? "visible" : "hidden"}
+          animate="visible"
+          variants={fadeInUp}
+          transition={{ duration: 0.5 }}
+          className="relative mx-auto max-w-3xl text-center"
+        >
           <h1 className="font-heading text-4xl font-bold sm:text-5xl mb-4">
             About{" "}
             <span className="cosmic-text">ChartChemistry</span>
@@ -119,13 +135,20 @@ export default function AboutPage() {
             readings that are deeply personal, astronomically precise, and
             genuinely illuminating.
           </p>
-        </div>
+        </motion.div>
       </section>
 
       {/* ========================= MISSION ========================= */}
       <section className="px-4 pb-20">
         <div className="mx-auto max-w-3xl">
-          <div className="glass-card rounded-2xl p-8 sm:p-10 text-center">
+          <motion.div
+            initial={shouldReduceMotion ? "visible" : "hidden"}
+            whileInView="visible"
+            viewport={{ once: true, margin: "-100px" }}
+            variants={fadeInUp}
+            transition={{ duration: 0.5 }}
+            className="glass-card rounded-2xl p-8 sm:p-10 text-center"
+          >
             <div className="mx-auto mb-6 flex h-14 w-14 items-center justify-center rounded-xl bg-cosmic-purple/10 text-cosmic-purple-light">
               <Stars className="h-7 w-7" />
             </div>
@@ -142,54 +165,75 @@ export default function AboutPage() {
               professional-grade astrological analysis accessible to everyone —
               no expertise required.
             </p>
-          </div>
+          </motion.div>
         </div>
       </section>
 
       {/* ========================= HOW IT WORKS ========================= */}
       <section className="px-4 pb-20">
         <div className="mx-auto max-w-6xl">
-          <div className="text-center mb-14">
+          <motion.div
+            initial={shouldReduceMotion ? "visible" : "hidden"}
+            whileInView="visible"
+            viewport={{ once: true, margin: "-100px" }}
+            variants={fadeInUp}
+            transition={{ duration: 0.5 }}
+            className="text-center mb-14"
+          >
             <h2 className="font-heading text-3xl font-bold sm:text-4xl">
               How It Works
             </h2>
             <p className="mt-3 text-muted-foreground">
               From birth data to deep insight in three steps.
             </p>
-          </div>
+          </motion.div>
 
-          <div className="grid gap-6 grid-cols-1 md:grid-cols-3">
+          <motion.div
+            initial={shouldReduceMotion ? "visible" : "hidden"}
+            whileInView="visible"
+            viewport={{ once: true, margin: "-100px" }}
+            variants={staggerContainer}
+            className="grid gap-6 grid-cols-1 md:grid-cols-3"
+          >
             {HOW_IT_WORKS.map((item, i) => (
-              <Card
-                key={item.title}
-                className="glass-card border-white/10 bg-transparent"
-              >
-                <CardHeader>
-                  <div className="flex items-center gap-3">
-                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-cosmic-purple text-xs font-bold text-white">
-                      {i + 1}
-                    </span>
-                    <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-cosmic-purple/10 text-cosmic-purple-light">
-                      <item.icon className="h-6 w-6" />
+              <motion.div key={item.title} variants={fadeInUp} transition={{ duration: 0.5 }}>
+                <Card
+                  className="glass-card border-white/10 bg-transparent"
+                >
+                  <CardHeader>
+                    <div className="flex items-center gap-3">
+                      <span className="flex h-8 w-8 items-center justify-center rounded-full bg-cosmic-purple text-xs font-bold text-white">
+                        {i + 1}
+                      </span>
+                      <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-cosmic-purple/10 text-cosmic-purple-light">
+                        <item.icon className="h-6 w-6" />
+                      </div>
                     </div>
-                  </div>
-                  <CardTitle className="text-lg">{item.title}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <CardDescription className="text-sm leading-relaxed">
-                    {item.description}
-                  </CardDescription>
-                </CardContent>
-              </Card>
+                    <CardTitle className="text-lg">{item.title}</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <CardDescription className="text-sm leading-relaxed">
+                      {item.description}
+                    </CardDescription>
+                  </CardContent>
+                </Card>
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
         </div>
       </section>
 
       {/* ========================= OUR TECHNOLOGY ========================= */}
       <section className="px-4 pb-20">
         <div className="mx-auto max-w-6xl">
-          <div className="text-center mb-14">
+          <motion.div
+            initial={shouldReduceMotion ? "visible" : "hidden"}
+            whileInView="visible"
+            viewport={{ once: true, margin: "-100px" }}
+            variants={fadeInUp}
+            transition={{ duration: 0.5 }}
+            className="text-center mb-14"
+          >
             <h2 className="font-heading text-3xl font-bold sm:text-4xl">
               Our Technology
             </h2>
@@ -197,35 +241,49 @@ export default function AboutPage() {
               Built on the most trusted tools in astronomy and artificial
               intelligence.
             </p>
-          </div>
+          </motion.div>
 
-          <div className="grid gap-6 grid-cols-1 md:grid-cols-3">
+          <motion.div
+            initial={shouldReduceMotion ? "visible" : "hidden"}
+            whileInView="visible"
+            viewport={{ once: true, margin: "-100px" }}
+            variants={staggerContainer}
+            className="grid gap-6 grid-cols-1 md:grid-cols-3"
+          >
             {TECHNOLOGY.map((item) => (
-              <Card
-                key={item.title}
-                className="glass-card border-white/10 bg-transparent"
-              >
-                <CardHeader>
-                  <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-lg bg-cosmic-purple/10 text-cosmic-purple-light">
-                    <item.icon className="h-6 w-6" />
-                  </div>
-                  <CardTitle className="text-lg">{item.title}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <CardDescription className="text-sm leading-relaxed">
-                    {item.description}
-                  </CardDescription>
-                </CardContent>
-              </Card>
+              <motion.div key={item.title} variants={fadeInUp} transition={{ duration: 0.5 }}>
+                <Card
+                  className="glass-card border-white/10 bg-transparent"
+                >
+                  <CardHeader>
+                    <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-lg bg-cosmic-purple/10 text-cosmic-purple-light">
+                      <item.icon className="h-6 w-6" />
+                    </div>
+                    <CardTitle className="text-lg">{item.title}</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <CardDescription className="text-sm leading-relaxed">
+                      {item.description}
+                    </CardDescription>
+                  </CardContent>
+                </Card>
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
         </div>
       </section>
 
       {/* ========================= WHAT WE OFFER ========================= */}
       <section className="px-4 pb-20">
         <div className="mx-auto max-w-6xl">
-          <div className="text-center mb-14">
+          <motion.div
+            initial={shouldReduceMotion ? "visible" : "hidden"}
+            whileInView="visible"
+            viewport={{ once: true, margin: "-100px" }}
+            variants={fadeInUp}
+            transition={{ duration: 0.5 }}
+            className="text-center mb-14"
+          >
             <h2 className="font-heading text-3xl font-bold sm:text-4xl">
               What We Offer
             </h2>
@@ -233,35 +291,49 @@ export default function AboutPage() {
               A full suite of astrological tools to explore yourself and your
               relationships.
             </p>
-          </div>
+          </motion.div>
 
-          <div className="grid gap-6 grid-cols-1 md:grid-cols-3">
+          <motion.div
+            initial={shouldReduceMotion ? "visible" : "hidden"}
+            whileInView="visible"
+            viewport={{ once: true, margin: "-100px" }}
+            variants={staggerContainer}
+            className="grid gap-6 grid-cols-1 md:grid-cols-3"
+          >
             {OFFERINGS.map((item) => (
-              <Card
-                key={item.title}
-                className="glass-card border-white/10 bg-transparent transition-all hover:border-cosmic-purple/30"
-              >
-                <CardHeader>
-                  <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-lg bg-cosmic-purple/10 text-cosmic-purple-light">
-                    <item.icon className="h-6 w-6" />
-                  </div>
-                  <CardTitle className="text-lg">{item.title}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <CardDescription className="text-sm leading-relaxed">
-                    {item.description}
-                  </CardDescription>
-                </CardContent>
-              </Card>
+              <motion.div key={item.title} variants={fadeInUp} transition={{ duration: 0.5 }}>
+                <Card
+                  className="glass-card border-white/10 bg-transparent transition-all hover:border-cosmic-purple/30"
+                >
+                  <CardHeader>
+                    <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-lg bg-cosmic-purple/10 text-cosmic-purple-light">
+                      <item.icon className="h-6 w-6" />
+                    </div>
+                    <CardTitle className="text-lg">{item.title}</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <CardDescription className="text-sm leading-relaxed">
+                      {item.description}
+                    </CardDescription>
+                  </CardContent>
+                </Card>
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
         </div>
       </section>
 
       {/* ========================= DISCLAIMER ========================= */}
       <section className="px-4 pb-24">
         <div className="mx-auto max-w-3xl">
-          <div className="glass-card rounded-2xl p-8 sm:p-10">
+          <motion.div
+            initial={shouldReduceMotion ? "visible" : "hidden"}
+            whileInView="visible"
+            viewport={{ once: true, margin: "-100px" }}
+            variants={fadeInUp}
+            transition={{ duration: 0.5 }}
+            className="glass-card rounded-2xl p-8 sm:p-10"
+          >
             <div className="flex items-start gap-4">
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gold/10 text-gold">
                 <AlertTriangle className="h-5 w-5" />
@@ -284,7 +356,7 @@ export default function AboutPage() {
                 </p>
               </div>
             </div>
-          </div>
+          </motion.div>
         </div>
       </section>
     </div>

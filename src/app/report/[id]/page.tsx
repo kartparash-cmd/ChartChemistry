@@ -415,6 +415,7 @@ export default function ReportPage() {
   const { data: session, status } = useSession();
   const [report, setReport] = useState<Report | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [shareToast, setShareToast] = useState(false);
 
   const reportId = params.id as string;
@@ -427,11 +428,11 @@ export default function ReportPage() {
           const json = await res.json();
           setReport(json);
         } else {
-          // Use demo data for MVP
-          setReport(getDemoReport(reportId));
+          setError("Unable to load this report. It may not exist or you may not have access.");
         }
-      } catch {
-        setReport(getDemoReport(reportId));
+      } catch (err) {
+        console.error("Failed to load report:", err);
+        setError("Unable to load this report. Please try again.");
       } finally {
         setLoading(false);
       }
@@ -448,6 +449,26 @@ export default function ReportPage() {
           <p className="mt-3 text-sm text-muted-foreground">
             Loading your compatibility report...
           </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex min-h-[60vh] flex-col items-center justify-center px-4 text-center">
+        <div className="flex h-14 w-14 items-center justify-center rounded-full bg-red-500/10 border border-red-500/20 mb-4">
+          <AlertTriangle className="h-7 w-7 text-red-400" />
+        </div>
+        <h1 className="text-xl font-semibold mb-2">Report Unavailable</h1>
+        <p className="text-sm text-muted-foreground mb-4 max-w-md">{error}</p>
+        <div className="flex gap-3">
+          <Button onClick={() => window.location.reload()} variant="outline">
+            Try Again
+          </Button>
+          <Button asChild className="bg-cosmic-purple hover:bg-cosmic-purple-dark text-white">
+            <Link href="/dashboard">Go to Dashboard</Link>
+          </Button>
         </div>
       </div>
     );
@@ -663,7 +684,7 @@ export default function ReportPage() {
                 asChild
                 className="bg-cosmic-purple hover:bg-cosmic-purple-dark text-white"
               >
-                <Link href="/chat">
+                <Link href={`/chat?reportId=${reportId}`}>
                   <MessageCircle className="mr-2 h-4 w-4" />
                   Ask AI About This
                 </Link>
@@ -848,32 +869,3 @@ function extractSection(narrative: string, section: string): string {
   return paragraphs[idx % paragraphs.length] || narrative;
 }
 
-// Demo report for when API is not available
-function getDemoReport(id: string): Report {
-  return {
-    id,
-    person1: { name: "Alex", birthDate: "1995-03-21", birthCity: "New York" },
-    person2: { name: "Jordan", birthDate: "1993-08-15", birthCity: "Los Angeles" },
-    overallScore: 78,
-    communicationScore: 82,
-    emotionalScore: 75,
-    chemistryScore: 88,
-    stabilityScore: 65,
-    conflictScore: 71,
-    summaryNarrative:
-      "Alex and Jordan share a magnetic connection rooted in complementary elements. With Alex's Aries Sun bringing bold initiative and Jordan's Leo Sun radiating warmth and loyalty, this pairing has natural fire-sign chemistry. The emotional landscape shows promising depth, though differences in communication styles may require conscious effort. Overall, this connection carries strong potential for both passion and growth.",
-    fullNarrative:
-      "This is a deeply layered compatibility that shows strength in passion and creative expression. The emotional connection between these two charts suggests a relationship that can be both nurturing and inspiring. Communication flows naturally in many areas, though there are some tension points around practical matters. The long-term potential is strong if both partners are willing to work through their differences with patience and understanding.",
-    redFlags: [
-      "Mars square Saturn suggests potential power struggles around control and pace. One partner may feel restricted while the other feels pushed too fast.",
-      "Moon opposition can create emotional misunderstandings. What feels nurturing to one may feel smothering to the other.",
-      "Venus-Uranus aspects suggest one or both partners may crave novelty, which could manifest as restlessness if not channeled constructively.",
-    ],
-    growthAreas: [
-      "Learning to balance independence with togetherness. This relationship teaches both partners the art of maintaining individuality within partnership.",
-      "Developing shared emotional vocabulary. The different Moon signs offer a chance to expand your emotional range and empathy.",
-      "Building patience around different communication rhythms. This pairing can develop exceptional communication skills through conscious practice.",
-    ],
-    tier: "FREE",
-  };
-}

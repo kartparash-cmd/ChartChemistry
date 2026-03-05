@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { motion } from "framer-motion";
 import { Sparkles, ArrowLeft, Loader2, Eye, EyeOff } from "lucide-react";
@@ -12,6 +13,16 @@ import { Separator } from "@/components/ui/separator";
 import { StarField } from "@/components/star-field";
 
 export default function SignUpPage() {
+  return (
+    <Suspense>
+      <SignUpContent />
+    </Suspense>
+  );
+}
+
+function SignUpContent() {
+  const searchParams = useSearchParams();
+  const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -23,7 +34,7 @@ export default function SignUpPage() {
   const handleGoogleSignIn = async () => {
     setIsLoadingGoogle(true);
     try {
-      await signIn("google", { callbackUrl: "/dashboard" });
+      await signIn("google", { callbackUrl });
     } catch {
       setIsLoadingGoogle(false);
     }
@@ -60,10 +71,10 @@ export default function SignUpPage() {
           redirect: false,
         });
         if (signInResult?.ok) {
-          window.location.href = "/dashboard";
+          window.location.href = callbackUrl;
         } else {
           // Account created but auto sign-in failed — send to sign-in page
-          window.location.href = "/auth/signin";
+          window.location.href = `/auth/signin?callbackUrl=${encodeURIComponent(callbackUrl)}`;
         }
       }
     } catch {
@@ -241,7 +252,7 @@ export default function SignUpPage() {
           <p className="mt-6 text-center text-sm text-muted-foreground">
             Already have an account?{" "}
             <Link
-              href="/auth/signin"
+              href={`/auth/signin?callbackUrl=${encodeURIComponent(callbackUrl)}`}
               className="text-cosmic-purple-light hover:underline font-medium"
             >
               Sign in

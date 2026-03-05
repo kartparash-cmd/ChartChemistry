@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { Suspense, useEffect, useState, useRef } from "react";
 import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -120,8 +120,18 @@ function ChatBubble({ message }: { message: Message }) {
 }
 
 export default function ChatPage() {
+  return (
+    <Suspense>
+      <ChatPageContent />
+    </Suspense>
+  );
+}
+
+function ChatPageContent() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const reportId = searchParams?.get("reportId");
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -129,6 +139,7 @@ export default function ChatPage() {
   const [selectedReportId, setSelectedReportId] = useState<string>("");
   const [loadingReports, setLoadingReports] = useState(true);
   const [sessionId, setSessionId] = useState<string | undefined>();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -152,21 +163,24 @@ export default function ChatPage() {
         if (res.ok) {
           const data = await res.json();
           if (data.reports) {
-            setReports(
-              data.reports.map(
-                (r: {
-                  id: string;
-                  person1: { name: string };
-                  person2: { name: string };
-                  overallScore: number;
-                }) => ({
-                  id: r.id,
-                  person1Name: r.person1.name,
-                  person2Name: r.person2.name,
-                  overallScore: r.overallScore,
-                })
-              )
+            const mapped = data.reports.map(
+              (r: {
+                id: string;
+                person1: { name: string };
+                person2: { name: string };
+                overallScore: number;
+              }) => ({
+                id: r.id,
+                person1Name: r.person1.name,
+                person2Name: r.person2.name,
+                overallScore: r.overallScore,
+              })
             );
+            setReports(mapped);
+            if (reportId) {
+              const match = mapped.find((r: ReportSummary) => r.id === reportId);
+              if (match) setSelectedReportId(match.id);
+            }
           }
         }
       } catch (error) {
@@ -177,7 +191,7 @@ export default function ChatPage() {
     };
 
     fetchReports();
-  }, [status]);
+  }, [status, reportId]);
 
   // Scroll to bottom on new messages
   useEffect(() => {
@@ -318,6 +332,21 @@ export default function ChatPage() {
               </Link>
             </Button>
           </div>
+          <div className="mt-6 w-full max-w-md space-y-3">
+            <p className="text-xs text-muted-foreground text-center mb-3">See what you can ask:</p>
+            <div className="rounded-lg border border-white/10 bg-white/[0.03] p-3 text-left">
+              <p className="text-xs font-medium text-cosmic-purple-light mb-1">You:</p>
+              <p className="text-xs text-muted-foreground">&ldquo;Why do we always argue about money?&rdquo;</p>
+              <p className="text-xs font-medium text-cosmic-purple-light mt-2 mb-1">AI Astrologer:</p>
+              <p className="text-xs text-muted-foreground">&ldquo;Your Mars in Taurus squares their Venus in Leo — you value security while they value expression. Try setting a shared &lsquo;fun fund&rsquo; to honor both needs...&rdquo;</p>
+            </div>
+            <div className="rounded-lg border border-white/10 bg-white/[0.03] p-3 text-left">
+              <p className="text-xs font-medium text-cosmic-purple-light mb-1">You:</p>
+              <p className="text-xs text-muted-foreground">&ldquo;What&rsquo;s our strongest connection?&rdquo;</p>
+              <p className="text-xs font-medium text-cosmic-purple-light mt-2 mb-1">AI Astrologer:</p>
+              <p className="text-xs text-muted-foreground">&ldquo;Your Moon conjunct their Sun creates deep emotional understanding — you intuitively &lsquo;get&rsquo; each other at a soul level...&rdquo;</p>
+            </div>
+          </div>
         </motion.div>
       </div>
     );
@@ -326,50 +355,59 @@ export default function ChatPage() {
   return (
     <div className="flex h-[calc(100dvh-4rem)] flex-col lg:flex-row">
       {/* Sidebar */}
-      <aside className="w-full lg:w-72 border-b lg:border-b-0 lg:border-r border-white/10 bg-white/[0.02] p-4 flex-shrink-0">
-        <div className="flex items-center gap-2 mb-4">
-          <MessageCircle className="h-4 w-4 text-cosmic-purple-light" />
-          <h2 className="text-sm font-semibold">Relationship Context</h2>
+      <aside className="w-full lg:w-72 border-b lg:border-b-0 lg:border-r border-white/10 bg-white/[0.02] flex-shrink-0">
+        <button
+          className="flex w-full items-center justify-between px-4 py-3 text-sm font-medium lg:hidden"
+          onClick={() => setSidebarOpen(!sidebarOpen)}
+        >
+          <span>Relationship Context</span>
+          <ChevronDown className={cn("h-4 w-4 transition-transform", sidebarOpen && "rotate-180")} />
+        </button>
+        <div className={cn("px-4 pb-4 lg:block", sidebarOpen ? "block" : "hidden lg:block")}>
+          <div className="flex items-center gap-2 mb-4 hidden lg:flex">
+            <MessageCircle className="h-4 w-4 text-cosmic-purple-light" />
+            <h2 className="text-sm font-semibold">Relationship Context</h2>
+          </div>
+
+          {loadingReports ? (
+            <div className="flex items-center justify-center py-4">
+              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+            </div>
+          ) : reports.length > 0 ? (
+            <Select value={selectedReportId} onValueChange={(v) => { setSelectedReportId(v); setSessionId(undefined); }}>
+              <SelectTrigger className="w-full bg-white/5 border-white/10">
+                <SelectValue placeholder="Select a relationship..." />
+              </SelectTrigger>
+              <SelectContent>
+                {reports.map((report) => (
+                  <SelectItem key={report.id} value={report.id}>
+                    {report.person1Name} & {report.person2Name} (
+                    {report.overallScore}%)
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          ) : (
+            <div className="rounded-lg border border-white/5 bg-white/[0.02] p-3 text-center">
+              <p className="text-xs text-muted-foreground">
+                No compatibility reports yet.
+              </p>
+              <Button
+                asChild
+                variant="link"
+                size="sm"
+                className="text-cosmic-purple-light text-xs px-0 h-auto mt-1"
+              >
+                <Link href="/compatibility">Create one</Link>
+              </Button>
+            </div>
+          )}
+
+          <p className="text-[10px] text-muted-foreground mt-3">
+            Select a relationship for context-aware answers, or ask general
+            astrology questions.
+          </p>
         </div>
-
-        {loadingReports ? (
-          <div className="flex items-center justify-center py-4">
-            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-          </div>
-        ) : reports.length > 0 ? (
-          <Select value={selectedReportId} onValueChange={(v) => { setSelectedReportId(v); setSessionId(undefined); }}>
-            <SelectTrigger className="w-full bg-white/5 border-white/10">
-              <SelectValue placeholder="Select a relationship..." />
-            </SelectTrigger>
-            <SelectContent>
-              {reports.map((report) => (
-                <SelectItem key={report.id} value={report.id}>
-                  {report.person1Name} & {report.person2Name} (
-                  {report.overallScore}%)
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        ) : (
-          <div className="rounded-lg border border-white/5 bg-white/[0.02] p-3 text-center">
-            <p className="text-xs text-muted-foreground">
-              No compatibility reports yet.
-            </p>
-            <Button
-              asChild
-              variant="link"
-              size="sm"
-              className="text-cosmic-purple-light text-xs px-0 h-auto mt-1"
-            >
-              <Link href="/compatibility">Create one</Link>
-            </Button>
-          </div>
-        )}
-
-        <p className="text-[10px] text-muted-foreground mt-3">
-          Select a relationship for context-aware answers, or ask general
-          astrology questions.
-        </p>
       </aside>
 
       {/* Chat Area */}

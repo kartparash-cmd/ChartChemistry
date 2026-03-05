@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import {
+  AlertTriangle,
   ArrowLeft,
   Users,
   Info,
@@ -181,10 +182,12 @@ export default function ChartPage() {
   const params = useParams();
   const [profile, setProfile] = useState<BirthChartProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   // House system state
   const [houseSystem, setHouseSystem] = useState<HouseSystem>("placidus");
   const [recalculating, setRecalculating] = useState(false);
+  const [recalcError, setRecalcError] = useState<string | null>(null);
 
   // Load house system preference from localStorage on mount
   useEffect(() => {
@@ -216,10 +219,11 @@ export default function ChartPage() {
           const json = await res.json();
           setProfile(json.profile || json);
         } else {
-          setProfile(getDemoProfile(chartId));
+          setError("Unable to load this chart. It may not exist or you may not have access.");
         }
-      } catch {
-        setProfile(getDemoProfile(chartId));
+      } catch (err) {
+        console.error("Failed to load chart:", err);
+        setError("Unable to load this chart. Please try again.");
       } finally {
         setLoading(false);
       }
@@ -300,6 +304,7 @@ export default function ChartPage() {
       }
 
       setRecalculating(true);
+      setRecalcError(null);
       try {
         const res = await fetch("/api/natal-chart/recalculate", {
           method: "POST",
@@ -317,10 +322,14 @@ export default function ChartPage() {
               prev ? { ...prev, chartData: data.chartData } : prev
             );
           }
+        } else {
+          setRecalcError("Failed to recalculate houses. Showing previous data.");
+          setTimeout(() => setRecalcError(null), 5000);
         }
-      } catch (error) {
-        // Silently fail -- keep existing chart data
-        console.warn("House system recalculation failed:", error);
+      } catch (err) {
+        console.warn("House system recalculation failed:", err);
+        setRecalcError("Failed to recalculate houses. Showing previous data.");
+        setTimeout(() => setRecalcError(null), 5000);
       } finally {
         setRecalculating(false);
       }
@@ -336,6 +345,26 @@ export default function ChartPage() {
           <p className="mt-3 text-sm text-muted-foreground">
             Loading birth chart...
           </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex min-h-[60vh] flex-col items-center justify-center px-4 text-center">
+        <div className="flex h-14 w-14 items-center justify-center rounded-full bg-red-500/10 border border-red-500/20 mb-4">
+          <AlertTriangle className="h-7 w-7 text-red-400" />
+        </div>
+        <h1 className="text-xl font-semibold mb-2">Chart Unavailable</h1>
+        <p className="text-sm text-muted-foreground mb-4 max-w-md">{error}</p>
+        <div className="flex gap-3">
+          <Button onClick={() => window.location.reload()} variant="outline">
+            Try Again
+          </Button>
+          <Button asChild className="bg-cosmic-purple hover:bg-cosmic-purple-dark text-white">
+            <Link href="/dashboard">Go to Dashboard</Link>
+          </Button>
         </div>
       </div>
     );
@@ -447,6 +476,28 @@ export default function ChartPage() {
                 chart.
               </p>
             </div>
+          </motion.div>
+        )}
+
+        {/* House system recalculation error notice */}
+        {recalcError && (
+          <motion.div
+            initial={{ opacity: 0, y: -5 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -5 }}
+            className="mb-6 rounded-xl border border-red-500/20 bg-red-500/[0.03] p-4 flex items-start gap-3"
+          >
+            <AlertTriangle className="h-5 w-5 text-red-400 flex-shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <p className="text-sm text-red-400">{recalcError}</p>
+            </div>
+            <button
+              onClick={() => setRecalcError(null)}
+              className="text-red-400/60 hover:text-red-400 text-sm"
+              aria-label="Dismiss"
+            >
+              &times;
+            </button>
           </motion.div>
         )}
 
@@ -957,130 +1008,3 @@ export default function ChartPage() {
   );
 }
 
-// Demo profile for when API is not available
-function getDemoProfile(id: string): BirthChartProfile {
-  return {
-    id,
-    name: "Alex",
-    birthDate: "1995-03-21",
-    birthTime: "14:30",
-    birthCity: "New York",
-    birthCountry: "United States",
-    chartData: {
-      planets: [
-        {
-          planet: "Sun",
-          sign: "Aries",
-          degree: 0.5,
-          house: 10,
-          retrograde: false,
-        },
-        {
-          planet: "Moon",
-          sign: "Cancer",
-          degree: 105.2,
-          house: 1,
-          retrograde: false,
-        },
-        {
-          planet: "Mercury",
-          sign: "Pisces",
-          degree: 345.8,
-          house: 9,
-          retrograde: true,
-        },
-        {
-          planet: "Venus",
-          sign: "Taurus",
-          degree: 42.3,
-          house: 11,
-          retrograde: false,
-        },
-        {
-          planet: "Mars",
-          sign: "Leo",
-          degree: 138.7,
-          house: 2,
-          retrograde: false,
-        },
-        {
-          planet: "Jupiter",
-          sign: "Sagittarius",
-          degree: 255.1,
-          house: 6,
-          retrograde: false,
-        },
-        {
-          planet: "Saturn",
-          sign: "Pisces",
-          degree: 338.4,
-          house: 9,
-          retrograde: true,
-        },
-        {
-          planet: "Uranus",
-          sign: "Aquarius",
-          degree: 305.9,
-          house: 8,
-          retrograde: false,
-        },
-        {
-          planet: "Neptune",
-          sign: "Capricorn",
-          degree: 295.2,
-          house: 7,
-          retrograde: false,
-        },
-        {
-          planet: "Pluto",
-          sign: "Scorpio",
-          degree: 230.6,
-          house: 5,
-          retrograde: false,
-        },
-        {
-          planet: "Ascendant",
-          sign: "Cancer",
-          degree: 97.0,
-          house: 1,
-          retrograde: false,
-        },
-        {
-          planet: "Midheaven",
-          sign: "Aries",
-          degree: 7.0,
-          house: 10,
-          retrograde: false,
-        },
-      ],
-      houses: [
-        { house: 1, sign: "Cancer", degree: 97 },
-        { house: 2, sign: "Leo", degree: 127 },
-        { house: 3, sign: "Virgo", degree: 157 },
-        { house: 4, sign: "Libra", degree: 187 },
-        { house: 5, sign: "Scorpio", degree: 217 },
-        { house: 6, sign: "Sagittarius", degree: 247 },
-        { house: 7, sign: "Capricorn", degree: 277 },
-        { house: 8, sign: "Aquarius", degree: 307 },
-        { house: 9, sign: "Pisces", degree: 337 },
-        { house: 10, sign: "Aries", degree: 7 },
-        { house: 11, sign: "Taurus", degree: 37 },
-        { house: 12, sign: "Gemini", degree: 67 },
-      ],
-      aspects: [
-        { planet1: "Sun", planet2: "Mars", type: "trine", orb: 1.8 },
-        { planet1: "Sun", planet2: "Jupiter", type: "trine", orb: 2.4 },
-        { planet1: "Moon", planet2: "Venus", type: "sextile", orb: 2.1 },
-        {
-          planet1: "Mercury",
-          planet2: "Saturn",
-          type: "conjunction",
-          orb: 0.6,
-        },
-        { planet1: "Venus", planet2: "Mars", type: "square", orb: 3.6 },
-        { planet1: "Mars", planet2: "Pluto", type: "square", orb: 1.9 },
-        { planet1: "Jupiter", planet2: "Neptune", type: "sextile", orb: 1.1 },
-      ],
-    },
-  };
-}

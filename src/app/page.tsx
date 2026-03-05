@@ -92,9 +92,9 @@ const DIMENSIONS = [
   },
   {
     icon: Swords,
-    title: "Conflict Patterns",
+    title: "Harmony & Conflict",
     description:
-      "Mars-Mars aspects, square tensions, and Pluto dynamics that reveal how you handle disagreements.",
+      "Mars-Mars aspects, trines, square tensions, and Pluto dynamics that reveal harmony indicators and conflict patterns in your relationship.",
   },
   {
     icon: TrendingUp,
@@ -107,9 +107,9 @@ const DIMENSIONS = [
 const BETA_STATS = [
   {
     icon: FileText,
-    value: "500+",
-    label: "Reports Generated",
-    description: "Compatibility reports created by early users exploring their cosmic connections.",
+    value: "Deep",
+    label: "Compatibility Reports",
+    description: "Full synastry analysis with 7 dimensions, composite charts, and AI-powered narrative insights.",
   },
   {
     icon: Layers,
@@ -135,7 +135,7 @@ const PRICING_TIERS = [
       "3 compatibility checks per day",
       "Sun, Moon & Rising comparison",
       "Short AI summary",
-      "Shareable results link",
+      "Save up to 3 profiles",
     ],
     cta: "Get Started Free",
     href: "/compatibility",
@@ -145,34 +145,18 @@ const PRICING_TIERS = [
     name: "Premium",
     price: "$9.99",
     period: "/mo",
-    description: "Full reports with detailed AI analysis",
+    description: "Full reports, AI chat, daily horoscope & more",
     features: [
       "Unlimited compatibility checks",
       "Full synastry report (all 7 sections)",
-      "AI Astrologer chat",
-      "Save unlimited profiles",
+      "AI Astrologer chat & daily horoscope",
+      "Transit alerts & wellness insights",
       "Red flags & growth insights",
-      "Priority support",
+      "Cancel anytime",
     ],
     cta: "Start Premium",
     href: "/pricing",
     featured: true,
-  },
-  {
-    name: "Annual",
-    price: "$79.99",
-    period: "/yr",
-    description: "Best value — save over 30%",
-    features: [
-      "Everything in Premium",
-      "Daily personalized horoscope",
-      "Transit alerts & timeline",
-      "Wellness insights",
-      "Priority support",
-    ],
-    cta: "Save with Annual",
-    href: "/pricing",
-    featured: false,
   },
 ];
 
@@ -393,15 +377,15 @@ export default function Home() {
             transition={{ duration: 0.5 }}
           >
             <h2 className="text-3xl font-bold sm:text-4xl">
-              Choose Your Depth
+              Simple Pricing
             </h2>
             <p className="mt-3 text-muted-foreground">
-              Start free. Go deeper when you&apos;re ready.
+              Start free. Upgrade when you&apos;re ready.
             </p>
           </motion.div>
 
           <motion.div
-            className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
+            className="mt-14 grid gap-6 sm:grid-cols-2 max-w-3xl mx-auto"
             initial={shouldReduceMotion ? "visible" : "hidden"}
             whileInView="visible"
             viewport={{ once: true, margin: "-100px" }}

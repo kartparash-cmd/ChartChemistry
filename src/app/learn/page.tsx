@@ -1,4 +1,6 @@
-import type { Metadata } from "next";
+"use client";
+
+import { motion, useReducedMotion } from "framer-motion";
 import Link from "next/link";
 import {
   BookOpen,
@@ -18,19 +20,16 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 
-export const metadata: Metadata = {
-  title: "Learn Astrology",
-  description:
-    "Explore the fundamentals of astrology. Learn about zodiac signs, planets, houses, aspects, and how to read your birth chart.",
-  keywords: [
-    "learn astrology",
-    "astrology basics",
-    "zodiac signs",
-    "planets in astrology",
-    "astrological houses",
-    "aspects astrology",
-    "birth chart reading",
-  ],
+const fadeInUp = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0 },
+};
+
+const staggerContainer = {
+  hidden: {},
+  visible: {
+    transition: { staggerChildren: 0.1 },
+  },
 };
 
 interface LearningTopic {
@@ -77,12 +76,20 @@ const topics: LearningTopic[] = [
 ];
 
 export default function LearnPage() {
+  const shouldReduceMotion = useReducedMotion();
+
   return (
     <div className="min-h-screen">
       {/* Hero */}
       <section className="relative overflow-hidden pt-24 pb-16 px-4">
         <div className="absolute inset-0 bg-gradient-to-b from-cosmic-purple/5 via-transparent to-transparent" />
-        <div className="relative mx-auto max-w-4xl text-center">
+        <motion.div
+          initial={shouldReduceMotion ? "visible" : "hidden"}
+          animate="visible"
+          variants={fadeInUp}
+          transition={{ duration: 0.5 }}
+          className="relative mx-auto max-w-4xl text-center"
+        >
           <Badge
             variant="outline"
             className="mb-4 border-cosmic-purple/30 bg-cosmic-purple/10 text-cosmic-purple-light"
@@ -98,53 +105,68 @@ export default function LearnPage() {
             understanding, explore the building blocks of astrology and learn how
             to interpret the cosmic patterns in your birth chart.
           </p>
-        </div>
+        </motion.div>
       </section>
 
       <Separator className="mx-auto max-w-4xl opacity-30" />
 
       {/* Topic Cards Grid */}
       <section className="px-4 py-16">
-        <div className="mx-auto max-w-4xl grid grid-cols-1 gap-6 sm:grid-cols-2">
+        <motion.div
+          initial={shouldReduceMotion ? "visible" : "hidden"}
+          whileInView="visible"
+          viewport={{ once: true, margin: "-100px" }}
+          variants={staggerContainer}
+          className="mx-auto max-w-4xl grid grid-cols-1 gap-6 sm:grid-cols-2"
+        >
           {topics.map((topic) => (
-            <Link key={topic.title} href={topic.href} className="group">
-              <Card className="h-full border-white/10 bg-white/[0.02] transition-all hover:border-cosmic-purple/30 hover:bg-cosmic-purple/[0.03] hover:shadow-lg hover:shadow-cosmic-purple/5">
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-cosmic-purple/10 text-cosmic-purple-light transition-colors group-hover:bg-cosmic-purple/20">
-                      {topic.icon}
+            <motion.div key={topic.title} variants={fadeInUp} transition={{ duration: 0.5 }}>
+              <Link href={topic.href} className="group">
+                <Card className="h-full border-white/10 bg-white/[0.02] transition-all hover:border-cosmic-purple/30 hover:bg-cosmic-purple/[0.03] hover:shadow-lg hover:shadow-cosmic-purple/5">
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-cosmic-purple/10 text-cosmic-purple-light transition-colors group-hover:bg-cosmic-purple/20">
+                        {topic.icon}
+                      </div>
+                      {topic.badge && (
+                        <Badge
+                          variant="outline"
+                          className="border-white/10 text-muted-foreground text-xs"
+                        >
+                          {topic.badge}
+                        </Badge>
+                      )}
                     </div>
-                    {topic.badge && (
-                      <Badge
-                        variant="outline"
-                        className="border-white/10 text-muted-foreground text-xs"
-                      >
-                        {topic.badge}
-                      </Badge>
-                    )}
-                  </div>
-                  <CardTitle className="font-heading text-lg mt-2">
-                    {topic.title}
-                  </CardTitle>
-                  <CardDescription className="leading-relaxed">
-                    {topic.description}
-                  </CardDescription>
-                </CardHeader>
-                <CardFooter>
-                  <span className="inline-flex items-center text-sm font-medium text-cosmic-purple-light transition-colors group-hover:text-cosmic-purple">
-                    Learn More
-                    <ArrowRight className="ml-1 h-4 w-4 transition-transform group-hover:translate-x-1" />
-                  </span>
-                </CardFooter>
-              </Card>
-            </Link>
+                    <CardTitle className="font-heading text-lg mt-2">
+                      {topic.title}
+                    </CardTitle>
+                    <CardDescription className="leading-relaxed">
+                      {topic.description}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardFooter>
+                    <span className="inline-flex items-center text-sm font-medium text-cosmic-purple-light transition-colors group-hover:text-cosmic-purple">
+                      Learn More
+                      <ArrowRight className="ml-1 h-4 w-4 transition-transform group-hover:translate-x-1" />
+                    </span>
+                  </CardFooter>
+                </Card>
+              </Link>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
       </section>
 
       {/* Bottom CTA */}
       <section className="px-4 pb-20">
-        <div className="mx-auto max-w-2xl text-center">
+        <motion.div
+          initial={shouldReduceMotion ? "visible" : "hidden"}
+          whileInView="visible"
+          viewport={{ once: true, margin: "-100px" }}
+          variants={fadeInUp}
+          transition={{ duration: 0.5 }}
+          className="mx-auto max-w-2xl text-center"
+        >
           <p className="text-muted-foreground text-sm">
             Ready to see your own chart?{" "}
             <Link
@@ -162,7 +184,7 @@ export default function LearnPage() {
             </Link>{" "}
             to save your birth chart.
           </p>
-        </div>
+        </motion.div>
       </section>
     </div>
   );

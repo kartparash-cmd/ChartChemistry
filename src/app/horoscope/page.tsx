@@ -166,7 +166,7 @@ export default function HoroscopePage() {
               className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-full bg-cosmic-purple/10"
             >
               {isAstroServiceError(error) ? (
-                <AlertTriangle className="h-7 w-7 text-cosmic-purple-light" />
+                <AlertTriangle className="h-7 w-7 text-amber-400" />
               ) : (
                 <Sun className="h-7 w-7 text-cosmic-purple-light" />
               )}
@@ -333,8 +333,8 @@ export default function HoroscopePage() {
                 variant="outline"
                 className="rounded-full border-white/10"
               >
-                <Link href="/compatibility">
-                  Check Compatibility
+                <Link href="/transits">
+                  View Your Transits
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
               </Button>

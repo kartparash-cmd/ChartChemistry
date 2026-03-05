@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
+import { useSession } from "next-auth/react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight, AlertTriangle, RefreshCw, LayoutDashboard } from "lucide-react";
 import Link from "next/link";
@@ -48,13 +49,33 @@ type PageState = "input" | "loading" | "results" | "error";
 /* -------------------------------------------------------------------------- */
 
 export default function CompatibilityPage() {
+  const { data: session } = useSession();
   const [personA, setPersonA] = useState<BirthData | null>(null);
   const [personB, setPersonB] = useState<BirthData | null>(null);
   const [pageState, setPageState] = useState<PageState>("input");
   const [result, setResult] = useState<CompatibilityResult | null>(null);
   const [error, setError] = useState<string>("");
+  const [savedProfiles, setSavedProfiles] = useState<any[]>([]);
+  const [formKeyA, setFormKeyA] = useState(0);
+  const [formKeyB, setFormKeyB] = useState(0);
 
   const bothValid = personA !== null && personB !== null;
+  const personAReady = personA !== null;
+  const personBReady = personB !== null;
+
+  // Fetch saved profiles for authenticated users
+  useEffect(() => {
+    if (session?.user) {
+      fetch("/api/profile")
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.profiles && Array.isArray(data.profiles)) {
+            setSavedProfiles(data.profiles);
+          }
+        })
+        .catch(() => {});
+    }
+  }, [session]);
 
   const handleSubmit = useCallback(async () => {
     if (!personA || !personB) return;
@@ -160,16 +181,92 @@ export default function CompatibilityPage() {
               transition={{ duration: 0.3 }}
             >
               <div className="grid gap-6 md:grid-cols-2">
-                <BirthDataForm
-                  label="Your Details"
-                  onSubmit={setPersonA}
-                  defaultValues={personA ?? undefined}
-                />
-                <BirthDataForm
-                  label="Their Details"
-                  onSubmit={setPersonB}
-                  defaultValues={personB ?? undefined}
-                />
+                <div>
+                  {savedProfiles.length > 0 && (
+                    <div className="mb-3">
+                      <select
+                        className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-foreground"
+                        defaultValue=""
+                        onChange={(e) => {
+                          const profile = savedProfiles.find(
+                            (p: any) => p.id === e.target.value
+                          );
+                          if (profile) {
+                            setPersonA({
+                              name: profile.name,
+                              birthDate: profile.birthDate,
+                              birthTime: profile.birthTime ?? undefined,
+                              birthCity: profile.birthCity,
+                              birthCountry: profile.birthCountry,
+                              latitude: profile.latitude ?? undefined,
+                              longitude: profile.longitude ?? undefined,
+                              timezone: profile.timezone ?? undefined,
+                            });
+                            setFormKeyA((k) => k + 1);
+                          }
+                        }}
+                      >
+                        <option value="" disabled>
+                          Use a saved profile...
+                        </option>
+                        {savedProfiles.map((p: any) => (
+                          <option key={p.id} value={p.id}>
+                            {p.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+                  <BirthDataForm
+                    key={`formA-${formKeyA}`}
+                    label="Your Details"
+                    onSubmit={setPersonA}
+                    defaultValues={personA ?? undefined}
+                  />
+                </div>
+                <div>
+                  {savedProfiles.length > 0 && (
+                    <div className="mb-3">
+                      <select
+                        className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-foreground"
+                        defaultValue=""
+                        onChange={(e) => {
+                          const profile = savedProfiles.find(
+                            (p: any) => p.id === e.target.value
+                          );
+                          if (profile) {
+                            setPersonB({
+                              name: profile.name,
+                              birthDate: profile.birthDate,
+                              birthTime: profile.birthTime ?? undefined,
+                              birthCity: profile.birthCity,
+                              birthCountry: profile.birthCountry,
+                              latitude: profile.latitude ?? undefined,
+                              longitude: profile.longitude ?? undefined,
+                              timezone: profile.timezone ?? undefined,
+                            });
+                            setFormKeyB((k) => k + 1);
+                          }
+                        }}
+                      >
+                        <option value="" disabled>
+                          Use a saved profile...
+                        </option>
+                        {savedProfiles.map((p: any) => (
+                          <option key={p.id} value={p.id}>
+                            {p.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+                  <BirthDataForm
+                    key={`formB-${formKeyB}`}
+                    label="Their Details"
+                    onSubmit={setPersonB}
+                    defaultValues={personB ?? undefined}
+                  />
+                </div>
               </div>
 
               {/* Instruction text */}
@@ -179,7 +276,7 @@ export default function CompatibilityPage() {
               </p>
 
               {/* Submit Button */}
-              <div className="mt-8 flex justify-center">
+              <div className="mt-8 flex flex-col items-center">
                 <Button
                   size="lg"
                   disabled={!bothValid}
@@ -194,6 +291,20 @@ export default function CompatibilityPage() {
                   Check Compatibility
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
+                {!personAReady || !personBReady ? (
+                  <p className="mt-2 text-center text-xs text-muted-foreground">
+                    {!personAReady && !personBReady
+                      ? "Fill in both forms above to check compatibility."
+                      : !personAReady
+                      ? "Complete your birth details to continue."
+                      : "Complete the second person's birth details to continue."}
+                  </p>
+                ) : null}
+                {!session && (
+                  <p className="mt-1 text-center text-xs text-muted-foreground/60">
+                    Free: 3 checks per day
+                  </p>
+                )}
               </div>
             </motion.div>
           )}

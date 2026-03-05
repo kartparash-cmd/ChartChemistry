@@ -15,7 +15,6 @@ import {
   LogIn,
   Shield,
   HelpCircle,
-  CreditCard,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -39,13 +38,10 @@ const publicNavLinks = [
 const authedNavLinks = [
   { href: "/dashboard", label: "Dashboard" },
   { href: "/compatibility", label: "Compatibility" },
-  { href: "/horoscope", label: "Horoscope" },
-  { href: "/transits", label: "Transits" },
-  { href: "/wellness", label: "Wellness" },
+  { href: "/horoscope", label: "Today" },
   { href: "/connections", label: "Connections" },
-  { href: "/relationship", label: "Relationships" },
   { href: "/chat", label: "AI Chat" },
-  { href: "/learn", label: "Learn" },
+  { href: "/pricing", label: "Pricing" },
 ];
 
 export function Navigation() {
@@ -324,14 +320,6 @@ export function Navigation() {
                     >
                       <LayoutDashboard className="h-4 w-4" />
                       Dashboard
-                    </Link>
-                    <Link
-                      href="/pricing"
-                      onClick={() => setMobileOpen(false)}
-                      className="flex items-center gap-2 rounded-lg px-4 py-3 text-sm transition-colors hover:bg-muted text-muted-foreground hover:text-foreground"
-                    >
-                      <CreditCard className="h-4 w-4" />
-                      Pricing
                     </Link>
                     <Link
                       href="/support"

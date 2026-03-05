@@ -69,9 +69,9 @@ function EmptyProfileState() {
       <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-cosmic-purple/10">
         <Orbit className="h-8 w-8 text-cosmic-purple-light" />
       </div>
-      <h3 className="font-heading text-xl font-semibold mb-2">
+      <h2 className="font-heading text-xl font-semibold mb-2">
         No Birth Profile Found
-      </h3>
+      </h2>
       <p className="text-sm text-muted-foreground max-w-md mx-auto mb-6">
         To see your personal transits, you need a birth profile with chart data.
         Create your birth chart first to unlock transit insights.
@@ -107,7 +107,7 @@ function ErrorState({
     <motion.div
       initial={{ opacity: 0, scale: 0.98 }}
       animate={{ opacity: 1, scale: 1 }}
-      className="rounded-xl border border-white/10 bg-white/[0.03] p-8 text-center backdrop-blur-sm"
+      className="rounded-2xl border border-white/10 bg-white/[0.03] p-8 text-center backdrop-blur-sm"
     >
       <motion.div
         initial={{ scale: 0.8, opacity: 0 }}
@@ -115,13 +115,13 @@ function ErrorState({
         transition={{ delay: 0.1, type: "spring", stiffness: 200 }}
         className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-full bg-cosmic-purple/10"
       >
-        <AlertTriangle className="h-7 w-7 text-cosmic-purple-light" />
+        <AlertTriangle className="h-7 w-7 text-amber-400" />
       </motion.div>
-      <h3 className="font-heading text-lg font-semibold mb-2">
+      <h2 className="font-heading text-lg font-semibold mb-2">
         {isServiceError
           ? "Service Temporarily Unavailable"
           : "Unable to Load Transits"}
-      </h3>
+      </h2>
       <p className="text-sm text-muted-foreground max-w-md mx-auto mb-6">
         {isServiceError
           ? "Our astrology calculation service is currently being updated. Please try again shortly."
@@ -394,9 +394,9 @@ export default function TransitsPage() {
                   <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-cosmic-purple/10">
                     <Moon className="h-7 w-7 text-cosmic-purple-light" />
                   </div>
-                  <h3 className="font-heading text-lg font-semibold mb-2">
+                  <h2 className="font-heading text-lg font-semibold mb-2">
                     No Active Transits
-                  </h3>
+                  </h2>
                   <p className="text-sm text-muted-foreground max-w-sm mx-auto">
                     No significant planetary transits are affecting your chart right now.
                     Check back tomorrow for updated cosmic weather.

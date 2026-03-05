@@ -14,7 +14,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { calculateNatalChart, calculateSynastry } from "@/lib/astro-client";
 import { generateFreeReport, extractSynastryHighlights } from "@/lib/claude";
-import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
+import { checkRateLimit, getClientIp, getRemainingChecks } from "@/lib/rate-limit";
 import { geocodeCity } from "@/lib/geocode";
 import type {
   PersonInput,
@@ -133,6 +133,10 @@ export async function POST(request: Request) {
       session?.user?.plan === "PREMIUM" || session?.user?.plan === "ANNUAL";
 
     // --- Rate limiting for unauthenticated / free users ---
+    // For free users this will be set to the number of checks left after this
+    // request. Premium/annual users get `null` (unlimited).
+    let remainingChecks: number | null = isPremium ? null : null;
+
     if (!isPremium) {
       const ip = getClientIp(request);
       const rateLimitResult = await checkRateLimit(ip);
@@ -144,6 +148,7 @@ export async function POST(request: Request) {
             message:
               "You have used all 3 free compatibility checks for today. Sign up for Premium for unlimited access.",
             resetAt: new Date(rateLimitResult.resetAt).toISOString(),
+            remainingChecks: 0,
           },
           {
             status: 429,
@@ -158,6 +163,11 @@ export async function POST(request: Request) {
           }
         );
       }
+
+      // Rate limit passed — capture how many checks the user has left.
+      // Prefer the value returned by checkRateLimit (works for both Upstash
+      // and in-memory). Fall back to getRemainingChecks for safety.
+      remainingChecks = rateLimitResult.remaining ?? getRemainingChecks(ip);
     }
 
     // --- Parse + validate body ---
@@ -255,6 +265,7 @@ export async function POST(request: Request) {
       narrative,
       person1Chart,
       person2Chart,
+      remainingChecks,
     });
   } catch (error) {
     console.error("[POST /api/compatibility] Error:", error);

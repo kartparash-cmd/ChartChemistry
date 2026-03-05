@@ -164,9 +164,9 @@ function ReportCard({ report }: { report: CompatibilityReport }) {
       >
         <div className="mb-3 flex items-start justify-between">
           <div className="min-w-0 flex-1">
-            <h4 className="truncate font-medium">
+            <h3 className="truncate font-medium">
               {report.person1.name} & {report.person2.name}
-            </h4>
+            </h3>
             <p className="mt-1 text-xs text-muted-foreground">
               <Calendar className="mr-1 inline h-3 w-3" />
               {new Date(report.createdAt).toLocaleDateString("en-US", {
@@ -537,18 +537,18 @@ export default function ConnectionsPage() {
                       initial={{ opacity: 0, y: -5 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -5 }}
-                      className="rounded-xl border border-white/10 bg-white/[0.03] p-6 text-center backdrop-blur-sm"
+                      className="rounded-2xl border border-white/10 bg-white/[0.03] p-8 text-center backdrop-blur-sm"
                     >
-                      <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-cosmic-purple/10">
-                        <AlertTriangle className="h-6 w-6 text-cosmic-purple-light" />
+                      <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-cosmic-purple/10">
+                        <AlertTriangle className="h-6 w-6 text-amber-400" />
                       </div>
-                      <h4 className="font-heading text-base font-semibold mb-1">
+                      <h3 className="font-heading text-base font-semibold mb-1">
                         {error.toLowerCase().includes("unreachable") ||
                         error.toLowerCase().includes("unavailable") ||
                         error.toLowerCase().includes("service")
                           ? "Service Temporarily Unavailable"
                           : "Compatibility Check Failed"}
-                      </h4>
+                      </h3>
                       <p className="text-sm text-muted-foreground mb-4 max-w-sm mx-auto">
                         {error.toLowerCase().includes("unreachable") ||
                         error.toLowerCase().includes("unavailable") ||
@@ -622,10 +622,10 @@ export default function ConnectionsPage() {
 
                       {/* Score dimensions */}
                       <div className="rounded-xl border border-white/10 bg-white/[0.02] p-5">
-                        <h4 className="mb-4 flex items-center gap-2 text-sm font-semibold">
+                        <h3 className="mb-4 flex items-center gap-2 text-sm font-semibold">
                           <BarChart3 className="h-4 w-4 text-cosmic-purple-light" />
                           Score Breakdown
-                        </h4>
+                        </h3>
                         <div className="space-y-3">
                           <ScoreDimension
                             label="Emotional Connection"
@@ -648,8 +648,8 @@ export default function ConnectionsPage() {
                             delay={0.4}
                           />
                           <ScoreDimension
-                            label="Conflict Resolution"
-                            score={quickResult.scores.conflict}
+                            label="Harmony"
+                            score={100 - quickResult.scores.conflict}
                             delay={0.5}
                           />
                         </div>
@@ -727,7 +727,7 @@ export default function ConnectionsPage() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
-            className="rounded-xl border border-dashed border-white/15 bg-white/[0.02] p-8 text-center"
+            className="rounded-xl border border-dashed border-white/20 bg-white/[0.02] p-8 text-center"
           >
             <BarChart3 className="mx-auto mb-3 h-8 w-8 text-muted-foreground/40" />
             <h2 className="mb-1 font-medium text-muted-foreground">

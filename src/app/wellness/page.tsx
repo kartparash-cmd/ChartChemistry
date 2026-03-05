@@ -359,7 +359,7 @@ export default function WellnessPage() {
                   className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-full bg-cosmic-purple/10"
                 >
                   {isServiceError ? (
-                    <AlertTriangle className="h-7 w-7 text-cosmic-purple-light" />
+                    <AlertTriangle className="h-7 w-7 text-amber-400" />
                   ) : (
                     <Activity className="h-7 w-7 text-cosmic-purple-light" />
                   )}

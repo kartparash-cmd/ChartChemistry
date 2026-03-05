@@ -242,6 +242,7 @@ function DashboardContent() {
   const [error, setError] = useState<string | null>(null);
   const initialTab = searchParams.get("tab") || "chart";
   const [activeTab, setActiveTab] = useState(initialTab);
+  const [upgraded, setUpgraded] = useState(searchParams.get("upgraded") === "true");
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -393,12 +394,41 @@ function DashboardContent() {
         </div>
       )}
 
+      {/* Upgrade Celebration Banner */}
+      {upgraded && (
+        <div className="mx-auto max-w-7xl px-4 pt-6 sm:px-6 lg:px-8">
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-6 rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-4 text-center"
+          >
+            <p className="text-lg font-semibold text-emerald-400">Welcome to Premium!</p>
+            <p className="text-sm text-muted-foreground mt-1">
+              All features are now unlocked. Start by generating a full compatibility report.
+            </p>
+            <Button
+              size="sm"
+              className="mt-3 bg-cosmic-purple hover:bg-cosmic-purple-dark text-white"
+              onClick={() => {
+                setUpgraded(false);
+                router.replace("/dashboard");
+              }}
+            >
+              Got it!
+            </Button>
+          </motion.div>
+        </div>
+      )}
+
       {/* Main Content */}
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* Main Area */}
           <div className="lg:col-span-3">
-            <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <Tabs value={activeTab} onValueChange={(newTab) => {
+              setActiveTab(newTab);
+              router.replace(`/dashboard?tab=${newTab}`, { scroll: false });
+            }}>
               <TabsList className="bg-white/5 border border-white/10 mb-6">
                 <TabsTrigger
                   value="chart"
@@ -515,22 +545,38 @@ function DashboardContent() {
                           <Sparkles className="h-8 w-8 text-cosmic-purple-light" />
                         </div>
                         <h3 className="font-heading text-xl font-semibold mb-2">
-                          Set Up Your Birth Chart
+                          Set Up Your Birth Profile
                         </h3>
                         <p className="text-sm text-muted-foreground max-w-md mx-auto mb-6">
-                          Enter your birth details to unlock your natal chart,
-                          discover your Sun, Moon, and Rising signs, and start
-                          exploring compatibility.
+                          Add your birth details to see your natal chart, daily
+                          horoscope, and more.
                         </p>
                         <Button
                           asChild
                           className="bg-cosmic-purple hover:bg-cosmic-purple-dark text-white"
                         >
-                          <Link href="/compatibility">
+                          <Link href="/dashboard/profiles">
                             <Plus className="mr-2 h-4 w-4" />
-                            Create Your Chart
+                            Create Your Birth Profile
                           </Link>
                         </Button>
+
+                        {/* Onboarding Checklist */}
+                        <div className="mt-6 space-y-3">
+                          <p className="text-sm font-medium text-muted-foreground">Getting Started:</p>
+                          <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-cosmic-purple/20 text-xs font-bold text-cosmic-purple-light">1</span>
+                            Create your birth profile
+                          </div>
+                          <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-white/10 text-xs font-bold">2</span>
+                            Run your first compatibility check
+                          </div>
+                          <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-white/10 text-xs font-bold">3</span>
+                            Explore your daily horoscope
+                          </div>
+                        </div>
                       </motion.div>
                     )}
                   </motion.div>

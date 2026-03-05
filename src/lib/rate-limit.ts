@@ -153,6 +153,28 @@ export async function checkRateLimit(ip: string): Promise<RateLimitResult> {
 }
 
 /* -------------------------------------------------------------------------- */
+/*  Remaining-checks helper                                                   */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Return how many free compatibility checks are left for the given IP.
+ *
+ * This is a **read-only, synchronous** peek at the in-memory store.
+ * When Upstash is configured the canonical remaining count comes from the
+ * `RateLimitResult.remaining` field returned by `checkRateLimit` instead.
+ */
+export function getRemainingChecks(ip: string): number {
+  const now = Date.now();
+  const entry = store.get(ip);
+
+  if (!entry || now >= entry.resetAt) {
+    return FREE_LIMIT;
+  }
+
+  return Math.max(0, FREE_LIMIT - entry.count);
+}
+
+/* -------------------------------------------------------------------------- */
 /*  IP extraction                                                             */
 /* -------------------------------------------------------------------------- */
 

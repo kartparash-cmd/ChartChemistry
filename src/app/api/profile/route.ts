@@ -165,19 +165,17 @@ export async function POST(request: Request) {
       );
     }
 
-    // Limit number of profiles per user (prevent abuse)
+    // Limit number of profiles per user based on plan
     const profileCount = await prisma.birthProfile.count({
       where: { userId: session.user.id },
     });
 
-    if (profileCount >= 20) {
-      return NextResponse.json(
-        {
-          error: "Profile limit reached",
-          message: "You can save up to 20 birth profiles. Please delete some before adding more.",
-        },
-        { status: 400 }
-      );
+    const maxProfiles = session.user.plan === "PREMIUM" || session.user.plan === "ANNUAL" ? 20 : 3;
+    if (profileCount >= maxProfiles) {
+      const message = maxProfiles === 3
+        ? "Free plan allows up to 3 profiles. Upgrade to Premium for more."
+        : "Profile limit reached (maximum 20).";
+      return NextResponse.json({ error: message }, { status: 403 });
     }
 
     // Calculate natal chart

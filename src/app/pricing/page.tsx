@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
@@ -10,7 +9,6 @@ import {
   X,
   Sparkles,
   Star,
-  Crown,
   Zap,
   ArrowRight,
 } from "lucide-react";
@@ -40,10 +38,10 @@ const tiers: PricingTier[] = [
     monthlyPrice: 0,
     annualPrice: 0,
     features: [
-      "3 basic compatibility checks per day",
+      "3 compatibility checks per day",
       "Sun, Moon & Rising comparison",
       "Short AI summary",
-      "Shareable results link",
+      "Save up to 3 profiles",
     ],
     cta: "Get Started",
     ctaVariant: "outline",
@@ -51,7 +49,7 @@ const tiers: PricingTier[] = [
   {
     name: "Premium",
     icon: <Zap className="h-5 w-5" />,
-    description: "Full astrological insights and AI guidance",
+    description: "Full astrological insights, AI guidance, and daily updates",
     monthlyPrice: 9.99,
     annualPrice: 79.99,
     popular: true,
@@ -59,93 +57,28 @@ const tiers: PricingTier[] = [
       "Unlimited compatibility checks",
       "Full synastry report (all 7 sections)",
       "AI Astrologer chat",
-      "Save unlimited profiles",
+      "Save up to 20 profiles",
       "Red flags & growth insights",
-      "Priority support",
+      "Daily personalized horoscope",
+      "Transit alerts & timeline",
+      "Wellness insights",
     ],
     cta: "Start Premium",
     ctaVariant: "default",
   },
-  {
-    name: "Annual",
-    icon: <Crown className="h-5 w-5" />,
-    description: "Best value — save over 30% with annual billing",
-    monthlyPrice: 6.67,
-    annualPrice: 79.99,
-    features: [
-      "Everything in Premium",
-      "Daily personalized horoscope",
-      "Transit alerts & timeline",
-      "AI Astrologer chat",
-      "Wellness insights",
-      "Priority support",
-    ],
-    cta: "Save with Annual",
-    ctaVariant: "secondary",
-  },
 ];
 
 const comparisonFeatures = [
-  {
-    feature: "Compatibility checks",
-    free: "3 per day",
-    premium: "Unlimited",
-    annual: "Unlimited",
-  },
-  {
-    feature: "Sun/Moon/Rising comparison",
-    free: true,
-    premium: true,
-    annual: true,
-  },
-  {
-    feature: "AI summary",
-    free: "Short",
-    premium: "Full",
-    annual: "Full",
-  },
-  {
-    feature: "Synastry report sections",
-    free: "1 of 7",
-    premium: "All 7",
-    annual: "All 7",
-  },
-  {
-    feature: "AI Astrologer chat",
-    free: false,
-    premium: true,
-    annual: true,
-  },
-  {
-    feature: "Save profiles",
-    free: "1",
-    premium: "Unlimited",
-    annual: "Unlimited",
-  },
-  {
-    feature: "Red flags & growth insights",
-    free: false,
-    premium: true,
-    annual: true,
-  },
-  {
-    feature: "Daily horoscope",
-    free: false,
-    premium: false,
-    annual: true,
-  },
-  {
-    feature: "Transit alerts",
-    free: false,
-    premium: false,
-    annual: true,
-  },
-  {
-    feature: "Wellness insights",
-    free: false,
-    premium: false,
-    annual: true,
-  },
+  { feature: "Compatibility checks", free: "3 per day", premium: "Unlimited" },
+  { feature: "Sun/Moon/Rising comparison", free: true, premium: true },
+  { feature: "AI summary", free: "Short", premium: "Full" },
+  { feature: "Synastry report sections", free: "1 of 7", premium: "All 7" },
+  { feature: "AI Astrologer chat", free: false, premium: true },
+  { feature: "Save profiles", free: "3", premium: "20" },
+  { feature: "Red flags & growth insights", free: false, premium: true },
+  { feature: "Daily horoscope", free: false, premium: true },
+  { feature: "Transit alerts", free: false, premium: true },
+  { feature: "Wellness insights", free: false, premium: true },
 ];
 
 function FeatureValue({ value }: { value: boolean | string }) {
@@ -181,10 +114,8 @@ export default function PricingPage() {
       return;
     }
 
-    // For paid tiers, create a Stripe checkout session
-    const plan = tierName === "Annual" || billing === "annual"
-      ? "ANNUAL"
-      : "PREMIUM";
+    // For Premium, determine billing period from the toggle
+    const plan = billing === "annual" ? "ANNUAL" : "PREMIUM";
 
     setLoadingTier(tierName);
     try {
@@ -258,33 +189,38 @@ export default function PricingPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.2 }}
-            className="mt-8 inline-flex items-center gap-3 rounded-full border border-white/10 bg-white/5 p-1"
+            className="mt-8 flex flex-col items-center"
           >
-            <button
-              onClick={() => setBilling("monthly")}
-              className={cn(
-                "rounded-full px-4 py-2 text-sm font-medium transition-all",
-                billing === "monthly"
-                  ? "bg-cosmic-purple text-white shadow-lg"
-                  : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              Monthly
-            </button>
-            <button
-              onClick={() => setBilling("annual")}
-              className={cn(
-                "rounded-full px-4 py-2 text-sm font-medium transition-all flex items-center gap-2",
-                billing === "annual"
-                  ? "bg-cosmic-purple text-white shadow-lg"
-                  : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              Annual
-              <Badge className="bg-gold/20 text-gold text-[10px] font-semibold px-1.5 py-0">
-                Save 33%
-              </Badge>
-            </button>
+            <div className="inline-flex items-center gap-3 rounded-full border border-white/10 bg-white/5 p-1">
+              <button
+                onClick={() => setBilling("monthly")}
+                className={cn(
+                  "rounded-full px-4 py-2 text-sm font-medium transition-all",
+                  billing === "monthly"
+                    ? "bg-cosmic-purple text-white shadow-lg"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                Monthly
+              </button>
+              <button
+                onClick={() => setBilling("annual")}
+                className={cn(
+                  "rounded-full px-4 py-2 text-sm font-medium transition-all flex items-center gap-2",
+                  billing === "annual"
+                    ? "bg-cosmic-purple text-white shadow-lg"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                Annual
+                <Badge className="bg-gold/20 text-gold text-[10px] font-semibold px-1.5 py-0">
+                  Save 33%
+                </Badge>
+              </button>
+            </div>
+            <p className="mt-3 text-xs text-muted-foreground">
+              Cancel anytime. 30-day money-back guarantee.
+            </p>
           </motion.div>
         </div>
       </section>
@@ -295,7 +231,7 @@ export default function PricingPage() {
           variants={containerVariants}
           initial="hidden"
           animate="visible"
-          className="mx-auto max-w-6xl grid grid-cols-1 gap-6 md:grid-cols-3"
+          className="mx-auto max-w-4xl grid grid-cols-1 gap-6 md:grid-cols-2"
         >
           {tiers.map((tier) => (
             <motion.div
@@ -353,10 +289,7 @@ export default function PricingPage() {
                 </div>
                 {billing === "annual" && tier.monthlyPrice > 0 && (
                   <p className="mt-1 text-xs text-gold">
-                    That is ${(tier.annualPrice / 12).toFixed(2)}/month, saving
-                    you $
-                    {(tier.monthlyPrice * 12 - tier.annualPrice).toFixed(2)}{" "}
-                    per year
+                    That&apos;s $6.67/month — save 33%
                   </p>
                 )}
               </div>
@@ -411,9 +344,6 @@ export default function PricingPage() {
                   <th className="px-4 py-4 text-center text-sm font-medium text-cosmic-purple-light">
                     Premium
                   </th>
-                  <th className="px-4 py-4 text-center text-sm font-medium text-gold">
-                    Annual
-                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -434,11 +364,6 @@ export default function PricingPage() {
                     <td className="px-4 py-3 text-center">
                       <div className="flex justify-center">
                         <FeatureValue value={row.premium} />
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-center">
-                      <div className="flex justify-center">
-                        <FeatureValue value={row.annual} />
                       </div>
                     </td>
                   </tr>

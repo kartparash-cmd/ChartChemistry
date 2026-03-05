@@ -95,6 +95,8 @@ function VerifyEmailContent() {
 
           {status === "loading" && (
             <motion.div
+              role="status"
+              aria-live="polite"
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.3 }}
@@ -112,6 +114,8 @@ function VerifyEmailContent() {
 
           {status === "success" && (
             <motion.div
+              role="status"
+              aria-live="polite"
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.4 }}

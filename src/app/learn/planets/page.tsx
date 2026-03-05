@@ -112,7 +112,7 @@ const planets: Planet[] = [
     name: "Mars",
     symbol: "\u2642",
     category: "Personal",
-    rulesSigns: ["Aries"],
+    rulesSigns: ["Aries", "Scorpio (traditional)"],
     represents: "Drive, ambition, energy, and assertiveness",
     keywords: ["Action", "Desire", "Courage", "Aggression"],
     description:
@@ -132,7 +132,7 @@ const planets: Planet[] = [
     name: "Saturn",
     symbol: "\u2644",
     category: "Social",
-    rulesSigns: ["Capricorn"],
+    rulesSigns: ["Capricorn", "Aquarius (traditional)"],
     represents: "Structure, discipline, responsibility, and lessons",
     keywords: ["Discipline", "Structure", "Maturity", "Limitation"],
     description:

@@ -382,6 +382,8 @@ function DashboardContent() {
             <AlertTriangle className="h-4 w-4 shrink-0" />
             <span className="flex-1">{error}</span>
             <button
+              type="button"
+              aria-label="Dismiss error message"
               onClick={() => setError(null)}
               className="shrink-0 underline hover:no-underline"
             >

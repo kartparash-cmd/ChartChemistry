@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import Link from "next/link";
 import { Sparkles, ArrowLeft, Home, Telescope } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -21,11 +21,13 @@ const staggerContainer = {
 };
 
 export default function NotFound() {
+  const shouldReduceMotion = useReducedMotion();
+
   return (
     <div className="relative flex min-h-[80vh] flex-col items-center justify-center px-4 text-center">
       <motion.div
         className="mx-auto max-w-lg space-y-6"
-        initial="hidden"
+        initial={shouldReduceMotion ? "visible" : "hidden"}
         animate="visible"
         variants={staggerContainer}
       >
@@ -98,9 +100,9 @@ export default function NotFound() {
           transition={{ duration: 0.6 }}
           className="flex items-center justify-center gap-2 pt-4 text-sm text-muted-foreground"
         >
-          <Sparkles className="h-4 w-4 text-gold" />
+          <Sparkles className="h-4 w-4 text-gold" aria-hidden="true" />
           <span>Maybe the universe has other plans for you.</span>
-          <Sparkles className="h-4 w-4 text-gold" />
+          <Sparkles className="h-4 w-4 text-gold" aria-hidden="true" />
         </motion.div>
       </motion.div>
     </div>

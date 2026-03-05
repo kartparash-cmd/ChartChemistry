@@ -63,7 +63,7 @@ const tiers: PricingTier[] = [
       "Red flags & growth insights",
       "Priority support",
     ],
-    cta: "Start Free Trial",
+    cta: "Start Premium",
     ctaVariant: "default",
   },
   {

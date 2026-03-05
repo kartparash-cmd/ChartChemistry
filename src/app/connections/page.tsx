@@ -209,9 +209,9 @@ function EmptyState() {
       <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-cosmic-purple/10">
         <Users className="h-8 w-8 text-cosmic-purple-light" />
       </div>
-      <h3 className="mb-2 font-heading text-xl font-semibold">
+      <h2 className="mb-2 font-heading text-xl font-semibold">
         Add Profiles to Get Started
-      </h3>
+      </h2>
       <p className="mx-auto mb-6 max-w-md text-sm text-muted-foreground">
         Add profiles to compare compatibility between people in your life. Save
         birth data for friends, family, or partners and discover your cosmic
@@ -443,6 +443,7 @@ export default function ConnectionsPage() {
             <AlertTriangle className="h-4 w-4 shrink-0" />
             <span className="flex-1">{fetchError}</span>
             <button
+              type="button"
               onClick={() => setFetchError(null)}
               className="shrink-0 underline hover:no-underline"
             >
@@ -729,9 +730,9 @@ export default function ConnectionsPage() {
             className="rounded-xl border border-dashed border-white/15 bg-white/[0.02] p-8 text-center"
           >
             <BarChart3 className="mx-auto mb-3 h-8 w-8 text-muted-foreground/40" />
-            <h3 className="mb-1 font-medium text-muted-foreground">
+            <h2 className="mb-1 font-medium text-muted-foreground">
               No reports yet
-            </h3>
+            </h2>
             <p className="text-xs text-muted-foreground/70">
               Compare two profiles above to see your first compatibility result
             </p>

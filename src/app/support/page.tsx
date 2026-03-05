@@ -87,7 +87,7 @@ export default function SupportPage() {
     <div className="mx-auto max-w-2xl px-4 pt-24 pb-8 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Support</h1>
+          <h2 className="text-2xl font-bold">Support</h2>
           <p className="text-muted-foreground text-sm mt-1">Get help with your account</p>
         </div>
         <Button

@@ -28,9 +28,10 @@ export const PLANS = {
     name: "Free",
     price: 0,
     features: [
-      "1 compatibility report per month",
-      "Basic synastry overview",
-      "Sun/Moon/Rising analysis",
+      "3 basic compatibility checks per day",
+      "Sun, Moon & Rising comparison",
+      "Short AI summary",
+      "Shareable results link",
     ],
   },
   PREMIUM: {
@@ -38,11 +39,12 @@ export const PLANS = {
     priceId: process.env.STRIPE_PREMIUM_PRICE_ID,
     price: 9.99,
     features: [
-      "Unlimited compatibility reports",
-      "Full synastry & composite charts",
-      "AI chat with astrologer",
-      "Detailed narrative reports",
-      "Red flags & growth areas",
+      "Unlimited compatibility checks",
+      "Full synastry report (all 7 sections)",
+      "AI Astrologer chat",
+      "Save unlimited profiles",
+      "Red flags & growth insights",
+      "Priority support",
     ],
   },
   ANNUAL: {
@@ -51,9 +53,10 @@ export const PLANS = {
     price: 79.99,
     features: [
       "Everything in Premium",
+      "Daily personalized horoscope",
+      "Transit alerts & timeline",
+      "Wellness insights",
       "Priority support",
-      "Boutique deep-dive reports",
-      "Save 33% vs monthly",
     ],
   },
 } as const;

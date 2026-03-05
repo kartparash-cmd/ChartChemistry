@@ -11,7 +11,6 @@ import {
   CardContent,
   CardFooter,
   CardHeader,
-  CardTitle,
   CardDescription,
 } from "@/components/ui/card";
 import { StarField } from "@/components/star-field";
@@ -73,9 +72,7 @@ function AuthErrorContent() {
             <div className="mb-2 flex h-14 w-14 items-center justify-center rounded-full bg-red-500/10 border border-red-500/20">
               <AlertTriangle className="h-7 w-7 text-red-400" />
             </div>
-            <CardTitle className="text-xl cosmic-text">
-              <h1>Sign-in Error</h1>
-            </CardTitle>
+            <h1 className="text-xl font-semibold cosmic-text">Sign-in Error</h1>
             <CardDescription role="alert" aria-live="polite" className="text-muted-foreground">
               {errorMessage}
             </CardDescription>

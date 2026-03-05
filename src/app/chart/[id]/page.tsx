@@ -169,6 +169,7 @@ function ExplainableElement({
         className
       )}
       title={`Tap to explain: ${element}`}
+      aria-label={`Explain ${element}`}
     >
       {children}
       <Sparkles className="h-3 w-3 opacity-0 group-hover/explain:opacity-70 transition-opacity duration-200 text-cosmic-purple-light flex-shrink-0" />
@@ -526,7 +527,7 @@ export default function ChartPage() {
               <h2 className="font-heading text-lg font-semibold mb-4">
                 Key Placements
               </h2>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              <div role="region" aria-label="Key Planetary Placements" className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 {KEY_PLACEMENTS.map((planetName) => {
                   const planet = chartData?.planets?.find(
                     (p) => p.planet === planetName
@@ -620,23 +621,24 @@ export default function ChartPage() {
           </h2>
           <div className="overflow-x-auto">
             <table className="w-full">
+              <caption className="sr-only">Planetary Positions</caption>
               <thead>
                 <tr className="border-b border-white/10">
-                  <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                  <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                     Planet
                   </th>
-                  <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                  <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                     Sign
                   </th>
-                  <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                  <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                     Degree
                   </th>
                   {hasBirthTime && (
-                    <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                    <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                       House
                     </th>
                   )}
-                  <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                  <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                     Retrograde
                   </th>
                 </tr>
@@ -727,15 +729,16 @@ export default function ChartPage() {
             </h2>
             <div className="overflow-x-auto">
               <table className="w-full">
+                <caption className="sr-only">Planetary Aspects</caption>
                 <thead>
                   <tr className="border-b border-white/10">
-                    <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                    <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                       Aspect
                     </th>
-                    <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                    <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                       Type
                     </th>
-                    <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                    <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                       Orb
                     </th>
                   </tr>
@@ -813,15 +816,16 @@ export default function ChartPage() {
             </h2>
             <div className="overflow-x-auto">
               <table className="w-full">
+                <caption className="sr-only">House Placements</caption>
                 <thead>
                   <tr className="border-b border-white/10">
-                    <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                    <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                       House
                     </th>
-                    <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                    <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                       Sign
                     </th>
-                    <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                    <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                       Ruler
                     </th>
                   </tr>
@@ -900,7 +904,7 @@ export default function ChartPage() {
           <ScrollArea className="flex-1 pr-4">
             <div className="py-4">
               {explainLoading && (
-                <div className="flex flex-col items-center justify-center py-12 gap-3">
+                <div role="status" aria-live="polite" className="flex flex-col items-center justify-center py-12 gap-3">
                   <div className="relative">
                     <Loader2 className="h-8 w-8 animate-spin text-cosmic-purple-light" />
                     <Sparkles className="absolute -top-1 -right-1 h-3 w-3 text-gold animate-pulse" />

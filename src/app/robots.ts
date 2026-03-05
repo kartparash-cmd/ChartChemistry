@@ -6,7 +6,7 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: "*",
         allow: "/",
-        disallow: ["/api/", "/dashboard/", "/admin/", "/chat/", "/report/", "/chart/"],
+        disallow: ["/api/", "/dashboard/", "/admin/", "/chat/", "/report/", "/chart/", "/auth/"],
       },
     ],
     sitemap: "https://chartchemistry.com/sitemap.xml",

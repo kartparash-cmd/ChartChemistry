@@ -374,6 +374,7 @@ export default function ChatPage() {
 
       {/* Chat Area */}
       <div className="flex flex-1 flex-col min-w-0">
+        <h1 className="sr-only">AI Astrologer Chat</h1>
         {/* Messages */}
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
           {messages.map((message) => (
@@ -407,6 +408,7 @@ export default function ChatPage() {
                   key={q}
                   onClick={() => sendMessage(q)}
                   disabled={isLoading}
+                  aria-label={q}
                   className="rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-white/[0.06] hover:text-foreground disabled:opacity-50"
                 >
                   {q}
@@ -426,6 +428,7 @@ export default function ChatPage() {
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder="Ask the AI Astrologer anything..."
+                aria-label="Type your message to the AI astrologer"
                 rows={1}
                 className="w-full resize-none rounded-xl border border-white/10 bg-white/5 px-4 py-3 pr-12 text-sm placeholder:text-muted-foreground/50 focus:border-cosmic-purple/30 focus:outline-none focus:ring-1 focus:ring-cosmic-purple/20"
                 style={{ minHeight: "44px", maxHeight: "120px" }}
@@ -439,6 +442,7 @@ export default function ChatPage() {
             <Button
               type="submit"
               disabled={!input.trim() || isLoading}
+              aria-label="Send message"
               className="h-11 w-11 rounded-xl bg-cosmic-purple hover:bg-cosmic-purple-dark text-white flex-shrink-0"
               size="icon"
             >

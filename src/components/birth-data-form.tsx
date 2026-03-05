@@ -297,7 +297,7 @@ export function BirthDataForm({
               <TooltipTrigger asChild>
                 <button
                   type="button"
-                  aria-label="More info about birth time"
+                  aria-label="More info about why birth time matters for your chart"
                   className="text-muted-foreground hover:text-foreground transition-colors"
                 >
                   <Info className="h-3.5 w-3.5" />
@@ -370,6 +370,7 @@ export function BirthDataForm({
               ref={suggestionsRef}
               id={`city-listbox-${label}`}
               role="listbox"
+              aria-live="polite"
               className="absolute z-50 mt-1 w-full rounded-lg border border-border bg-popover shadow-lg overflow-hidden"
             >
               {citySuggestions.map((result, i) => (
@@ -408,7 +409,7 @@ export function BirthDataForm({
           value={birthCountry}
           onValueChange={(value) => setBirthCountry(value)}
         >
-          <SelectTrigger className="w-full bg-background/50">
+          <SelectTrigger className="w-full bg-background/50" aria-label="Select birth country">
             <SelectValue placeholder="Select country" />
           </SelectTrigger>
           <SelectContent>
@@ -422,7 +423,7 @@ export function BirthDataForm({
       </div>
 
       {/* Visual indicator of form completeness */}
-      <div className="flex items-center gap-2 pt-1">
+      <div className="flex items-center gap-2 pt-1" role="status" aria-live="polite">
         <div
           className={cn(
             "h-2 w-2 rounded-full transition-colors",

@@ -15,7 +15,7 @@ export default function PrivacyPolicyPage() {
           Privacy Policy
         </h1>
         <p className="text-sm text-muted-foreground">
-          Last updated: March 1, 2026
+          Last updated: March 3, 2026
         </p>
       </header>
 
@@ -429,7 +429,7 @@ export default function PrivacyPolicyPage() {
         {/* Footer separator */}
         <div className="border-t border-white/10 pt-8">
           <p className="text-sm text-muted-foreground">
-            This privacy policy is effective as of March 1, 2026.
+            This privacy policy is effective as of March 3, 2026.
           </p>
           <p className="text-sm text-muted-foreground mt-2">
             <Link

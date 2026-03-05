@@ -13,7 +13,6 @@ import {
   CardHeader,
   CardTitle,
   CardDescription,
-  CardContent,
   CardFooter,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -75,14 +74,6 @@ const topics: LearningTopic[] = [
       "Explore the geometric relationships between planets in your chart. Aspects reveal the dynamic interplay of energies that shape your personality and life.",
     badge: "5 Major",
   },
-  {
-    href: "/learn/houses",
-    icon: <BookOpen className="h-6 w-6" />,
-    title: "Reading Your Chart",
-    description:
-      "Tie it all together: learn how signs, planets, houses, and aspects combine to create the full picture of your astrological birth chart.",
-    badge: "Guide",
-  },
 ];
 
 export default function LearnPage() {
@@ -114,7 +105,7 @@ export default function LearnPage() {
 
       {/* Topic Cards Grid */}
       <section className="px-4 py-16">
-        <div className="mx-auto max-w-6xl grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mx-auto max-w-4xl grid grid-cols-1 gap-6 sm:grid-cols-2">
           {topics.map((topic) => (
             <Link key={topic.title} href={topic.href} className="group">
               <Card className="h-full border-white/10 bg-white/[0.02] transition-all hover:border-cosmic-purple/30 hover:bg-cosmic-purple/[0.03] hover:shadow-lg hover:shadow-cosmic-purple/5">

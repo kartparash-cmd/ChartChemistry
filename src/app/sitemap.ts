@@ -13,6 +13,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/learn/zodiac",
     "/learn/houses",
     "/learn/aspects",
+    "/learn/planets",
     "/privacy",
     "/terms",
     "/support",

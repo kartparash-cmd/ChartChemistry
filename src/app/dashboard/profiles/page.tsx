@@ -444,6 +444,14 @@ export default function ProfilesPage() {
           <div className="rounded-lg border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-400">
             {error}
             <button
+              type="button"
+              onClick={() => fetchProfiles()}
+              className="ml-3 underline hover:no-underline"
+            >
+              Retry
+            </button>
+            <button
+              type="button"
               onClick={() => setError(null)}
               className="ml-3 underline hover:no-underline"
             >
@@ -461,9 +469,9 @@ export default function ProfilesPage() {
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-cosmic-purple/10">
               <Sparkles className="h-8 w-8 text-cosmic-purple-light" />
             </div>
-            <h3 className="font-heading text-xl font-semibold mb-2">
+            <h2 className="font-heading text-xl font-semibold mb-2">
               No Profiles Yet
-            </h3>
+            </h2>
             <p className="text-sm text-muted-foreground max-w-md mx-auto mb-6">
               Create your first birth profile to unlock natal charts,
               compatibility reports, and personalized cosmic insights.

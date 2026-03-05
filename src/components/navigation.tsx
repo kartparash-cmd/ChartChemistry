@@ -15,6 +15,7 @@ import {
   LogIn,
   Shield,
   HelpCircle,
+  CreditCard,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -42,6 +43,7 @@ const authedNavLinks = [
   { href: "/transits", label: "Transits" },
   { href: "/wellness", label: "Wellness" },
   { href: "/connections", label: "Connections" },
+  { href: "/relationship", label: "Relationships" },
   { href: "/chat", label: "AI Chat" },
   { href: "/learn", label: "Learn" },
 ];
@@ -124,6 +126,9 @@ export function Navigation() {
               <button
                 onClick={() => setDropdownOpen(!dropdownOpen)}
                 aria-label="User menu"
+                aria-expanded={dropdownOpen}
+                aria-haspopup="menu"
+                aria-controls="user-menu"
                 className="flex items-center gap-2 rounded-full p-1 pr-3 transition-colors hover:bg-muted"
               >
                 {session.user.image ? (
@@ -154,6 +159,8 @@ export function Navigation() {
                       animate={{ opacity: 1, scale: 1, y: 0 }}
                       exit={{ opacity: 0, scale: 0.95, y: -5 }}
                       transition={{ duration: 0.15 }}
+                      role="menu"
+                      id="user-menu"
                       className="absolute right-0 top-full z-50 mt-2 w-56 rounded-xl border border-border bg-popover/95 backdrop-blur-xl p-1 shadow-xl"
                     >
                       <div className="px-3 py-2 border-b border-border mb-1">
@@ -171,6 +178,7 @@ export function Navigation() {
                       </div>
                       <Link
                         href="/dashboard"
+                        role="menuitem"
                         onClick={() => setDropdownOpen(false)}
                         className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-muted"
                       >
@@ -179,6 +187,7 @@ export function Navigation() {
                       </Link>
                       <Link
                         href="/dashboard?tab=settings"
+                        role="menuitem"
                         onClick={() => setDropdownOpen(false)}
                         className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-muted"
                       >
@@ -187,6 +196,7 @@ export function Navigation() {
                       </Link>
                       <Link
                         href="/support"
+                        role="menuitem"
                         onClick={() => setDropdownOpen(false)}
                         className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-muted"
                       >
@@ -196,6 +206,7 @@ export function Navigation() {
                       {session.user.role === "ADMIN" && (
                         <Link
                           href="/admin"
+                          role="menuitem"
                           onClick={() => setDropdownOpen(false)}
                           className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-amber-500 transition-colors hover:bg-muted"
                         >
@@ -204,6 +215,7 @@ export function Navigation() {
                         </Link>
                       )}
                       <button
+                        role="menuitem"
                         onClick={() => {
                           setDropdownOpen(false);
                           signOut({ callbackUrl: "/" });
@@ -306,6 +318,22 @@ export function Navigation() {
                         </p>
                       </div>
                     </div>
+                    <Link
+                      href="/dashboard"
+                      onClick={() => setMobileOpen(false)}
+                      className="flex items-center gap-2 rounded-lg px-4 py-3 text-sm transition-colors hover:bg-muted text-muted-foreground hover:text-foreground"
+                    >
+                      <LayoutDashboard className="h-4 w-4" />
+                      Dashboard
+                    </Link>
+                    <Link
+                      href="/pricing"
+                      onClick={() => setMobileOpen(false)}
+                      className="flex items-center gap-2 rounded-lg px-4 py-3 text-sm transition-colors hover:bg-muted text-muted-foreground hover:text-foreground"
+                    >
+                      <CreditCard className="h-4 w-4" />
+                      Pricing
+                    </Link>
                     <Link
                       href="/support"
                       onClick={() => setMobileOpen(false)}

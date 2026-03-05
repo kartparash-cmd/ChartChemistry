@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import Link from "next/link";
 import {
   Calendar,
@@ -147,13 +147,12 @@ const PRICING_TIERS = [
     period: "/mo",
     description: "Full reports with detailed AI analysis",
     features: [
-      "Everything in Free",
-      "Full synastry report",
-      "Composite chart analysis",
-      "Red flags & green flags",
-      "Growth area recommendations",
-      "Unlimited reports",
-      "Save & compare reports",
+      "Unlimited compatibility checks",
+      "Full synastry report (all 7 sections)",
+      "AI Astrologer chat",
+      "Save unlimited profiles",
+      "Red flags & growth insights",
+      "Priority support",
     ],
     cta: "Start Premium",
     href: "/pricing",
@@ -182,6 +181,8 @@ const PRICING_TIERS = [
 /* -------------------------------------------------------------------------- */
 
 export default function Home() {
+  const shouldReduceMotion = useReducedMotion();
+
   return (
     <div className="relative min-h-screen overflow-hidden">
       {/* ========================= HERO ========================= */}
@@ -190,7 +191,7 @@ export default function Home() {
 
         <motion.div
           className="relative z-10 mx-auto max-w-3xl space-y-6"
-          initial="hidden"
+          initial={shouldReduceMotion ? "visible" : "hidden"}
           animate="visible"
           variants={staggerContainer}
         >
@@ -225,7 +226,7 @@ export default function Home() {
             <Button
               asChild
               size="lg"
-              className="mt-4 h-14 rounded-full bg-gradient-to-r from-cosmic-purple to-gold px-8 text-base font-semibold text-white shadow-lg transition-all hover:shadow-cosmic-purple/40 hover:shadow-xl hover:brightness-110"
+              className="mt-4 h-14 rounded-full bg-gradient-to-r from-cosmic-purple to-gold px-8 text-base font-semibold text-white shadow-lg transition-all hover:shadow-cosmic-purple/40 hover:shadow-xl hover:brightness-110 focus-visible:ring-2 focus-visible:ring-cosmic-purple-light focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             >
               <Link href="/compatibility">
                 Check Your Compatibility &mdash; Free
@@ -244,7 +245,7 @@ export default function Home() {
         <div className="mx-auto max-w-5xl">
           <motion.div
             className="text-center"
-            initial="hidden"
+            initial={shouldReduceMotion ? "visible" : "hidden"}
             whileInView="visible"
             viewport={{ once: true, margin: "-100px" }}
             variants={fadeInUp}
@@ -257,8 +258,8 @@ export default function Home() {
           </motion.div>
 
           <motion.div
-            className="mt-14 grid gap-6 md:grid-cols-3"
-            initial="hidden"
+            className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
+            initial={shouldReduceMotion ? "visible" : "hidden"}
             whileInView="visible"
             viewport={{ once: true, margin: "-100px" }}
             variants={staggerContainer}
@@ -292,7 +293,7 @@ export default function Home() {
         <div className="mx-auto max-w-6xl">
           <motion.div
             className="text-center"
-            initial="hidden"
+            initial={shouldReduceMotion ? "visible" : "hidden"}
             whileInView="visible"
             viewport={{ once: true, margin: "-100px" }}
             variants={fadeInUp}
@@ -307,7 +308,7 @@ export default function Home() {
 
           <motion.div
             className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
-            initial="hidden"
+            initial={shouldReduceMotion ? "visible" : "hidden"}
             whileInView="visible"
             viewport={{ once: true, margin: "-100px" }}
             variants={staggerContainer}
@@ -337,7 +338,7 @@ export default function Home() {
         <div className="mx-auto max-w-5xl">
           <motion.div
             className="text-center"
-            initial="hidden"
+            initial={shouldReduceMotion ? "visible" : "hidden"}
             whileInView="visible"
             viewport={{ once: true, margin: "-100px" }}
             variants={fadeInUp}
@@ -353,8 +354,8 @@ export default function Home() {
           </motion.div>
 
           <motion.div
-            className="mt-14 grid gap-6 md:grid-cols-3"
-            initial="hidden"
+            className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
+            initial={shouldReduceMotion ? "visible" : "hidden"}
             whileInView="visible"
             viewport={{ once: true, margin: "-100px" }}
             variants={staggerContainer}
@@ -385,7 +386,7 @@ export default function Home() {
         <div className="mx-auto max-w-5xl">
           <motion.div
             className="text-center"
-            initial="hidden"
+            initial={shouldReduceMotion ? "visible" : "hidden"}
             whileInView="visible"
             viewport={{ once: true, margin: "-100px" }}
             variants={fadeInUp}
@@ -400,8 +401,8 @@ export default function Home() {
           </motion.div>
 
           <motion.div
-            className="mt-14 grid gap-6 md:grid-cols-3"
-            initial="hidden"
+            className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
+            initial={shouldReduceMotion ? "visible" : "hidden"}
             whileInView="visible"
             viewport={{ once: true, margin: "-100px" }}
             variants={staggerContainer}

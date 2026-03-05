@@ -69,6 +69,19 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark" suppressHydrationWarning>
       <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "Organization",
+              name: "ChartChemistry",
+              url: "https://chartchemistry.com",
+              description: "AI-powered astrology compatibility analysis using full synastry charts, composite analysis, and house overlays.",
+              logo: "https://chartchemistry.com/og-image.png",
+            }),
+          }}
+        />
         {process.env.NEXT_PUBLIC_UMAMI_URL && process.env.NEXT_PUBLIC_UMAMI_SITE_ID && (
           <Script
             src={`${process.env.NEXT_PUBLIC_UMAMI_URL}/script.js`}

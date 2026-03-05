@@ -323,6 +323,7 @@ function NarrativeSectionCard({
     >
       <button
         onClick={() => !isLocked && setIsOpen(!isOpen)}
+        aria-expanded={isOpen}
         className="flex w-full items-center justify-between p-4 text-left transition-colors hover:bg-white/[0.02]"
       >
         <div className="flex items-center gap-3">
@@ -532,7 +533,7 @@ export default function ReportPage() {
       {/* Print-only branding header */}
       <div className="print-header">
         <div className="print-header-brand">
-          <span className="print-header-logo">&#x2728;</span>
+          <span className="print-header-logo" aria-hidden="true">&#x2728;</span>
           <span className="print-header-title">ChartChemistry</span>
         </div>
         <p className="print-header-subtitle">AI-Powered Astrological Compatibility Report</p>
@@ -588,9 +589,9 @@ export default function ReportPage() {
           <div className="lg:col-span-1 space-y-6">
             {/* Overall Score */}
             <div className="rounded-xl border border-white/10 bg-white/[0.03] p-6 text-center backdrop-blur-sm">
-              <h3 className="font-heading text-sm font-semibold mb-4 text-muted-foreground uppercase tracking-wider">
+              <h2 className="font-heading text-sm font-semibold mb-4 text-muted-foreground uppercase tracking-wider">
                 Overall Score
-              </h3>
+              </h2>
               <ScoreCircle score={report.overallScore} />
               {/* Print-only plain text score */}
               <div className="print-score-text">
@@ -601,9 +602,9 @@ export default function ReportPage() {
 
             {/* Radar Chart */}
             <div className="rounded-xl border border-white/10 bg-white/[0.03] p-6 backdrop-blur-sm print:hidden">
-              <h3 className="font-heading text-sm font-semibold mb-4 text-muted-foreground uppercase tracking-wider text-center">
+              <h2 className="font-heading text-sm font-semibold mb-4 text-muted-foreground uppercase tracking-wider text-center">
                 Dimension Breakdown
-              </h3>
+              </h2>
               <RadarChart
                 scores={scores.map((s) => ({
                   label: s.label,
@@ -614,9 +615,9 @@ export default function ReportPage() {
 
             {/* Individual Score Bars */}
             <div className="rounded-xl border border-white/10 bg-white/[0.03] p-6 backdrop-blur-sm space-y-4">
-              <h3 className="font-heading text-sm font-semibold mb-2 text-muted-foreground uppercase tracking-wider">
+              <h2 className="font-heading text-sm font-semibold mb-2 text-muted-foreground uppercase tracking-wider">
                 Scores
-              </h3>
+              </h2>
               {scores.map((s, i) => (
                 <ScoreBar
                   key={s.label}
@@ -709,6 +710,8 @@ export default function ReportPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 20 }}
+            role="status"
+            aria-live="polite"
             className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-xl border border-white/10 bg-navy-light/95 backdrop-blur-xl px-6 py-3 shadow-xl"
           >
             <p className="text-sm font-medium">Link copied to clipboard</p>

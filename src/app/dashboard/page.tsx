@@ -26,6 +26,7 @@ import {
   LogOut,
   Mail,
   Shield,
+  AlertTriangle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -238,6 +239,7 @@ function DashboardContent() {
   const searchParams = useSearchParams();
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const initialTab = searchParams.get("tab") || "chart";
   const [activeTab, setActiveTab] = useState(initialTab);
 
@@ -254,12 +256,25 @@ function DashboardContent() {
 
     const fetchData = async () => {
       try {
+        setError(null);
         const res = await fetch("/api/dashboard");
         if (res.ok) {
           const json = await res.json();
           setData(json);
-        } else {
+        } else if (res.status === 404) {
           // API not built yet; use empty state
+          setData({
+            profile: null,
+            reports: [],
+            stats: {
+              totalReports: 0,
+              highestScore: 0,
+              plan: session?.user?.plan || "FREE",
+            },
+          });
+        } else {
+          const errData = await res.json().catch(() => ({}));
+          setError(errData.message || errData.error || "Failed to load dashboard data. Please try again.");
           setData({
             profile: null,
             reports: [],
@@ -271,6 +286,7 @@ function DashboardContent() {
           });
         }
       } catch {
+        setError("Could not connect to the server. Please try again.");
         setData({
           profile: null,
           reports: [],
@@ -358,6 +374,22 @@ function DashboardContent() {
           </motion.div>
         </div>
       </section>
+
+      {/* Error Banner */}
+      {error && (
+        <div className="mx-auto max-w-7xl px-4 pt-4 sm:px-6 lg:px-8">
+          <div className="flex items-center gap-3 rounded-lg border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-400">
+            <AlertTriangle className="h-4 w-4 shrink-0" />
+            <span className="flex-1">{error}</span>
+            <button
+              onClick={() => setError(null)}
+              className="shrink-0 underline hover:no-underline"
+            >
+              Dismiss
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Main Content */}
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">

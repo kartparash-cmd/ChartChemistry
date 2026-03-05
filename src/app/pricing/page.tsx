@@ -40,7 +40,7 @@ const tiers: PricingTier[] = [
     monthlyPrice: 0,
     annualPrice: 0,
     features: [
-      "1 basic compatibility check per day",
+      "3 basic compatibility checks per day",
       "Sun, Moon & Rising comparison",
       "Short AI summary",
       "Shareable results link",
@@ -164,7 +164,7 @@ export default function PricingPage() {
   const router = useRouter();
   const [billing, setBilling] = useState<BillingPeriod>("monthly");
   const [toastVisible, setToastVisible] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [loadingTier, setLoadingTier] = useState<string | null>(null);
 
   const handleCta = async (tierName: string) => {
     if (tierName === "Free") {
@@ -186,7 +186,7 @@ export default function PricingPage() {
       ? "ANNUAL"
       : "PREMIUM";
 
-    setLoading(true);
+    setLoadingTier(tierName);
     try {
       const res = await fetch("/api/stripe/checkout", {
         method: "POST",
@@ -206,7 +206,7 @@ export default function PricingPage() {
       setToastVisible(true);
       setTimeout(() => setToastVisible(false), 3000);
     } finally {
-      setLoading(false);
+      setLoadingTier(null);
     }
   };
 
@@ -376,7 +376,7 @@ export default function PricingPage() {
               {/* CTA */}
               <Button
                 onClick={() => handleCta(tier.name)}
-                disabled={loading}
+                disabled={loadingTier !== null}
                 variant={tier.ctaVariant}
                 className={cn(
                   "w-full h-11 font-medium transition-all",
@@ -384,8 +384,8 @@ export default function PricingPage() {
                     "bg-cosmic-purple hover:bg-cosmic-purple-dark text-white shadow-lg shadow-cosmic-purple/20"
                 )}
               >
-                {loading ? "Redirecting..." : tier.cta}
-                {!loading && <ArrowRight className="ml-2 h-4 w-4" />}
+                {loadingTier === tier.name ? "Redirecting..." : tier.cta}
+                {loadingTier !== tier.name && <ArrowRight className="ml-2 h-4 w-4" />}
               </Button>
             </motion.div>
           ))}

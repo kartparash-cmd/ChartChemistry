@@ -121,6 +121,7 @@ export function BirthDataForm({
   const [citySuggestions, setCitySuggestions] = useState<CityResult[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [citySearching, setCitySearching] = useState(false);
+  const [highlightedIndex, setHighlightedIndex] = useState(-1);
   const cityInputRef = useRef<HTMLInputElement>(null);
   const suggestionsRef = useRef<HTMLDivElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(null);
@@ -215,6 +216,29 @@ export function BirthDataForm({
     setBirthCity(result.city);
     setSelectedCoords({ lat: result.lat, lon: result.lon });
     setShowSuggestions(false);
+    setHighlightedIndex(-1);
+  };
+
+  const handleCityKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!showSuggestions || citySuggestions.length === 0) return;
+
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setHighlightedIndex((prev) =>
+        prev < citySuggestions.length - 1 ? prev + 1 : 0
+      );
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setHighlightedIndex((prev) =>
+        prev > 0 ? prev - 1 : citySuggestions.length - 1
+      );
+    } else if (e.key === "Enter" && highlightedIndex >= 0) {
+      e.preventDefault();
+      handleCitySelect(citySuggestions[highlightedIndex]);
+    } else if (e.key === "Escape") {
+      setShowSuggestions(false);
+      setHighlightedIndex(-1);
+    }
   };
 
   return (
@@ -273,6 +297,7 @@ export function BirthDataForm({
               <TooltipTrigger asChild>
                 <button
                   type="button"
+                  aria-label="More info about birth time"
                   className="text-muted-foreground hover:text-foreground transition-colors"
                 >
                   <Info className="h-3.5 w-3.5" />
@@ -311,11 +336,22 @@ export function BirthDataForm({
             onChange={(e) => {
               setBirthCity(e.target.value);
               setSelectedCoords(null);
+              setHighlightedIndex(-1);
               searchCities(e.target.value);
             }}
             onFocus={() => {
               if (citySuggestions.length > 0) setShowSuggestions(true);
             }}
+            onKeyDown={handleCityKeyDown}
+            role="combobox"
+            aria-expanded={showSuggestions && citySuggestions.length > 0}
+            aria-autocomplete="list"
+            aria-controls={`city-listbox-${label}`}
+            aria-activedescendant={
+              highlightedIndex >= 0
+                ? `city-option-${label}-${highlightedIndex}`
+                : undefined
+            }
             autoComplete="off"
             className={cn(
               "bg-background/50 pr-8",
@@ -332,13 +368,21 @@ export function BirthDataForm({
           {showSuggestions && citySuggestions.length > 0 && (
             <div
               ref={suggestionsRef}
+              id={`city-listbox-${label}`}
+              role="listbox"
               className="absolute z-50 mt-1 w-full rounded-lg border border-border bg-popover shadow-lg overflow-hidden"
             >
               {citySuggestions.map((result, i) => (
                 <button
                   key={`${result.lat}-${result.lon}-${i}`}
+                  id={`city-option-${label}-${i}`}
+                  role="option"
+                  aria-selected={i === highlightedIndex}
                   type="button"
-                  className="flex w-full items-start gap-2 px-3 py-2.5 text-left text-sm hover:bg-accent transition-colors"
+                  className={cn(
+                    "flex w-full items-start gap-2 px-3 py-2.5 text-left text-sm hover:bg-accent transition-colors",
+                    i === highlightedIndex && "bg-accent"
+                  )}
                   onClick={() => handleCitySelect(result)}
                 >
                   <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />

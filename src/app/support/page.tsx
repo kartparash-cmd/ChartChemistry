@@ -34,6 +34,7 @@ export default function SupportPage() {
   const [subject, setSubject] = useState("");
   const [description, setDescription] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!session) return;
@@ -46,21 +47,33 @@ export default function SupportPage() {
     e.preventDefault();
     if (!subject.trim() || !description.trim()) return;
     setSubmitting(true);
-    const res = await fetch("/api/support", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ subject: subject.trim(), description: description.trim() }),
-    });
-    const data = await res.json();
-    if (data.ticket) {
-      router.push(`/support/${data.ticket.id}`);
+    setError(null);
+    try {
+      const res = await fetch("/api/support", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ subject: subject.trim(), description: description.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || "Failed to submit ticket. Please try again.");
+        setSubmitting(false);
+        return;
+      }
+      if (data.ticket) {
+        router.push(`/support/${data.ticket.id}`);
+      } else {
+        setError("Something went wrong. Please try again.");
+      }
+    } catch {
+      setError("Network error. Please check your connection and try again.");
     }
     setSubmitting(false);
   }
 
   if (!session) {
     return (
-      <div className="mx-auto max-w-2xl px-4 py-16 text-center">
+      <div className="mx-auto max-w-2xl px-4 pt-24 pb-16 text-center">
         <h1 className="text-2xl font-bold">Support</h1>
         <p className="text-muted-foreground mt-2">Please sign in to access support.</p>
         <Button asChild className="mt-4 bg-cosmic-purple hover:bg-cosmic-purple-dark text-white">
@@ -71,7 +84,7 @@ export default function SupportPage() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-8 space-y-6">
+    <div className="mx-auto max-w-2xl px-4 pt-24 pb-8 space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">Support</h1>
@@ -107,8 +120,13 @@ export default function SupportPage() {
               className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-cosmic-purple/50"
             />
           </div>
+          {error && (
+            <div className="rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+              {error}
+            </div>
+          )}
           <div className="flex gap-2 justify-end">
-            <Button type="button" variant="outline" onClick={() => setShowForm(false)}>
+            <Button type="button" variant="outline" onClick={() => { setShowForm(false); setError(null); }}>
               Cancel
             </Button>
             <Button

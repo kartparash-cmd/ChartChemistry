@@ -11,8 +11,9 @@ const fadeInUp = {
 };
 
 const staggerContainer = {
-  hidden: {},
+  hidden: { opacity: 0 },
   visible: {
+    opacity: 1,
     transition: {
       staggerChildren: 0.15,
     },
@@ -21,7 +22,7 @@ const staggerContainer = {
 
 export default function NotFound() {
   return (
-    <main className="relative flex min-h-[80vh] flex-col items-center justify-center px-4 text-center">
+    <div className="relative flex min-h-[80vh] flex-col items-center justify-center px-4 text-center">
       <motion.div
         className="mx-auto max-w-lg space-y-6"
         initial="hidden"
@@ -102,6 +103,6 @@ export default function NotFound() {
           <Sparkles className="h-4 w-4 text-gold" />
         </motion.div>
       </motion.div>
-    </main>
+    </div>
   );
 }

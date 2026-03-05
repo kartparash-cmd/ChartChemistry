@@ -2,14 +2,14 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "Privacy Policy | ChartChemistry",
+  title: "Privacy Policy",
   description:
     "Learn how ChartChemistry collects, uses, and protects your personal data including birth information, account details, and astrological readings.",
 };
 
 export default function PrivacyPolicyPage() {
   return (
-    <div className="max-w-4xl mx-auto px-4 py-16">
+    <div className="max-w-4xl mx-auto px-4 pt-24 pb-16">
       <header className="mb-12">
         <h1 className="font-heading text-4xl font-bold cosmic-text mb-4">
           Privacy Policy
@@ -307,8 +307,7 @@ export default function PrivacyPolicyPage() {
             </li>
             <li>
               <strong className="text-foreground">Data export:</strong> You
-              can request an export of your data in a machine-readable format
-              (JSON).
+              may contact us to request your data.
             </li>
             <li>
               <strong className="text-foreground">Withdraw consent:</strong>{" "}

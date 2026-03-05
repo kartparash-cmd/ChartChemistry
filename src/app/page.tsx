@@ -132,9 +132,9 @@ const PRICING_TIERS = [
     period: "",
     description: "Get a taste of real compatibility analysis",
     features: [
-      "Overall compatibility score",
-      "5 dimension breakdown",
-      "Basic AI interpretation",
+      "3 compatibility checks per day",
+      "Sun, Moon & Rising comparison",
+      "Short AI summary",
       "Shareable results link",
     ],
     cta: "Get Started Free",
@@ -183,7 +183,7 @@ const PRICING_TIERS = [
 
 export default function Home() {
   return (
-    <main className="relative min-h-screen overflow-hidden">
+    <div className="relative min-h-screen overflow-hidden">
       {/* ========================= HERO ========================= */}
       <section className="relative flex min-h-[90vh] flex-col items-center justify-center px-4 text-center">
         <StarField className="z-0" />
@@ -452,7 +452,7 @@ export default function Home() {
                     "mt-6 w-full rounded-full font-semibold",
                     tier.featured
                       ? "bg-gradient-to-r from-cosmic-purple to-gold text-white hover:brightness-110"
-                      : "variant-outline"
+                      : ""
                   )}
                   variant={tier.featured ? "default" : "outline"}
                 >
@@ -465,6 +465,6 @@ export default function Home() {
       </section>
 
       {/* Footer is rendered globally in layout.tsx */}
-    </main>
+    </div>
   );
 }

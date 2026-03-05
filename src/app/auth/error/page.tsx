@@ -74,9 +74,9 @@ function AuthErrorContent() {
               <AlertTriangle className="h-7 w-7 text-red-400" />
             </div>
             <CardTitle className="text-xl cosmic-text">
-              Sign-in Error
+              <h1>Sign-in Error</h1>
             </CardTitle>
-            <CardDescription className="text-muted-foreground">
+            <CardDescription role="alert" aria-live="polite" className="text-muted-foreground">
               {errorMessage}
             </CardDescription>
           </CardHeader>

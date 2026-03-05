@@ -101,8 +101,11 @@ function VerifyEmailContent() {
               className="flex flex-col items-center gap-4 py-4"
             >
               <Loader2 className="h-10 w-10 text-cosmic-purple-light animate-spin" />
+              <h1 className="text-xl font-semibold text-foreground">
+                Verifying your email
+              </h1>
               <p className="text-sm text-muted-foreground">
-                Verifying your email...
+                Please wait...
               </p>
             </motion.div>
           )}
@@ -123,9 +126,9 @@ function VerifyEmailContent() {
               >
                 Verified
               </Badge>
-              <h2 className="text-xl font-semibold text-foreground">
+              <h1 className="text-xl font-semibold text-foreground">
                 Email verified!
-              </h2>
+              </h1>
               <p className="text-sm text-muted-foreground text-center">
                 {message}
               </p>
@@ -143,6 +146,8 @@ function VerifyEmailContent() {
 
           {status === "error" && (
             <motion.div
+              role="alert"
+              aria-live="polite"
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.4 }}
@@ -157,9 +162,9 @@ function VerifyEmailContent() {
               >
                 Verification Failed
               </Badge>
-              <h2 className="text-xl font-semibold text-foreground">
+              <h1 className="text-xl font-semibold text-foreground">
                 Unable to verify
-              </h2>
+              </h1>
               <p className="text-sm text-muted-foreground text-center">
                 {message}
               </p>
@@ -197,9 +202,9 @@ function VerifyEmailContent() {
               >
                 Check Your Email
               </Badge>
-              <h2 className="text-xl font-semibold text-foreground">
+              <h1 className="text-xl font-semibold text-foreground">
                 Verification link sent
-              </h2>
+              </h1>
               <p className="text-sm text-muted-foreground text-center">
                 We&apos;ve sent a verification link to your email address.
                 Please check your inbox and click the link to verify your

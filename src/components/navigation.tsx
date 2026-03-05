@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
@@ -32,6 +32,7 @@ const publicNavLinks = [
   { href: "/compatibility", label: "Compatibility" },
   { href: "/learn", label: "Learn" },
   { href: "/pricing", label: "Pricing" },
+  { href: "/about", label: "About" },
 ];
 
 const authedNavLinks = [
@@ -39,6 +40,8 @@ const authedNavLinks = [
   { href: "/compatibility", label: "Compatibility" },
   { href: "/horoscope", label: "Horoscope" },
   { href: "/transits", label: "Transits" },
+  { href: "/wellness", label: "Wellness" },
+  { href: "/connections", label: "Connections" },
   { href: "/chat", label: "AI Chat" },
   { href: "/learn", label: "Learn" },
 ];
@@ -48,6 +51,18 @@ export function Navigation() {
   const { data: session, status } = useSession();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+
+  // Close dropdown and mobile menu on Escape key press
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setDropdownOpen(false);
+        setMobileOpen(false);
+      }
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   const isAuthPage = pathname?.startsWith("/auth");
   if (isAuthPage) return null;
@@ -59,7 +74,7 @@ export function Navigation() {
       transition={{ duration: 0.4, ease: "easeOut" }}
       className="sticky top-0 z-50 w-full border-b border-border bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60"
     >
-      <nav className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+      <nav aria-label="Main navigation" className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2 group">
           <Sparkles className="h-5 w-5 text-cosmic-purple-light transition-transform group-hover:rotate-12" />
@@ -71,7 +86,10 @@ export function Navigation() {
         {/* Desktop Navigation */}
         <div className="hidden md:flex items-center gap-1">
           {(session ? authedNavLinks : publicNavLinks).map((link) => {
-            const isActive = pathname === link.href;
+            const isActive =
+              link.href === "/"
+                ? pathname === "/"
+                : pathname === link.href || pathname.startsWith(link.href + "/");
             return (
               <Link
                 key={link.href}
@@ -105,6 +123,7 @@ export function Navigation() {
             <div className="relative">
               <button
                 onClick={() => setDropdownOpen(!dropdownOpen)}
+                aria-label="User menu"
                 className="flex items-center gap-2 rounded-full p-1 pr-3 transition-colors hover:bg-muted"
               >
                 {session.user.image ? (
@@ -138,8 +157,13 @@ export function Navigation() {
                       className="absolute right-0 top-full z-50 mt-2 w-56 rounded-xl border border-border bg-popover/95 backdrop-blur-xl p-1 shadow-xl"
                     >
                       <div className="px-3 py-2 border-b border-border mb-1">
-                        <p className="text-sm font-medium truncate">
+                        <p className="text-sm font-medium truncate flex items-center">
                           {session.user.name}
+                          {session.user.plan && session.user.plan !== "FREE" && (
+                            <span className="ml-2 rounded-full bg-cosmic-purple/20 px-2 py-0.5 text-[10px] font-semibold text-cosmic-purple-light">
+                              {session.user.plan}
+                            </span>
+                          )}
                         </p>
                         <p className="text-xs text-muted-foreground truncate">
                           {session.user.email}
@@ -208,7 +232,7 @@ export function Navigation() {
         <div className="md:hidden">
           <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-9 w-9">
+              <Button variant="ghost" size="icon" className="h-9 w-9" aria-label="Open menu">
                 <Menu className="h-5 w-5" />
                 <span className="sr-only">Toggle menu</span>
               </Button>
@@ -226,7 +250,10 @@ export function Navigation() {
 
               <div className="mt-8 flex flex-col gap-1">
                 {(session ? authedNavLinks : publicNavLinks).map((link) => {
-                  const isActive = pathname === link.href;
+                  const isActive =
+                    link.href === "/"
+                      ? pathname === "/"
+                      : pathname === link.href || pathname.startsWith(link.href + "/");
                   return (
                     <Link
                       key={link.href}
@@ -266,8 +293,13 @@ export function Navigation() {
                         </div>
                       )}
                       <div className="min-w-0">
-                        <p className="text-sm font-medium truncate">
+                        <p className="text-sm font-medium truncate flex items-center">
                           {session.user.name}
+                          {session.user.plan && session.user.plan !== "FREE" && (
+                            <span className="ml-2 shrink-0 rounded-full bg-cosmic-purple/20 px-2 py-0.5 text-[10px] font-semibold text-cosmic-purple-light">
+                              {session.user.plan}
+                            </span>
+                          )}
                         </p>
                         <p className="text-xs text-muted-foreground truncate">
                           {session.user.email}

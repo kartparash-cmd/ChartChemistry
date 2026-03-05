@@ -94,9 +94,12 @@ function ResetPasswordContent() {
                   ChartChemistry
                 </span>
               </div>
+              <h1 className="text-sm text-muted-foreground font-normal">
+                Reset your password
+              </h1>
             </div>
             <div className="text-center">
-              <div className="mb-4 rounded-lg border border-red-500/20 bg-red-500/10 p-3 text-sm text-red-400">
+              <div role="alert" aria-live="polite" className="mb-4 rounded-lg border border-red-500/20 bg-red-500/10 p-3 text-sm text-red-400">
                 Invalid or missing reset token. Please request a new password
                 reset link.
               </div>
@@ -144,9 +147,9 @@ function ResetPasswordContent() {
                 ChartChemistry
               </span>
             </div>
-            <p className="text-sm text-muted-foreground">
+            <h1 className="text-sm text-muted-foreground font-normal">
               Set your new password
-            </p>
+            </h1>
           </div>
 
           {isSuccess ? (
@@ -175,7 +178,7 @@ function ResetPasswordContent() {
           ) : (
             <>
               {errorMessage && (
-                <div className="mb-4 rounded-lg border border-red-500/20 bg-red-500/10 p-3 text-sm text-red-400">
+                <div role="alert" aria-live="polite" className="mb-4 rounded-lg border border-red-500/20 bg-red-500/10 p-3 text-sm text-red-400">
                   {errorMessage}
                 </div>
               )}
@@ -192,6 +195,7 @@ function ResetPasswordContent() {
                       placeholder="Enter new password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
+                      autoComplete="new-password"
                       className="h-11 bg-white/5 border-white/10 focus:border-cosmic-purple/50 focus:ring-cosmic-purple/20 pr-10"
                       required
                       minLength={8}
@@ -199,6 +203,7 @@ function ResetPasswordContent() {
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
+                      aria-label={showPassword ? "Hide password" : "Show password"}
                       className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                     >
                       {showPassword ? (
@@ -224,6 +229,7 @@ function ResetPasswordContent() {
                       placeholder="Confirm new password"
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
+                      autoComplete="new-password"
                       className="h-11 bg-white/5 border-white/10 focus:border-cosmic-purple/50 focus:ring-cosmic-purple/20 pr-10"
                       required
                       minLength={8}
@@ -233,6 +239,7 @@ function ResetPasswordContent() {
                       onClick={() =>
                         setShowConfirmPassword(!showConfirmPassword)
                       }
+                      aria-label={showConfirmPassword ? "Hide password" : "Show password"}
                       className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                     >
                       {showConfirmPassword ? (
@@ -250,9 +257,13 @@ function ResetPasswordContent() {
                   disabled={isLoading || !password || !confirmPassword}
                 >
                   {isLoading ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  ) : null}
-                  Reset Password
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Resetting...
+                    </>
+                  ) : (
+                    "Reset Password"
+                  )}
                 </Button>
               </form>
             </>

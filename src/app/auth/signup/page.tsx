@@ -104,13 +104,13 @@ export default function SignUpPage() {
                 ChartChemistry
               </span>
             </div>
-            <p className="text-sm text-muted-foreground">
+            <h1 className="text-sm text-muted-foreground font-normal">
               Create your account to explore cosmic compatibility
-            </p>
+            </h1>
           </div>
 
           {errorMessage && (
-            <div className="mb-4 rounded-lg border border-red-500/20 bg-red-500/10 p-3 text-sm text-red-400">
+            <div role="alert" aria-live="polite" className="mb-4 rounded-lg border border-red-500/20 bg-red-500/10 p-3 text-sm text-red-400">
               {errorMessage}
             </div>
           )}
@@ -150,7 +150,7 @@ export default function SignUpPage() {
           {/* Divider */}
           <div className="relative my-6">
             <Separator className="bg-white/10" />
-            <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#0F172A] px-3 text-xs text-muted-foreground">
+            <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-background px-3 text-xs text-muted-foreground">
               or
             </span>
           </div>
@@ -167,6 +167,7 @@ export default function SignUpPage() {
                 placeholder="Your name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
+                autoComplete="name"
                 className="h-11 bg-white/5 border-white/10 focus:border-cosmic-purple/50 focus:ring-cosmic-purple/20"
               />
             </div>
@@ -180,6 +181,7 @@ export default function SignUpPage() {
                 placeholder="you@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                autoComplete="email"
                 className="h-11 bg-white/5 border-white/10 focus:border-cosmic-purple/50 focus:ring-cosmic-purple/20"
                 required
               />
@@ -195,6 +197,7 @@ export default function SignUpPage() {
                   placeholder="At least 8 characters"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  autoComplete="new-password"
                   className="h-11 bg-white/5 border-white/10 focus:border-cosmic-purple/50 focus:ring-cosmic-purple/20 pr-10"
                   minLength={8}
                   required
@@ -202,6 +205,7 @@ export default function SignUpPage() {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                 >
                   {showPassword ? (
@@ -218,9 +222,13 @@ export default function SignUpPage() {
               disabled={isLoadingSignup || !email || !password}
             >
               {isLoadingSignup ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : null}
-              Create Account
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Signing up...
+                </>
+              ) : (
+                "Create Account"
+              )}
             </Button>
           </form>
 

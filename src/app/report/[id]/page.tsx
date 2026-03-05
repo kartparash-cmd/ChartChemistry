@@ -247,14 +247,22 @@ function ScoreBar({
   score,
   icon,
   delay = 0,
+  invertColor = false,
 }: {
   label: string;
   score: number;
   icon: React.ReactNode;
   delay?: number;
+  invertColor?: boolean;
 }) {
-  const color =
-    score >= 70
+  // For conflict, high score = bad (red/amber), low score = good (green)
+  const color = invertColor
+    ? score >= 70
+      ? "bg-red-400"
+      : score >= 50
+        ? "bg-gold"
+        : "bg-emerald-400"
+    : score >= 70
       ? "bg-emerald-400"
       : score >= 50
         ? "bg-gold"
@@ -616,6 +624,7 @@ export default function ReportPage() {
                   score={s.value}
                   icon={s.icon}
                   delay={i * 0.1}
+                  invertColor={s.label === "Conflict"}
                 />
               ))}
               {/* Print-only score table */}

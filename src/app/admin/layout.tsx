@@ -5,6 +5,7 @@ import { AdminSidebar } from "@/components/admin/admin-sidebar";
 
 export const metadata = {
   title: "Admin Dashboard",
+  robots: "noindex, nofollow",
 };
 
 export default async function AdminLayout({

@@ -6,10 +6,14 @@ const footerLinks = {
   product: [
     { href: "/", label: "Home" },
     { href: "/compatibility", label: "Compatibility" },
-    { href: "/horoscope", label: "Daily Horoscope" },
+    { href: "/learn", label: "Learn" },
     { href: "/pricing", label: "Pricing" },
     { href: "/dashboard", label: "Dashboard" },
+  ],
+  company: [
     { href: "/about", label: "About" },
+    { href: "/support", label: "Support" },
+    { href: "mailto:support@chartchemistry.com", label: "Contact" },
   ],
   legal: [
     { href: "/privacy", label: "Privacy Policy" },
@@ -21,60 +25,94 @@ export function Footer() {
   return (
     <footer className="border-t border-border bg-muted/50">
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
-          {/* Branding */}
-          <div className="col-span-1 sm:col-span-2 lg:col-span-1">
-            <Link href="/" className="flex items-center gap-2 mb-4">
-              <Sparkles className="h-5 w-5 text-cosmic-purple-light" />
-              <span className="font-heading text-lg font-bold cosmic-text">
-                ChartChemistry
-              </span>
-            </Link>
-            <p className="text-sm text-muted-foreground leading-relaxed max-w-xs">
-              AI-powered astrological compatibility analysis. Discover deeper
-              connections through the stars.
-            </p>
-          </div>
+        <nav aria-label="Footer navigation">
+          <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
+            {/* Branding */}
+            <div className="col-span-1 sm:col-span-2 lg:col-span-1">
+              <Link
+                href="/"
+                className="flex items-center gap-2 mb-4"
+                aria-label="ChartChemistry home"
+              >
+                <Sparkles className="h-5 w-5 text-cosmic-purple-light" aria-hidden="true" />
+                <span className="font-heading text-lg font-bold cosmic-text">
+                  ChartChemistry
+                </span>
+              </Link>
+              <p className="text-sm text-muted-foreground leading-relaxed max-w-xs">
+                AI-powered astrological compatibility analysis. Discover deeper
+                connections through the stars.
+              </p>
+            </div>
 
-          {/* Product Links */}
-          <div>
-            <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-foreground/80">
-              Product
-            </h3>
-            <ul className="space-y-3">
-              {footerLinks.product.map((link) => (
-                <li key={link.href}>
-                  <Link
-                    href={link.href}
-                    className="text-sm text-muted-foreground transition-colors hover:text-cosmic-purple-light"
-                  >
-                    {link.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
+            {/* Product Links */}
+            <div>
+              <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-foreground/80">
+                Product
+              </h3>
+              <ul className="space-y-3">
+                {footerLinks.product.map((link) => (
+                  <li key={link.href}>
+                    <Link
+                      href={link.href}
+                      className="text-sm text-muted-foreground transition-colors hover:text-cosmic-purple-light"
+                    >
+                      {link.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
 
-          {/* Legal Links */}
-          <div>
-            <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-foreground/80">
-              Legal
-            </h3>
-            <ul className="space-y-3">
-              {footerLinks.legal.map((link) => (
-                <li key={link.href}>
-                  <Link
-                    href={link.href}
-                    className="text-sm text-muted-foreground transition-colors hover:text-cosmic-purple-light"
-                  >
-                    {link.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
+            {/* Company Links */}
+            <div>
+              <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-foreground/80">
+                Company
+              </h3>
+              <ul className="space-y-3">
+                {footerLinks.company.map((link) => (
+                  <li key={link.href}>
+                    {link.href.startsWith("mailto:") ? (
+                      <a
+                        href={link.href}
+                        className="text-sm text-muted-foreground transition-colors hover:text-cosmic-purple-light"
+                        aria-label="Send email to ChartChemistry support"
+                      >
+                        {link.label}
+                      </a>
+                    ) : (
+                      <Link
+                        href={link.href}
+                        className="text-sm text-muted-foreground transition-colors hover:text-cosmic-purple-light"
+                      >
+                        {link.label}
+                      </Link>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </div>
 
-        </div>
+            {/* Legal Links */}
+            <div>
+              <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-foreground/80">
+                Legal
+              </h3>
+              <ul className="space-y-3">
+                {footerLinks.legal.map((link) => (
+                  <li key={link.href}>
+                    <Link
+                      href={link.href}
+                      className="text-sm text-muted-foreground transition-colors hover:text-cosmic-purple-light"
+                    >
+                      {link.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </nav>
 
         <Separator className="my-8 bg-border" />
 

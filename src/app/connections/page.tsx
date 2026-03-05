@@ -222,7 +222,7 @@ function EmptyState() {
           asChild
           className="bg-cosmic-purple text-white hover:bg-cosmic-purple-dark"
         >
-          <Link href="/dashboard">
+          <Link href="/dashboard/profiles">
             <Plus className="mr-2 h-4 w-4" />
             Add a Birth Profile
           </Link>
@@ -255,6 +255,7 @@ export default function ConnectionsPage() {
   const [person2Id, setPerson2Id] = useState("");
   const [quickResult, setQuickResult] = useState<QuickResult | null>(null);
   const [error, setError] = useState("");
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -269,6 +270,7 @@ export default function ConnectionsPage() {
 
     const fetchData = async () => {
       try {
+        setFetchError(null);
         const [profilesRes, reportsRes] = await Promise.all([
           fetch("/api/profile"),
           fetch("/api/dashboard").catch(() => null),
@@ -277,6 +279,8 @@ export default function ConnectionsPage() {
         if (profilesRes.ok) {
           const profilesData = await profilesRes.json();
           setProfiles(profilesData.profiles || []);
+        } else {
+          setFetchError("Failed to load profiles. Please try refreshing the page.");
         }
 
         if (reportsRes && reportsRes.ok) {
@@ -284,7 +288,7 @@ export default function ConnectionsPage() {
           setReports(reportsData.reports || []);
         }
       } catch {
-        // Silently handle errors -- empty state will show
+        setFetchError("Could not connect to the server. Please try again.");
       } finally {
         setLoading(false);
       }
@@ -422,7 +426,7 @@ export default function ConnectionsPage() {
                 size="sm"
                 className="bg-cosmic-purple text-white hover:bg-cosmic-purple-dark"
               >
-                <Link href="/dashboard">
+                <Link href="/dashboard/profiles">
                   <Plus className="mr-2 h-3 w-3" />
                   Add Profile
                 </Link>
@@ -433,6 +437,20 @@ export default function ConnectionsPage() {
       </section>
 
       <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8 space-y-8">
+        {/* Fetch error banner */}
+        {fetchError && (
+          <div className="flex items-center gap-3 rounded-lg border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-400">
+            <AlertTriangle className="h-4 w-4 shrink-0" />
+            <span className="flex-1">{fetchError}</span>
+            <button
+              onClick={() => setFetchError(null)}
+              className="shrink-0 underline hover:no-underline"
+            >
+              Dismiss
+            </button>
+          </div>
+        )}
+
         {/* No profiles or not enough */}
         {!hasProfiles && (
           <EmptyState />

@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/card";
 
 export const metadata: Metadata = {
-  title: "About | ChartChemistry",
+  title: "About",
   description:
     "Learn how ChartChemistry combines ancient astrological wisdom with modern AI to deliver deep, personalized compatibility insights powered by Swiss Ephemeris and Claude.",
 };

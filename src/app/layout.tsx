@@ -22,6 +22,7 @@ const playfair = Playfair_Display({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://chartchemistry.com"),
   title: {
     default: "ChartChemistry — AI-Powered Astrological Compatibility",
     template: "%s | ChartChemistry",
@@ -45,12 +46,14 @@ export const metadata: Metadata = {
       "Go beyond sun signs. Analyze full birth chart compatibility with AI-powered synastry, composite charts, house overlays, and planetary aspects.",
     type: "website",
     siteName: "ChartChemistry",
+    images: ["/og-image.png"],
   },
   twitter: {
     card: "summary_large_image",
     title: "ChartChemistry — AI-Powered Astrological Compatibility",
     description:
       "Go beyond sun signs. Analyze full birth chart compatibility with AI-powered synastry and composite charts.",
+    images: ["/og-image.png"],
   },
   robots: {
     index: true,
@@ -64,7 +67,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" className="dark" suppressHydrationWarning>
       <head>
         {process.env.NEXT_PUBLIC_UMAMI_URL && process.env.NEXT_PUBLIC_UMAMI_SITE_ID && (
           <Script
@@ -77,12 +80,18 @@ export default function RootLayout({
       <body
         className={`${inter.variable} ${playfair.variable} font-sans antialiased`}
       >
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[100] focus:rounded-lg focus:bg-cosmic-purple focus:px-4 focus:py-2 focus:text-white"
+        >
+          Skip to main content
+        </a>
         <ThemeProvider>
           <SessionProvider>
             <TooltipProvider>
               <ImpersonationBanner />
               <Navigation />
-              <main className="min-h-screen">{children}</main>
+              <main id="main-content" className="min-h-screen">{children}</main>
               <Footer />
             </TooltipProvider>
           </SessionProvider>

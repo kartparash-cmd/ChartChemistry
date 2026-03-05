@@ -151,10 +151,10 @@ const signs: ZodiacSign[] = [
     dateRange: "Oct 23 - Nov 21",
     element: "Water",
     modality: "Fixed",
-    rulingPlanet: "Pluto",
+    rulingPlanet: "Pluto (Mars traditionally)",
     traits: ["Intense", "Perceptive", "Passionate", "Transformative"],
     description:
-      "Scorpio dives beneath the surface to uncover hidden truths and catalyze transformation. Ruled by Pluto, Scorpio possesses remarkable depth, emotional intensity, and the power to regenerate and reinvent itself.",
+      "Scorpio dives beneath the surface to uncover hidden truths and catalyze transformation. Ruled by Pluto (and traditionally by Mars), Scorpio possesses remarkable depth, emotional intensity, and the power to regenerate and reinvent itself.",
   },
   {
     name: "Sagittarius",
@@ -184,10 +184,10 @@ const signs: ZodiacSign[] = [
     dateRange: "Jan 20 - Feb 18",
     element: "Air",
     modality: "Fixed",
-    rulingPlanet: "Uranus",
+    rulingPlanet: "Uranus (Saturn traditionally)",
     traits: ["Innovative", "Independent", "Humanitarian", "Visionary"],
     description:
-      "Aquarius is the visionary and humanitarian of the zodiac, looking toward the future with progressive ideals. Ruled by Uranus, this sign values individuality, community, and the revolutionary ideas that advance humanity.",
+      "Aquarius is the visionary and humanitarian of the zodiac, looking toward the future with progressive ideals. Ruled by Uranus (and traditionally by Saturn), this sign values individuality, community, and the revolutionary ideas that advance humanity.",
   },
   {
     name: "Pisces",

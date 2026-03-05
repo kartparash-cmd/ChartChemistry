@@ -76,7 +76,7 @@ const topics: LearningTopic[] = [
     badge: "5 Major",
   },
   {
-    href: "/learn/zodiac",
+    href: "/learn/houses",
     icon: <BookOpen className="h-6 w-6" />,
     title: "Reading Your Chart",
     description:

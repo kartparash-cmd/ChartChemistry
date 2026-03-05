@@ -1,14 +1,14 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Terms of Service | ChartChemistry",
+  title: "Terms of Service",
   description:
     "Terms of Service for ChartChemistry. Read our terms governing the use of our AI-powered astrological compatibility platform, subscription plans, and services.",
 };
 
 export default function TermsOfServicePage() {
   return (
-    <div className="max-w-4xl mx-auto px-4 py-16">
+    <div className="max-w-4xl mx-auto px-4 pt-24 pb-16">
       <header className="mb-12 text-center">
         <h1 className="font-heading text-4xl font-bold sm:text-5xl mb-4">
           <span className="cosmic-text">Terms of Service</span>
@@ -350,10 +350,10 @@ export default function TermsOfServicePage() {
               <p>
                 Email:{" "}
                 <a
-                  href="mailto:support@chartchemistry.io"
+                  href="mailto:support@chartchemistry.com"
                   className="text-cosmic-purple-light hover:underline"
                 >
-                  support@chartchemistry.io
+                  support@chartchemistry.com
                 </a>
               </p>
             </div>

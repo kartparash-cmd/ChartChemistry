@@ -72,9 +72,9 @@ export default function ForgotPasswordPage() {
                 ChartChemistry
               </span>
             </div>
-            <p className="text-sm text-muted-foreground">
+            <h1 className="text-sm text-muted-foreground font-normal">
               Reset your password
-            </p>
+            </h1>
           </div>
 
           {isSuccess ? (
@@ -107,7 +107,7 @@ export default function ForgotPasswordPage() {
           ) : (
             <>
               {errorMessage && (
-                <div className="mb-4 rounded-lg border border-red-500/20 bg-red-500/10 p-3 text-sm text-red-400">
+                <div role="alert" aria-live="polite" className="mb-4 rounded-lg border border-red-500/20 bg-red-500/10 p-3 text-sm text-red-400">
                   {errorMessage}
                 </div>
               )}
@@ -128,6 +128,7 @@ export default function ForgotPasswordPage() {
                     placeholder="you@example.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
+                    autoComplete="email"
                     className="h-11 bg-white/5 border-white/10 focus:border-cosmic-purple/50 focus:ring-cosmic-purple/20"
                     required
                   />
@@ -138,9 +139,13 @@ export default function ForgotPasswordPage() {
                   disabled={isLoading || !email}
                 >
                   {isLoading ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  ) : null}
-                  Send Reset Link
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Sending...
+                    </>
+                  ) : (
+                    "Send Reset Link"
+                  )}
                 </Button>
               </form>
 

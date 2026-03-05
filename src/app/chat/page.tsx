@@ -237,15 +237,14 @@ export default function ChatPage() {
         };
         setMessages((prev) => [...prev, aiMessage]);
       } else {
-        // Fallback for MVP
-        const aiMessage: Message = {
-          id: `ai-${Date.now()}`,
+        const errorMessage: Message = {
+          id: `error-${Date.now()}`,
           role: "assistant",
           content:
-            "I appreciate your question! The AI chat API is being set up. Once connected, I will be able to provide detailed astrological insights about your relationships, compatibility patterns, and cosmic guidance. Check back soon!",
+            "Sorry, I couldn't process your request. Please try again.",
           timestamp: new Date(),
         };
-        setMessages((prev) => [...prev, aiMessage]);
+        setMessages((prev) => [...prev, errorMessage]);
       }
     } catch {
       const aiMessage: Message = {
@@ -325,7 +324,7 @@ export default function ChatPage() {
   }
 
   return (
-    <div className="flex h-[calc(100vh-4rem)] flex-col lg:flex-row">
+    <div className="flex h-[calc(100dvh-4rem)] flex-col lg:flex-row">
       {/* Sidebar */}
       <aside className="w-full lg:w-72 border-b lg:border-b-0 lg:border-r border-white/10 bg-white/[0.02] p-4 flex-shrink-0">
         <div className="flex items-center gap-2 mb-4">

@@ -254,6 +254,7 @@
 }
 
 .cosmic-text {
+  color: #a78bfa;
   background: linear-gradient(135deg, #7C3AED, #D97706);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -271,6 +272,7 @@
   background: rgba(124, 58, 237, 0.04);
   backdrop-filter: blur(10px);
   border: 1px solid rgba(124, 58, 237, 0.1);
+  border-radius: 1rem;
 }
 
 .dark .glass-card {
@@ -342,8 +344,8 @@
     display: none !important;
   }
 
-  /* Hide animated SVG elements that won't render well in print */
-  .print-report svg {
+  /* Hide decorative/icon SVGs but keep chart SVGs (ScoreCircle, RadarChart) */
+  .print-report svg.lucide {
     display: none !important;
   }
 
@@ -595,5 +597,17 @@
 
   .print-report .text-emerald-400 {
     color: #10B981 !important;
+  }
+}
+
+/* ============================================================================
+   Reduced Motion Support
+   ============================================================================ */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }

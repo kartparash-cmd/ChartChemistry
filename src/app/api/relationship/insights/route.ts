@@ -52,6 +52,14 @@ export async function POST(request: Request) {
       );
     }
 
+    const isPremium = session.user.plan === "PREMIUM" || session.user.plan === "ANNUAL";
+    if (!isPremium) {
+      return NextResponse.json(
+        { error: "Premium plan required" },
+        { status: 403 }
+      );
+    }
+
     // --- 2. Parse + validate body ---
     let body: { profileId1: string; profileId2: string };
     try {

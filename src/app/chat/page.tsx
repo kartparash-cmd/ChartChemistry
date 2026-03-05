@@ -169,8 +169,8 @@ export default function ChatPage() {
             );
           }
         }
-      } catch {
-        // Silently handle for MVP
+      } catch (error) {
+        console.warn("Failed to load reports:", error);
       } finally {
         setLoadingReports(false);
       }

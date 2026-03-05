@@ -318,8 +318,9 @@ export default function ChartPage() {
             );
           }
         }
-      } catch {
+      } catch (error) {
         // Silently fail -- keep existing chart data
+        console.warn("House system recalculation failed:", error);
       } finally {
         setRecalculating(false);
       }

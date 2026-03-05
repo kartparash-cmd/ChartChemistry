@@ -246,12 +246,11 @@ export function Navigation() {
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon" className="h-9 w-9" aria-label="Open menu">
                 <Menu className="h-5 w-5" />
-                <span className="sr-only">Toggle menu</span>
               </Button>
             </SheetTrigger>
             <SheetContent
               side="right"
-              className="w-[300px] bg-popover/95 backdrop-blur-xl border-border"
+              className="w-[min(300px,85vw)] bg-popover/95 backdrop-blur-xl border-border"
             >
               <SheetHeader>
                 <SheetTitle className="flex items-center gap-2">

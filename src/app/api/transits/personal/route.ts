@@ -24,6 +24,14 @@ export async function GET() {
       );
     }
 
+    const isPremium = session.user.plan === "PREMIUM" || session.user.plan === "ANNUAL";
+    if (!isPremium) {
+      return NextResponse.json(
+        { error: "Premium plan required" },
+        { status: 403 }
+      );
+    }
+
     // Find user's profile with chart data
     const profile = await prisma.birthProfile.findFirst({
       where: {
@@ -90,7 +98,7 @@ export async function GET() {
         transitCount: 0,
         highSignificance: 0,
         error: "Transit service temporarily unavailable",
-      });
+      }, { status: 503 });
     }
   } catch (error) {
     console.error("[GET /api/transits/personal] Error:", error);

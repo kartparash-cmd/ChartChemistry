@@ -23,6 +23,14 @@ export async function POST(request: Request) {
       );
     }
 
+    const isPremium = session.user.plan === "PREMIUM" || session.user.plan === "ANNUAL";
+    if (!isPremium) {
+      return NextResponse.json(
+        { error: "Premium plan required" },
+        { status: 403 }
+      );
+    }
+
     let body: { profileId: string; element: string };
     try {
       body = await request.json();

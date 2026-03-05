@@ -374,7 +374,7 @@ export default function ProfilesPage() {
 
   if (status === "loading" || loading) {
     return (
-      <div className="min-h-screen">
+      <div className="min-h-screen pt-8">
         <section className="border-b border-white/10 bg-gradient-to-b from-cosmic-purple/5 to-transparent">
           <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
             <div className="h-8 w-48 animate-pulse rounded bg-white/10" />
@@ -399,7 +399,7 @@ export default function ProfilesPage() {
   // ---------------------------------------------------------------------------
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen pt-8">
       {/* Header */}
       <section className="border-b border-white/10 bg-gradient-to-b from-cosmic-purple/5 to-transparent">
         <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">

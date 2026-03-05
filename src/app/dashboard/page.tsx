@@ -378,7 +378,7 @@ function DashboardContent() {
       {/* Error Banner */}
       {error && (
         <div className="mx-auto max-w-7xl px-4 pt-4 sm:px-6 lg:px-8">
-          <div className="flex items-center gap-3 rounded-lg border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-400">
+          <div role="alert" className="flex items-center gap-3 rounded-lg border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-400">
             <AlertTriangle className="h-4 w-4 shrink-0" />
             <span className="flex-1">{error}</span>
             <button

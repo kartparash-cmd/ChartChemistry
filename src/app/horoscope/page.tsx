@@ -251,9 +251,10 @@ export default function HoroscopePage() {
                   variant="ghost"
                   size="icon"
                   onClick={fetchHoroscope}
+                  disabled={loading}
                   className="text-muted-foreground hover:text-foreground"
                 >
-                  <RefreshCw className="h-4 w-4" />
+                  <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
                 </Button>
               </div>
               <p className="text-lg font-medium leading-relaxed">

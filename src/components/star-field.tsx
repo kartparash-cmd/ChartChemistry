@@ -22,6 +22,7 @@ export function StarField({ starCount = 100, className }: StarFieldProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const starsRef = useRef<Star[]>([]);
   const animationRef = useRef<number>(0);
+  const isVisibleRef = useRef<boolean>(true);
 
   const initStars = useCallback(
     (width: number, height: number) => {
@@ -77,6 +78,11 @@ export function StarField({ starCount = 100, className }: StarFieldProps) {
     let time = 0;
 
     const animate = () => {
+      if (!isVisibleRef.current) {
+        animationRef.current = 0;
+        return;
+      }
+
       const rect = canvas.getBoundingClientRect();
       ctx.clearRect(0, 0, rect.width, rect.height);
 
@@ -116,9 +122,22 @@ export function StarField({ starCount = 100, className }: StarFieldProps) {
       animationRef.current = requestAnimationFrame(animate);
     };
 
+    // Pause animation when canvas is off-viewport
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        isVisibleRef.current = entry.isIntersecting;
+        if (entry.isIntersecting && animationRef.current === 0) {
+          animationRef.current = requestAnimationFrame(animate);
+        }
+      },
+      { threshold: 0 }
+    );
+    observer.observe(canvas);
+
     animationRef.current = requestAnimationFrame(animate);
 
     return () => {
+      observer.disconnect();
       window.removeEventListener("resize", handleResize);
       cancelAnimationFrame(animationRef.current);
     };

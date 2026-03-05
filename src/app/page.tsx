@@ -165,9 +165,9 @@ const PRICING_TIERS = [
     description: "Best value — save over 30%",
     features: [
       "Everything in Premium",
-      "Daily horoscope",
-      "Transit alerts",
-      "AI Astrologer chat",
+      "Daily personalized horoscope",
+      "Transit alerts & timeline",
+      "Wellness insights",
       "Priority support",
     ],
     cta: "Save with Annual",

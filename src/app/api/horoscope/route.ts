@@ -33,6 +33,14 @@ export async function GET() {
       );
     }
 
+    const isPremium = session.user.plan === "PREMIUM" || session.user.plan === "ANNUAL";
+    if (!isPremium) {
+      return NextResponse.json(
+        { error: "Premium plan required" },
+        { status: 403 }
+      );
+    }
+
     const today = new Date().toISOString().split("T")[0];
     const cacheKey = getCacheKey(session.user.id, today);
 

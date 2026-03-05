@@ -206,6 +206,9 @@ export function CompatibilityResults({
   // Save state
   const [saved, setSaved] = useState(false);
 
+  // Share toast state
+  const [shareToast, setShareToast] = useState(false);
+
   const radarData = [
     { dimension: "Emotional", score: result.dimensions.emotional },
     { dimension: "Chemistry", score: result.dimensions.chemistry },
@@ -239,6 +242,8 @@ export function CompatibilityResults({
       await navigator.clipboard.writeText(
         `${shareText}\n${window.location.href}`
       );
+      setShareToast(true);
+      setTimeout(() => setShareToast(false), 2000);
     }
   };
 
@@ -483,8 +488,8 @@ export function CompatibilityResults({
               Full Premium Report Available
             </h3>
             <p className="mb-5 text-sm text-muted-foreground max-w-md mx-auto">
-              Get detailed synastry analysis, red flags, green flags, growth
-              areas, and personalized cosmic advice.
+              Get detailed synastry analysis, red flags, growth insights,
+              growth areas, and personalized cosmic advice.
             </p>
             {premiumError && (
               <div className="mb-4 flex items-center justify-center gap-2 text-sm text-red-400">
@@ -518,7 +523,7 @@ export function CompatibilityResults({
               description="Detailed analysis of every planetary aspect between your charts, house overlays, and composite chart interpretation."
             />
             <LockedSection
-              title="Red Flags & Green Flags"
+              title="Red Flags & Growth Insights"
               description="Specific patterns in your charts that indicate potential challenges and natural strengths in your connection."
             />
             <LockedSection
@@ -564,6 +569,21 @@ export function CompatibilityResults({
           )}
         </Button>
       </motion.div>
+
+      {/* Share toast */}
+      {shareToast && (
+        <div className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2">
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 10 }}
+            className="flex items-center gap-2 rounded-full border border-white/10 bg-background/90 px-4 py-2 text-sm font-medium shadow-lg backdrop-blur-sm"
+          >
+            <Check className="h-4 w-4 text-green-500" />
+            Link copied!
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 }

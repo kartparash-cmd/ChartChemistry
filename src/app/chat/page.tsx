@@ -487,7 +487,7 @@ function ChatPageContent() {
   // -------------------------------------------------------------------
 
   return (
-    <div className="flex h-[calc(100dvh-4rem)] flex-col lg:flex-row">
+    <div className="flex h-[calc(100dvh-8rem)] md:h-[calc(100dvh-4rem)] flex-col lg:flex-row">
       {/* Sidebar */}
       <aside className="w-full lg:w-72 border-b lg:border-b-0 lg:border-r border-white/10 bg-white/[0.02] flex-shrink-0">
         <button
@@ -568,7 +568,7 @@ function ChatPageContent() {
         <h1 className="sr-only">AI Astrologer Chat</h1>
 
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        <div className="flex-1 overflow-y-auto p-4 space-y-4" aria-live="polite" aria-relevant="additions">
           {messages.map((message) => (
             <ChatBubble key={message.id} message={message} />
           ))}
@@ -579,7 +579,11 @@ function ChatPageContent() {
               animate={{ opacity: 1 }}
               className="flex justify-start"
             >
-              <div className="rounded-2xl rounded-bl-sm border border-white/10 bg-white/[0.03]">
+              <div
+                role="status"
+                aria-label="AI is typing"
+                className="rounded-2xl rounded-bl-sm border border-white/10 bg-white/[0.03]"
+              >
                 <TypingIndicator />
               </div>
             </motion.div>

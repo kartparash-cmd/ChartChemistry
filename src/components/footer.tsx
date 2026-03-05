@@ -31,7 +31,7 @@ export function Footer() {
             <div className="col-span-1 sm:col-span-2 lg:col-span-1">
               <Link
                 href="/"
-                className="flex items-center gap-2 mb-4"
+                className="inline-flex items-center gap-2 py-2 mb-2"
                 aria-label="ChartChemistry home"
               >
                 <Sparkles className="h-5 w-5 text-cosmic-purple-light" aria-hidden="true" />
@@ -50,12 +50,12 @@ export function Footer() {
               <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-foreground/80">
                 Product
               </h3>
-              <ul className="space-y-3">
+              <ul className="space-y-1">
                 {footerLinks.product.map((link) => (
                   <li key={link.href}>
                     <Link
                       href={link.href}
-                      className="text-sm text-muted-foreground transition-colors hover:text-cosmic-purple-light"
+                      className="inline-block py-2 text-sm text-muted-foreground transition-colors hover:text-cosmic-purple-light"
                     >
                       {link.label}
                     </Link>
@@ -69,13 +69,13 @@ export function Footer() {
               <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-foreground/80">
                 Company
               </h3>
-              <ul className="space-y-3">
+              <ul className="space-y-1">
                 {footerLinks.company.map((link) => (
                   <li key={link.href}>
                     {link.href.startsWith("mailto:") ? (
                       <a
                         href={link.href}
-                        className="text-sm text-muted-foreground transition-colors hover:text-cosmic-purple-light"
+                        className="inline-block py-2 text-sm text-muted-foreground transition-colors hover:text-cosmic-purple-light"
                         aria-label="Send email to ChartChemistry support"
                       >
                         {link.label}
@@ -83,7 +83,7 @@ export function Footer() {
                     ) : (
                       <Link
                         href={link.href}
-                        className="text-sm text-muted-foreground transition-colors hover:text-cosmic-purple-light"
+                        className="inline-block py-2 text-sm text-muted-foreground transition-colors hover:text-cosmic-purple-light"
                       >
                         {link.label}
                       </Link>
@@ -98,12 +98,12 @@ export function Footer() {
               <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-foreground/80">
                 Legal
               </h3>
-              <ul className="space-y-3">
+              <ul className="space-y-1">
                 {footerLinks.legal.map((link) => (
                   <li key={link.href}>
                     <Link
                       href={link.href}
-                      className="text-sm text-muted-foreground transition-colors hover:text-cosmic-purple-light"
+                      className="inline-block py-2 text-sm text-muted-foreground transition-colors hover:text-cosmic-purple-light"
                     >
                       {link.label}
                     </Link>

@@ -99,9 +99,10 @@ function SignInContent() {
                 ChartChemistry
               </span>
             </div>
-            <h1 className="text-sm text-muted-foreground font-normal">
+            <h1 className="text-xl font-semibold">Sign In</h1>
+            <p className="text-sm text-muted-foreground">
               Sign in to save your charts and unlock insights
-            </h1>
+            </p>
           </div>
 
           {errorMessage && (
@@ -116,6 +117,7 @@ function SignInContent() {
             className="w-full h-11 bg-white/5 border-white/10 hover:bg-white/10 transition-all"
             onClick={handleGoogleSignIn}
             disabled={isLoadingGoogle}
+            aria-label="Sign in with Google"
           >
             {isLoadingGoogle ? (
               <>
@@ -124,7 +126,7 @@ function SignInContent() {
               </>
             ) : (
               <>
-                <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
+                <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24" aria-hidden="true">
                   <path
                     d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"
                     fill="#4285F4"

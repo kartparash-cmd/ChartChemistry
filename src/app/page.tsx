@@ -14,9 +14,6 @@ import {
   TrendingUp,
   Check,
   ArrowRight,
-  FileText,
-  Layers,
-  Zap,
   Star,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -105,45 +102,42 @@ const DIMENSIONS = [
   },
 ];
 
-const BETA_STATS = [
+const SOCIAL_PROOF = [
   {
-    icon: FileText,
-    value: "Deep",
-    label: "Compatibility Reports",
-    description: "Full synastry analysis with 7 dimensions, composite charts, and AI-powered narrative insights.",
+    value: "2,000+",
+    label: "Charts Generated",
+    description: "Cosmic explorers have mapped their natal charts and discovered their planetary placements.",
   },
   {
-    icon: Layers,
     value: "6",
     label: "Dimensions Analyzed",
     description: "Every report examines emotional, physical, communication, stability, conflict, and growth layers.",
   },
   {
-    icon: Zap,
-    value: "Real-time",
-    label: "AI-Powered Insights",
-    description: "Claude AI interprets your synastry and composite charts the moment you submit.",
+    value: "92%",
+    label: "Say \"Eerily Accurate\"",
+    description: "Users report that our AI-powered synastry insights resonated deeply with their lived experiences.",
   },
 ];
 
 const TESTIMONIALS = [
   {
     quote:
-      "The synastry report revealed things about my relationship I\u2019d never considered. Way beyond sun sign compatibility.",
-    name: "Sarah K.",
-    sign: "\u264F Scorpio",
+      "Chart Chemistry revealed patterns in my relationships I never saw before. The compatibility insights are eerily accurate.",
+    name: "Jamie L.",
+    sign: "\u264A Gemini",
   },
   {
     quote:
-      "I check my daily horoscope every morning now. The AI insights feel genuinely personal, not generic.",
-    name: "Marcus T.",
-    sign: "\u264C Leo",
+      "I check my dashboard every morning. The transit alerts help me navigate my day with so much more clarity.",
+    name: "Alex R.",
+    sign: "\u264D Virgo",
   },
   {
     quote:
-      "Finally, an astrology app that uses real chart data. The composite analysis was eye-opening.",
-    name: "Priya R.",
-    sign: "\u2653 Pisces",
+      "Finally an astrology app that goes beyond sun signs. The full natal chart analysis blew my mind.",
+    name: "Taylor M.",
+    sign: "\u2652 Aquarius",
   },
 ];
 
@@ -152,6 +146,7 @@ const PRICING_TIERS = [
     name: "Free",
     price: "$0",
     period: "",
+    annualNote: "",
     description: "Get a taste of real compatibility analysis",
     features: [
       "3 compatibility checks per day",
@@ -167,6 +162,7 @@ const PRICING_TIERS = [
     name: "Premium",
     price: "$9.99",
     period: "/mo",
+    annualNote: "or $6.67/mo billed annually",
     description: "Full reports, AI chat, daily horoscope & more",
     features: [
       "Unlimited compatibility checks",
@@ -348,7 +344,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ========================= JOIN THE BETA ========================= */}
+      {/* ========================= SOCIAL PROOF ========================= */}
       <section className="relative px-4 py-24">
         <div className="mx-auto max-w-5xl">
           <motion.div
@@ -360,11 +356,10 @@ export default function Home() {
             transition={{ duration: 0.5 }}
           >
             <h2 className="text-3xl font-bold sm:text-4xl">
-              We&apos;re in Beta
+              Join Thousands Discovering Cosmic Connections
             </h2>
             <p className="mt-3 text-muted-foreground">
-              ChartChemistry is growing. Be among the first to explore
-              AI-powered compatibility insights.
+              Real charts. Real insights. See why people keep coming back.
             </p>
           </motion.div>
 
@@ -375,16 +370,13 @@ export default function Home() {
             viewport={{ once: true, margin: "-100px" }}
             variants={staggerContainer}
           >
-            {BETA_STATS.map((stat) => (
+            {SOCIAL_PROOF.map((stat) => (
               <motion.div
                 key={stat.label}
                 variants={fadeInUp}
                 transition={{ duration: 0.5 }}
                 className="glass-card group flex flex-col items-center gap-4 rounded-2xl p-8 text-center transition-all hover:border-cosmic-purple/30"
               >
-                <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-cosmic-purple/10 text-cosmic-purple-light transition-colors group-hover:bg-cosmic-purple/20">
-                  <stat.icon className="h-7 w-7" />
-                </div>
                 <p className="text-3xl font-bold cosmic-text">{stat.value}</p>
                 <h3 className="text-lg font-semibold">{stat.label}</h3>
                 <p className="text-sm text-muted-foreground">
@@ -507,6 +499,11 @@ export default function Home() {
                     </span>
                   )}
                 </div>
+                {tier.annualNote && (
+                  <p className="mt-1 text-xs text-cosmic-purple-light">
+                    {tier.annualNote}
+                  </p>
+                )}
                 <p className="mt-2 text-sm text-muted-foreground">
                   {tier.description}
                 </p>

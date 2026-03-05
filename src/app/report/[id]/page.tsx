@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import {
   ChevronDown,
   ChevronUp,
@@ -24,6 +24,7 @@ import {
   Download,
   TrendingUp,
   Sun,
+  RefreshCw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -32,6 +33,7 @@ import { cn } from "@/lib/utils";
 
 // Types
 interface ReportPerson {
+  id: string;
   name: string;
   birthDate: string;
   birthCity: string;
@@ -69,10 +71,12 @@ function ScoreCircle({
   score,
   size = 160,
   strokeWidth = 10,
+  reducedMotion = false,
 }: {
   score: number;
   size?: number;
   strokeWidth?: number;
+  reducedMotion?: boolean;
 }) {
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
@@ -86,7 +90,11 @@ function ScoreCircle({
         : "#EF4444";
 
   return (
-    <div className="relative inline-flex items-center justify-center">
+    <div
+      className="relative inline-flex items-center justify-center"
+      role="img"
+      aria-label={`Overall compatibility score: ${score} out of 100`}
+    >
       <svg width={size} height={size} className="-rotate-90">
         <circle
           cx={size / 2}
@@ -105,17 +113,17 @@ function ScoreCircle({
           fill="none"
           strokeLinecap="round"
           strokeDasharray={circumference}
-          initial={{ strokeDashoffset: circumference }}
+          initial={reducedMotion ? false : { strokeDashoffset: circumference }}
           animate={{ strokeDashoffset: offset }}
-          transition={{ duration: 1.5, ease: "easeOut", delay: 0.3 }}
+          transition={reducedMotion ? { duration: 0 } : { duration: 1.5, ease: "easeOut", delay: 0.3 }}
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
         <motion.span
           className="text-4xl font-bold"
-          initial={{ opacity: 0 }}
+          initial={reducedMotion ? false : { opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 0.5 }}
+          transition={reducedMotion ? { duration: 0 } : { delay: 0.5 }}
           style={{ color: scoreColor }}
         >
           {score}
@@ -131,8 +139,10 @@ function ScoreCircle({
 // Radar chart (simplified SVG)
 function RadarChart({
   scores,
+  reducedMotion = false,
 }: {
   scores: { label: string; value: number }[];
+  reducedMotion?: boolean;
 }) {
   const size = 250;
   const cx = size / 2;
@@ -163,8 +173,17 @@ function RadarChart({
 
   const polygonPath = points.map((p) => `${p.x},${p.y}`).join(" ");
 
+  const radarLabel = scores
+    .map((s) => `${s.label}: ${s.value}`)
+    .join(", ");
+
   return (
-    <svg viewBox={`0 0 ${size} ${size}`} className="w-full max-w-[280px] mx-auto">
+    <svg
+      viewBox={`0 0 ${size} ${size}`}
+      className="w-full max-w-[280px] mx-auto"
+      role="img"
+      aria-label={`Radar chart showing dimension scores: ${radarLabel}`}
+    >
       {/* Grid lines */}
       {gridLevels.map((r, li) => (
         <polygon
@@ -205,9 +224,9 @@ function RadarChart({
         fill="rgba(124,58,237,0.15)"
         stroke="#A78BFA"
         strokeWidth="1.5"
-        initial={{ opacity: 0, scale: 0.5 }}
+        initial={reducedMotion ? false : { opacity: 0, scale: 0.5 }}
         animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.8, delay: 0.5, ease: "easeOut" }}
+        transition={reducedMotion ? { duration: 0 } : { duration: 0.8, delay: 0.5, ease: "easeOut" }}
         style={{ transformOrigin: `${cx}px ${cy}px` }}
       />
 
@@ -219,9 +238,9 @@ function RadarChart({
           cy={p.y}
           r="3"
           fill="#A78BFA"
-          initial={{ opacity: 0 }}
+          initial={reducedMotion ? false : { opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 0.8 + i * 0.1 }}
+          transition={reducedMotion ? { duration: 0 } : { delay: 0.8 + i * 0.1 }}
         />
       ))}
 
@@ -251,12 +270,14 @@ function ScoreBar({
   icon,
   delay = 0,
   invertColor = false,
+  reducedMotion = false,
 }: {
   label: string;
   score: number;
   icon: React.ReactNode;
   delay?: number;
   invertColor?: boolean;
+  reducedMotion?: boolean;
 }) {
   // For conflict, high score = bad (red/amber), low score = good (green)
   const color = invertColor
@@ -273,9 +294,9 @@ function ScoreBar({
 
   return (
     <motion.div
-      initial={{ opacity: 0, x: -10 }}
+      initial={reducedMotion ? false : { opacity: 0, x: -10 }}
       animate={{ opacity: 1, x: 0 }}
-      transition={{ delay }}
+      transition={reducedMotion ? { duration: 0 } : { delay }}
       className="space-y-2"
     >
       <div className="flex items-center justify-between">
@@ -285,12 +306,19 @@ function ScoreBar({
         </div>
         <span className="text-sm font-bold">{score}</span>
       </div>
-      <div className="h-2 rounded-full bg-white/5 overflow-hidden">
+      <div
+        className="h-2 rounded-full bg-white/5 overflow-hidden"
+        role="meter"
+        aria-valuenow={score}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-label={`${label} score: ${score} out of 100`}
+      >
         <motion.div
           className={cn("h-full rounded-full", color)}
-          initial={{ width: 0 }}
+          initial={reducedMotion ? false : { width: 0 }}
           animate={{ width: `${score}%` }}
-          transition={{ duration: 1, delay: delay + 0.3, ease: "easeOut" }}
+          transition={reducedMotion ? { duration: 0 } : { duration: 1, delay: delay + 0.3, ease: "easeOut" }}
         />
       </div>
     </motion.div>
@@ -302,19 +330,21 @@ function NarrativeSectionCard({
   section,
   isPremium,
   index,
+  reducedMotion = false,
 }: {
   section: NarrativeSection;
   isPremium: boolean;
   index: number;
+  reducedMotion?: boolean;
 }) {
   const [isOpen, setIsOpen] = useState(section.freeAccess);
   const isLocked = !section.freeAccess && !isPremium;
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 10 }}
+      initial={reducedMotion ? false : { opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.05 }}
+      transition={reducedMotion ? { duration: 0 } : { delay: index * 0.05 }}
       className={cn(
         "rounded-xl border overflow-hidden",
         section.variant === "warning"
@@ -367,10 +397,10 @@ function NarrativeSectionCard({
       <AnimatePresence>
         {isOpen && !isLocked && (
           <motion.div
-            initial={{ height: 0, opacity: 0 }}
+            initial={reducedMotion ? false : { height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2 }}
+            exit={reducedMotion ? { opacity: 0 } : { height: 0, opacity: 0 }}
+            transition={reducedMotion ? { duration: 0 } : { duration: 0.2 }}
           >
             <div className="px-4 pb-4">
               <Separator className="mb-4 bg-white/5" />
@@ -438,10 +468,14 @@ export default function ReportPage() {
   const params = useParams();
   const router = useRouter();
   const { data: session, status } = useSession();
+  const prefersReducedMotion = useReducedMotion();
+  const shouldAnimate = !prefersReducedMotion;
   const [report, setReport] = useState<Report | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [shareToast, setShareToast] = useState(false);
+  const [regenerating, setRegenerating] = useState(false);
+  const [regenerateError, setRegenerateError] = useState<string | null>(null);
 
   const reportId = params.id as string;
 
@@ -465,6 +499,46 @@ export default function ReportPage() {
 
     fetchReport();
   }, [reportId]);
+
+  const handleRegenerate = useCallback(async () => {
+    if (!report || regenerating) return;
+    setRegenerating(true);
+    setRegenerateError(null);
+    try {
+      const res = await fetch("/api/compatibility/full", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          person1Id: report.person1.id,
+          person2Id: report.person2.id,
+          regenerate: true,
+        }),
+      });
+      if (res.ok) {
+        const json = await res.json();
+        // Navigate to the (possibly same) report page to reload fresh data
+        if (json.id) {
+          router.push(`/report/${json.id}`);
+          router.refresh();
+        }
+        // Reload current report data
+        const refreshRes = await fetch(`/api/report/${reportId}`);
+        if (refreshRes.ok) {
+          setReport(await refreshRes.json());
+        }
+      } else {
+        const errJson = await res.json().catch(() => null);
+        setRegenerateError(
+          errJson?.message || errJson?.error || "Failed to regenerate report. Please try again."
+        );
+      }
+    } catch (err) {
+      console.error("Failed to regenerate report:", err);
+      setRegenerateError("Failed to regenerate report. Please try again.");
+    } finally {
+      setRegenerating(false);
+    }
+  }, [report, regenerating, reportId, router]);
 
   if (loading) {
     return (
@@ -555,13 +629,27 @@ export default function ReportPage() {
   const narrativeSections = parseNarrativeSections(report);
 
   const handleShare = async () => {
-    const url = window.location.href;
+    const url = `${window.location.origin}/report/${reportId}`;
     try {
       await navigator.clipboard.writeText(url);
       setShareToast(true);
       setTimeout(() => setShareToast(false), 2000);
     } catch {
-      // Fallback
+      // Fallback for browsers that block clipboard API
+      const textArea = document.createElement("textarea");
+      textArea.value = url;
+      textArea.style.position = "fixed";
+      textArea.style.left = "-9999px";
+      document.body.appendChild(textArea);
+      textArea.select();
+      try {
+        document.execCommand("copy");
+        setShareToast(true);
+        setTimeout(() => setShareToast(false), 2000);
+      } catch {
+        // Silent fail
+      }
+      document.body.removeChild(textArea);
     }
   };
 
@@ -597,8 +685,9 @@ export default function ReportPage() {
           </Link>
 
           <motion.div
-            initial={{ opacity: 0, y: 10 }}
+            initial={shouldAnimate ? { opacity: 0, y: 10 } : false}
             animate={{ opacity: 1, y: 0 }}
+            transition={shouldAnimate ? undefined : { duration: 0 }}
             className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
           >
             <div>
@@ -612,14 +701,42 @@ export default function ReportPage() {
               </p>
               {report.createdAt && (() => {
                 const { label, isStale } = formatReportAge(report.createdAt);
+                const createdDate = new Date(report.createdAt);
+                const formattedDate = createdDate.toLocaleDateString(undefined, {
+                  year: "numeric",
+                  month: "long",
+                  day: "numeric",
+                });
                 return (
                   <div className="mt-2 flex flex-wrap items-center gap-2">
-                    <span className="text-xs text-muted-foreground">{label}</span>
+                    <span className="text-xs text-muted-foreground">
+                      Report generated on {formattedDate}
+                      {!isStale && <> ({label.toLowerCase().replace("generated ", "")})</>}
+                    </span>
                     {isStale && (
-                      <span className="inline-flex items-center gap-1 text-xs text-gold/80 bg-gold/10 border border-gold/20 rounded-full px-2 py-0.5">
-                        <AlertTriangle className="h-3 w-3" />
-                        Transits may have shifted — consider regenerating
-                      </span>
+                      <>
+                        <span className="inline-flex items-center gap-1 text-xs text-gold/80 bg-gold/10 border border-gold/20 rounded-full px-2 py-0.5">
+                          <AlertTriangle className="h-3 w-3" />
+                          Transits may have shifted
+                        </span>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={handleRegenerate}
+                          disabled={regenerating}
+                          className="h-6 text-xs border-cosmic-purple/30 hover:border-cosmic-purple hover:bg-cosmic-purple/10 text-cosmic-purple-light print:hidden"
+                        >
+                          {regenerating ? (
+                            <Loader2 className="mr-1.5 h-3 w-3 animate-spin" />
+                          ) : (
+                            <RefreshCw className="mr-1.5 h-3 w-3" />
+                          )}
+                          {regenerating ? "Regenerating..." : "Regenerate Report"}
+                        </Button>
+                      </>
+                    )}
+                    {regenerateError && (
+                      <span className="text-xs text-red-400">{regenerateError}</span>
                     )}
                   </div>
                 );
@@ -652,7 +769,7 @@ export default function ReportPage() {
               <h2 className="font-heading text-sm font-semibold mb-4 text-muted-foreground uppercase tracking-wider">
                 Overall Score
               </h2>
-              <ScoreCircle score={report.overallScore} />
+              <ScoreCircle score={report.overallScore} reducedMotion={!shouldAnimate} />
               {/* Print-only plain text score */}
               <div className="print-score-text">
                 <span className="text-4xl font-bold">{report.overallScore}</span>
@@ -670,6 +787,7 @@ export default function ReportPage() {
                   label: s.label,
                   value: s.value,
                 }))}
+                reducedMotion={!shouldAnimate}
               />
             </div>
 
@@ -686,6 +804,7 @@ export default function ReportPage() {
                   icon={s.icon}
                   delay={i * 0.1}
                   invertColor={s.label === "Conflict"}
+                  reducedMotion={!shouldAnimate}
                 />
               ))}
               {/* Print-only score table */}
@@ -714,6 +833,7 @@ export default function ReportPage() {
                 section={section}
                 isPremium={isPremium}
                 index={i}
+                reducedMotion={!shouldAnimate}
               />
             ))}
 
@@ -818,12 +938,13 @@ export default function ReportPage() {
       <AnimatePresence>
         {shareToast && (
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={shouldAnimate ? { opacity: 0, y: 20 } : false}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 20 }}
+            exit={shouldAnimate ? { opacity: 0, y: 20 } : { opacity: 0 }}
+            transition={shouldAnimate ? undefined : { duration: 0 }}
             role="status"
             aria-live="polite"
-            className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-xl border border-white/10 bg-navy-light/95 backdrop-blur-xl px-6 py-3 shadow-xl"
+            className="fixed bottom-24 md:bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-xl border border-white/10 bg-navy-light/95 backdrop-blur-xl px-6 py-3 shadow-xl"
           >
             <p className="text-sm font-medium">Link copied to clipboard</p>
           </motion.div>

@@ -136,38 +136,40 @@ export async function POST(request: Request) {
       );
     }
 
-    // --- 4. Check for existing report ---
-    const existingReport = await prisma.compatibilityReport.findUnique({
-      where: {
-        person1Id_person2Id: {
-          person1Id: body.person1Id,
-          person2Id: body.person2Id,
+    // --- 4. Check for existing report (skip cache if regenerate flag is set) ---
+    if (!body.regenerate) {
+      const existingReport = await prisma.compatibilityReport.findUnique({
+        where: {
+          person1Id_person2Id: {
+            person1Id: body.person1Id,
+            person2Id: body.person2Id,
+          },
         },
-      },
-    });
-
-    if (existingReport && existingReport.tier === "PREMIUM") {
-      // Return the existing report instead of regenerating
-      return NextResponse.json({
-        id: existingReport.id,
-        scores: {
-          overall: existingReport.overallScore,
-          communication: existingReport.communicationScore,
-          emotional: existingReport.emotionalScore,
-          chemistry: existingReport.chemistryScore,
-          stability: existingReport.stabilityScore,
-          conflict: existingReport.conflictScore,
-        },
-        sections: JSON.parse(existingReport.fullNarrative),
-        redFlags: existingReport.redFlags,
-        growthAreas: existingReport.growthAreas,
-        synastryData: existingReport.synastryData,
-        compositeData: existingReport.compositeData,
-        person1: { name: profile1.name, id: profile1.id },
-        person2: { name: profile2.name, id: profile2.id },
-        createdAt: existingReport.createdAt.toISOString(),
-        cached: true,
       });
+
+      if (existingReport && existingReport.tier === "PREMIUM") {
+        // Return the existing report instead of regenerating
+        return NextResponse.json({
+          id: existingReport.id,
+          scores: {
+            overall: existingReport.overallScore,
+            communication: existingReport.communicationScore,
+            emotional: existingReport.emotionalScore,
+            chemistry: existingReport.chemistryScore,
+            stability: existingReport.stabilityScore,
+            conflict: existingReport.conflictScore,
+          },
+          sections: JSON.parse(existingReport.fullNarrative),
+          redFlags: existingReport.redFlags,
+          growthAreas: existingReport.growthAreas,
+          synastryData: existingReport.synastryData,
+          compositeData: existingReport.compositeData,
+          person1: { name: profile1.name, id: profile1.id },
+          person2: { name: profile2.name, id: profile2.id },
+          createdAt: existingReport.createdAt.toISOString(),
+          cached: true,
+        });
+      }
     }
 
     // --- 5. Get or calculate natal charts ---

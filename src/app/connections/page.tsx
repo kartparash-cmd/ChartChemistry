@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import {
   Users,
   Heart,
@@ -132,12 +132,13 @@ function ScoreDimension({
   score: number;
   delay: number;
 }) {
+  const prefersReducedMotion = useReducedMotion();
   return (
     <motion.div
-      initial={{ opacity: 0, x: -10 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ duration: 0.3, delay }}
+      {...(prefersReducedMotion ? {} : { initial: { opacity: 0, x: -10 }, animate: { opacity: 1, x: 0 }, transition: { duration: 0.3, delay } })}
       className="space-y-1.5"
+      role="group"
+      aria-label={`${label}: ${score}%`}
     >
       <div className="flex items-center justify-between">
         <span className="text-xs text-muted-foreground">{label}</span>
@@ -151,16 +152,17 @@ function ScoreDimension({
 }
 
 function ReportCard({ report }: { report: CompatibilityReport }) {
+  const prefersReducedMotion = useReducedMotion();
   const scoreColor = getScoreColor(report.overallScore);
 
   return (
     <motion.div
-      whileHover={{ y: -3, scale: 1.01 }}
-      transition={{ duration: 0.2 }}
+      {...(prefersReducedMotion ? {} : { whileHover: { y: -3, scale: 1.01 }, transition: { duration: 0.2 } })}
     >
       <Link
         href={`/report/${report.id}`}
         className="block rounded-2xl border border-white/10 bg-white/[0.03] p-5 backdrop-blur-sm transition-colors hover:border-white/20 hover:bg-white/[0.05]"
+        aria-label={`View compatibility report for ${report.person1.name} and ${report.person2.name}, score ${report.overallScore}`}
       >
         <div className="mb-3 flex items-start justify-between">
           <div className="min-w-0 flex-1">
@@ -200,14 +202,14 @@ function ReportCard({ report }: { report: CompatibilityReport }) {
 }
 
 function EmptyState() {
+  const prefersReducedMotion = useReducedMotion();
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 0.98 }}
-      animate={{ opacity: 1, scale: 1 }}
+      {...(prefersReducedMotion ? {} : { initial: { opacity: 0, scale: 0.98 }, animate: { opacity: 1, scale: 1 } })}
       className="rounded-2xl border border-dashed border-white/20 bg-white/[0.02] p-12 text-center"
     >
       <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-cosmic-purple/10">
-        <Users className="h-8 w-8 text-cosmic-purple-light" />
+        <Users className="h-8 w-8 text-cosmic-purple-light" aria-hidden="true" />
       </div>
       <h2 className="mb-2 font-heading text-xl font-semibold">
         Add Profiles to Get Started
@@ -245,6 +247,7 @@ function EmptyState() {
 export default function ConnectionsPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const prefersReducedMotion = useReducedMotion();
 
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [reports, setReports] = useState<CompatibilityReport[]>([]);
@@ -401,8 +404,7 @@ export default function ConnectionsPage() {
       <section className="border-b border-white/10 bg-gradient-to-b from-cosmic-purple/5 to-transparent">
         <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
           <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
+            {...(prefersReducedMotion ? {} : { initial: { opacity: 0, y: 10 }, animate: { opacity: 1, y: 0 } })}
             className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
           >
             <div>
@@ -439,13 +441,17 @@ export default function ConnectionsPage() {
       <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8 space-y-8">
         {/* Fetch error banner */}
         {fetchError && (
-          <div className="flex items-center gap-3 rounded-lg border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-400">
-            <AlertTriangle className="h-4 w-4 shrink-0" />
+          <div
+            role="alert"
+            className="flex items-center gap-3 rounded-lg border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-400"
+          >
+            <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden="true" />
             <span className="flex-1">{fetchError}</span>
             <button
               type="button"
               onClick={() => setFetchError(null)}
               className="shrink-0 underline hover:no-underline"
+              aria-label="Dismiss error"
             >
               Dismiss
             </button>
@@ -460,9 +466,7 @@ export default function ConnectionsPage() {
         {/* Compare Profiles Section */}
         {hasProfiles && (
           <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
+            {...(prefersReducedMotion ? {} : { initial: { opacity: 0, y: 10 }, animate: { opacity: 1, y: 0 }, transition: { delay: 0.1 } })}
           >
             <Card className="rounded-2xl border-white/10 bg-white/[0.03] backdrop-blur-sm">
               <CardHeader>
@@ -509,6 +513,7 @@ export default function ConnectionsPage() {
                     size="lg"
                     disabled={!person1Id || !person2Id || comparing}
                     onClick={handleCompare}
+                    aria-label={comparing ? "Analyzing compatibility charts" : "Compare compatibility between selected profiles"}
                     className={cn(
                       "h-14 rounded-full px-8 text-base font-semibold shadow-lg transition-all",
                       person1Id && person2Id && !comparing
@@ -534,9 +539,7 @@ export default function ConnectionsPage() {
                 <AnimatePresence>
                   {error && (
                     <motion.div
-                      initial={{ opacity: 0, y: -5 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -5 }}
+                      {...(prefersReducedMotion ? {} : { initial: { opacity: 0, y: -5 }, animate: { opacity: 1, y: 0 }, exit: { opacity: 0, y: -5 } })}
                       className="rounded-2xl border border-white/10 bg-white/[0.03] p-8 text-center backdrop-blur-sm"
                     >
                       <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-cosmic-purple/10">
@@ -582,9 +585,7 @@ export default function ConnectionsPage() {
                 <AnimatePresence>
                   {quickResult && (
                     <motion.div
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -10 }}
+                      {...(prefersReducedMotion ? {} : { initial: { opacity: 0, y: 10 }, animate: { opacity: 1, y: 0 }, exit: { opacity: 0, y: -10 } })}
                       className="space-y-6"
                     >
                       <Separator className="bg-white/10" />
@@ -685,9 +686,7 @@ export default function ConnectionsPage() {
         {/* Existing Reports Section */}
         {reports.length > 0 && (
           <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
+            {...(prefersReducedMotion ? {} : { initial: { opacity: 0, y: 10 }, animate: { opacity: 1, y: 0 }, transition: { delay: 0.2 } })}
             className="space-y-4"
           >
             <div className="flex items-center justify-between">
@@ -701,18 +700,17 @@ export default function ConnectionsPage() {
                 className="border-white/10"
               >
                 <Link href="/compatibility">
-                  <Plus className="mr-2 h-3 w-3" />
+                  <Plus className="mr-2 h-3 w-3" aria-hidden="true" />
                   New Check
                 </Link>
               </Button>
             </div>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2" role="list" aria-label="Compatibility reports">
               {reports.map((report, i) => (
                 <motion.div
                   key={report.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.3 + i * 0.05 }}
+                  role="listitem"
+                  {...(prefersReducedMotion ? {} : { initial: { opacity: 0, y: 10 }, animate: { opacity: 1, y: 0 }, transition: { delay: 0.3 + i * 0.05 } })}
                 >
                   <ReportCard report={report} />
                 </motion.div>
@@ -724,12 +722,10 @@ export default function ConnectionsPage() {
         {/* No reports but has profiles */}
         {reports.length === 0 && hasProfiles && !quickResult && (
           <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
+            {...(prefersReducedMotion ? {} : { initial: { opacity: 0, y: 10 }, animate: { opacity: 1, y: 0 }, transition: { delay: 0.3 } })}
             className="rounded-2xl border border-dashed border-white/20 bg-white/[0.02] p-8 text-center"
           >
-            <BarChart3 className="mx-auto mb-3 h-8 w-8 text-muted-foreground" />
+            <BarChart3 className="mx-auto mb-3 h-8 w-8 text-muted-foreground" aria-hidden="true" />
             <h2 className="mb-1 font-medium text-muted-foreground">
               No reports yet
             </h2>

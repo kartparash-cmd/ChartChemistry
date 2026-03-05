@@ -17,6 +17,8 @@ model User {
   plan             Plan      @default(FREE)
   role             Role      @default(USER)
   stripeCustomerId String?
+  streakCount      Int       @default(0)
+  lastCheckinDate  DateTime?
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 
@@ -27,6 +29,9 @@ model User {
   chatSessions   ChatSession[]
   supportTickets SupportTicket[]
   ticketReplies  TicketReply[]
+  achievements   UserAchievement[]
+
+  @@index([stripeCustomerId])
 }
 
 enum Role {
@@ -180,4 +185,15 @@ model TicketReply {
   message   String   @db.Text
   isAdmin   Boolean  @default(false)
   createdAt DateTime @default(now())
+}
+
+model UserAchievement {
+  id              String   @id @default(cuid())
+  userId          String
+  achievementType String
+  unlockedAt      DateTime @default(now())
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, achievementType])
+  @@index([userId])
 }

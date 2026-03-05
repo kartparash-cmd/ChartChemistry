@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import {
   AlertTriangle,
   ArrowLeft,
@@ -180,6 +180,7 @@ function ExplainableElement({
 
 export default function ChartPage() {
   const params = useParams();
+  const prefersReducedMotion = useReducedMotion();
   const [profile, setProfile] = useState<BirthChartProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -388,6 +389,17 @@ export default function ChartPage() {
   const chartData = profile.chartData;
   const hasBirthTime = !!profile.birthTime;
 
+  // Animation props that respect prefers-reduced-motion
+  const fadeUp = prefersReducedMotion
+    ? {}
+    : { initial: { opacity: 0, y: 10 }, animate: { opacity: 1, y: 0 } };
+  const fadeIn = prefersReducedMotion
+    ? {}
+    : { initial: { opacity: 0 }, animate: { opacity: 1 } };
+  const scaleIn = prefersReducedMotion
+    ? {}
+    : { initial: { opacity: 0, scale: 0.95 }, animate: { opacity: 1, scale: 1 }, transition: { duration: 0.5 } };
+
   // Prepare chart wheel data
   const wheelPlanets: PlanetPosition[] =
     chartData?.planets?.map((p) => ({
@@ -426,8 +438,7 @@ export default function ChartPage() {
           </Link>
 
           <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
+            {...fadeUp}
           >
             <h1 className="font-heading text-2xl sm:text-3xl font-bold mb-2">
               {profile.name}&apos;s Natal Chart
@@ -460,8 +471,7 @@ export default function ChartPage() {
         {/* No birth time notice */}
         {!hasBirthTime && (
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
+            {...fadeIn}
             className="mb-6 rounded-xl border border-gold/20 bg-gold/[0.03] p-4 flex items-start gap-3"
           >
             <Info className="h-5 w-5 text-gold flex-shrink-0 mt-0.5" />
@@ -482,9 +492,7 @@ export default function ChartPage() {
         {/* House system recalculation error notice */}
         {recalcError && (
           <motion.div
-            initial={{ opacity: 0, y: -5 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -5 }}
+            {...(prefersReducedMotion ? {} : { initial: { opacity: 0, y: -5 }, animate: { opacity: 1, y: 0 }, exit: { opacity: 0, y: -5 } })}
             className="mb-6 rounded-xl border border-red-500/20 bg-red-500/[0.03] p-4 flex items-start gap-3"
           >
             <AlertTriangle className="h-5 w-5 text-red-400 flex-shrink-0 mt-0.5" />
@@ -503,9 +511,8 @@ export default function ChartPage() {
 
         {/* Tap-to-explain hint */}
         <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.15 }}
+          {...fadeIn}
+          {...(prefersReducedMotion ? {} : { transition: { delay: 0.15 } })}
           className="mb-6 flex items-center gap-2 text-xs text-muted-foreground"
         >
           <Sparkles className="h-3.5 w-3.5 text-cosmic-purple-light" />
@@ -518,10 +525,10 @@ export default function ChartPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Chart Wheel */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.5 }}
+            {...scaleIn}
             className="rounded-xl border border-white/10 bg-white/[0.03] p-6 backdrop-blur-sm"
+            role="img"
+            aria-label={`Natal chart wheel for ${profile.name}`}
           >
             <div className="flex items-center justify-between mb-4">
               <h2 className="font-heading text-lg font-semibold text-center flex-1">
@@ -571,9 +578,8 @@ export default function ChartPage() {
           <div className="space-y-6">
             {/* Key placements highlight */}
             <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
+              {...fadeUp}
+              {...(prefersReducedMotion ? {} : { transition: { delay: 0.1 } })}
               className="rounded-xl border border-white/10 bg-white/[0.03] p-6 backdrop-blur-sm"
             >
               <h2 className="font-heading text-lg font-semibold mb-4">
@@ -637,9 +643,8 @@ export default function ChartPage() {
 
             {/* CTA */}
             <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
+              {...fadeUp}
+              {...(prefersReducedMotion ? {} : { transition: { delay: 0.2 } })}
               className="rounded-xl border border-cosmic-purple/20 bg-gradient-to-br from-cosmic-purple/10 to-transparent p-6 text-center"
             >
               <h3 className="font-heading text-lg font-semibold mb-2">
@@ -663,9 +668,8 @@ export default function ChartPage() {
 
         {/* Planet Positions Table */}
         <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
+          {...fadeUp}
+          {...(prefersReducedMotion ? {} : { transition: { delay: 0.3 } })}
           className="mt-8 rounded-xl border border-white/10 bg-white/[0.03] p-6 backdrop-blur-sm"
         >
           <h2 className="font-heading text-lg font-semibold mb-4">
@@ -771,9 +775,8 @@ export default function ChartPage() {
         {/* Aspects Table */}
         {chartData?.aspects && chartData.aspects.length > 0 && (
           <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.35 }}
+            {...fadeUp}
+            {...(prefersReducedMotion ? {} : { transition: { delay: 0.35 } })}
             className="mt-8 rounded-xl border border-white/10 bg-white/[0.03] p-6 backdrop-blur-sm"
           >
             <h2 className="font-heading text-lg font-semibold mb-4">
@@ -858,9 +861,8 @@ export default function ChartPage() {
         {/* House Placements Table */}
         {hasBirthTime && chartData?.houses && (
           <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
+            {...fadeUp}
+            {...(prefersReducedMotion ? {} : { transition: { delay: 0.4 } })}
             className="mt-8 rounded-xl border border-white/10 bg-white/[0.03] p-6 backdrop-blur-sm"
           >
             <h2 className="font-heading text-lg font-semibold mb-4">
@@ -983,9 +985,7 @@ export default function ChartPage() {
 
               {explainText && !explainLoading && (
                 <motion.div
-                  initial={{ opacity: 0, y: 5 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3 }}
+                  {...(prefersReducedMotion ? {} : { initial: { opacity: 0, y: 5 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.3 } })}
                   className="prose prose-invert prose-sm max-w-none"
                 >
                   {explainText.split("\n").map((paragraph, i) =>

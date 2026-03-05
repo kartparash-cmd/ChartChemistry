@@ -4,7 +4,7 @@ import { useEffect, useState, useMemo } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import {
   Sun,
   Sparkles,
@@ -105,6 +105,7 @@ const MOOD_CONFIG: Record<string, { color: string; icon: string }> = {
 export default function HoroscopePage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const prefersReducedMotion = useReducedMotion();
   const [horoscope, setHoroscope] = useState<Horoscope | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -114,6 +115,20 @@ export default function HoroscopePage() {
   const now = useMemo(() => new Date(), []);
   const mercuryRetrograde = useMemo(() => isMercuryRetrograde(now), [now]);
   const moonPhase = useMemo(() => getMoonPhase(now), [now]);
+
+  // Animation variants that respect reduced motion preferences
+  const fadeUp = prefersReducedMotion
+    ? { initial: { opacity: 1 }, animate: { opacity: 1 } }
+    : { initial: { opacity: 0, y: 20 }, animate: { opacity: 1, y: 0 } };
+  const fadeUpSmall = prefersReducedMotion
+    ? { initial: { opacity: 1 }, animate: { opacity: 1 } }
+    : { initial: { opacity: 0, y: 10 }, animate: { opacity: 1, y: 0 } };
+  const fadeIn = prefersReducedMotion
+    ? { initial: { opacity: 1 }, animate: { opacity: 1 } }
+    : { initial: { opacity: 0 }, animate: { opacity: 1 } };
+  const scaleIn = prefersReducedMotion
+    ? { initial: { opacity: 1 }, animate: { opacity: 1 } }
+    : { initial: { scale: 0.8, opacity: 0 }, animate: { scale: 1, opacity: 1 } };
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -173,8 +188,8 @@ export default function HoroscopePage() {
       <section className="relative overflow-hidden border-b border-white/10 bg-gradient-to-b from-cosmic-purple/5 to-transparent">
         <div className="mx-auto max-w-3xl px-4 py-10 text-center">
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
+            initial={fadeUp.initial}
+            animate={fadeUp.animate}
           >
             <Badge
               variant="outline"
@@ -197,12 +212,12 @@ export default function HoroscopePage() {
       <AnimatePresence>
         {mercuryRetrograde && !retrogradedismissed && (
           <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
+            initial={prefersReducedMotion ? { opacity: 1 } : { opacity: 0, height: 0 }}
+            animate={prefersReducedMotion ? { opacity: 1 } : { opacity: 1, height: "auto" }}
+            exit={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, height: 0 }}
             className="mx-auto max-w-3xl px-4 pt-4"
           >
-            <div className="relative flex items-start gap-3 rounded-2xl bg-amber-400/10 px-5 py-4 text-amber-400">
+            <div role="alert" className="relative flex items-start gap-3 rounded-2xl bg-amber-400/10 px-5 py-4 text-amber-400">
               <span className="mt-0.5 text-lg shrink-0" aria-hidden="true">
                 ☿
               </span>
@@ -225,15 +240,26 @@ export default function HoroscopePage() {
 
       {/* Content */}
       <div className="mx-auto max-w-3xl px-4 py-8">
+        {/* Premium Upgrade CTA for free users */}
+        {session?.user?.plan === "FREE" && (
+          <div className="text-center py-8 mb-6 rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur-sm">
+            <h2 className="text-xl font-semibold cosmic-text mb-2">Unlock Daily Horoscopes</h2>
+            <p className="text-muted-foreground mb-4">Get personalized daily readings based on your natal chart</p>
+            <Button asChild className="cosmic-gradient text-white" aria-label="Upgrade to Premium for daily horoscopes">
+              <Link href="/pricing">Upgrade to Premium</Link>
+            </Button>
+          </div>
+        )}
+
         {loading ? (
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
+            initial={fadeIn.initial}
+            animate={fadeIn.animate}
             className="flex flex-col items-center gap-4 py-20"
           >
             <div className="relative">
-              <div className="h-16 w-16 rounded-full bg-cosmic-purple/10 animate-pulse" />
-              <Sparkles className="absolute inset-0 m-auto h-8 w-8 text-cosmic-purple-light animate-spin" />
+              <div className={cn("h-16 w-16 rounded-full bg-cosmic-purple/10", !prefersReducedMotion && "animate-pulse")} />
+              <Sparkles className={cn("absolute inset-0 m-auto h-8 w-8 text-cosmic-purple-light", !prefersReducedMotion && "animate-spin")} />
             </div>
             <p className="text-sm text-muted-foreground">
               Reading the stars for you...
@@ -241,14 +267,14 @@ export default function HoroscopePage() {
           </motion.div>
         ) : error ? (
           <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
+            initial={fadeUpSmall.initial}
+            animate={fadeUpSmall.animate}
             className="rounded-2xl border border-white/10 bg-white/[0.03] p-8 text-center backdrop-blur-sm"
           >
             <motion.div
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ delay: 0.1, type: "spring", stiffness: 200 }}
+              initial={scaleIn.initial}
+              animate={scaleIn.animate}
+              transition={prefersReducedMotion ? undefined : { delay: 0.1, type: "spring", stiffness: 200 }}
               className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-full bg-cosmic-purple/10"
             >
               {isAstroServiceError(error) ? (
@@ -273,6 +299,7 @@ export default function HoroscopePage() {
                   <Button
                     onClick={fetchHoroscope}
                     className="bg-cosmic-purple text-white hover:bg-cosmic-purple-dark"
+                    aria-label="Retry loading horoscope"
                   >
                     <RefreshCw className="mr-2 h-4 w-4" />
                     Try Again
@@ -281,6 +308,7 @@ export default function HoroscopePage() {
                     asChild
                     variant="outline"
                     className="border-white/10"
+                    aria-label="Navigate to dashboard"
                   >
                     <Link href="/dashboard">
                       <LayoutDashboard className="mr-2 h-4 w-4" />
@@ -293,6 +321,7 @@ export default function HoroscopePage() {
                   <Button
                     asChild
                     className="bg-cosmic-purple hover:bg-cosmic-purple-dark text-white"
+                    aria-label="Create your birth profile"
                   >
                     <Link href="/dashboard/profiles">
                       <Sparkles className="mr-2 h-4 w-4" />
@@ -303,6 +332,7 @@ export default function HoroscopePage() {
                     onClick={fetchHoroscope}
                     variant="outline"
                     className="border-white/10"
+                    aria-label="Retry loading horoscope"
                   >
                     <RefreshCw className="mr-2 h-4 w-4" />
                     Retry
@@ -339,13 +369,15 @@ export default function HoroscopePage() {
 
             {/* Mood + Summary Card */}
             <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
+              role="article"
+              aria-label="Today's mood and energy summary"
+              initial={fadeUpSmall.initial}
+              animate={fadeUpSmall.animate}
               className="rounded-2xl border border-white/10 bg-gradient-to-br from-cosmic-purple/[0.06] to-transparent p-6"
             >
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3">
-                  <span className="text-3xl">
+                  <span className="text-3xl" aria-hidden="true">
                     {moodConfig.icon}
                   </span>
                   <div>
@@ -363,8 +395,9 @@ export default function HoroscopePage() {
                   onClick={fetchHoroscope}
                   disabled={loading}
                   className="text-muted-foreground hover:text-foreground"
+                  aria-label="Refresh horoscope"
                 >
-                  <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
+                  <RefreshCw className={cn("h-4 w-4", loading && !prefersReducedMotion && "animate-spin")} />
                 </Button>
               </div>
               <p className="text-lg font-medium leading-relaxed">
@@ -374,9 +407,11 @@ export default function HoroscopePage() {
 
             {/* Main Horoscope Body */}
             <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
+              role="article"
+              aria-label="Full cosmic reading"
+              initial={fadeUpSmall.initial}
+              animate={fadeUpSmall.animate}
+              transition={prefersReducedMotion ? undefined : { delay: 0.1 }}
               className="rounded-2xl border border-white/10 bg-white/[0.03] p-6"
             >
               <div className="flex items-center gap-2 mb-4">
@@ -396,9 +431,11 @@ export default function HoroscopePage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {/* Cosmic Tip */}
               <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
+                role="article"
+                aria-label="Cosmic tip of the day"
+                initial={fadeUpSmall.initial}
+                animate={fadeUpSmall.animate}
+                transition={prefersReducedMotion ? undefined : { delay: 0.2 }}
                 className="rounded-xl border border-gold/20 bg-gold/[0.04] p-5"
               >
                 <div className="flex items-center gap-2 mb-2">
@@ -414,9 +451,11 @@ export default function HoroscopePage() {
 
               {/* Lucky Time */}
               <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.25 }}
+                role="article"
+                aria-label="Best time window for today"
+                initial={fadeUpSmall.initial}
+                animate={fadeUpSmall.animate}
+                transition={prefersReducedMotion ? undefined : { delay: 0.25 }}
                 className="rounded-xl border border-cosmic-purple/20 bg-cosmic-purple/[0.04] p-5"
               >
                 <div className="flex items-center gap-2 mb-2">
@@ -432,18 +471,20 @@ export default function HoroscopePage() {
             </div>
 
             {/* Continue Your Cosmic Journey */}
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
+            <motion.nav
+              aria-label="Related cosmic features"
+              initial={fadeUpSmall.initial}
+              animate={fadeUpSmall.animate}
+              transition={prefersReducedMotion ? undefined : { delay: 0.3 }}
               className="pt-4"
             >
-              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider text-center mb-4">
+              <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider text-center mb-4">
                 Continue Your Cosmic Journey
-              </h3>
+              </h2>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <Link
                   href="/transits"
+                  aria-label="View your current planetary transits"
                   className="glass-card group flex flex-col items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.03] p-5 text-center backdrop-blur-sm transition-colors hover:border-cosmic-purple/30 hover:bg-cosmic-purple/[0.06]"
                 >
                   <RefreshCw className="h-5 w-5 text-cosmic-purple-light transition-transform group-hover:rotate-45" />
@@ -451,10 +492,11 @@ export default function HoroscopePage() {
                   <span className="text-xs text-muted-foreground">
                     What the planets are doing right now
                   </span>
-                  <ArrowRight className="h-3.5 w-3.5 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
+                  <ArrowRight className="h-3.5 w-3.5 text-muted-foreground transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
                 </Link>
                 <Link
                   href="/compatibility"
+                  aria-label="Check your astrological compatibility"
                   className="glass-card group flex flex-col items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.03] p-5 text-center backdrop-blur-sm transition-colors hover:border-gold/30 hover:bg-gold/[0.06]"
                 >
                   <Heart className="h-5 w-5 text-gold transition-transform group-hover:scale-110" />
@@ -462,10 +504,11 @@ export default function HoroscopePage() {
                   <span className="text-xs text-muted-foreground">
                     How today affects your relationships
                   </span>
-                  <ArrowRight className="h-3.5 w-3.5 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
+                  <ArrowRight className="h-3.5 w-3.5 text-muted-foreground transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
                 </Link>
                 <Link
                   href="/wellness"
+                  aria-label="View wellness timing recommendations"
                   className="glass-card group flex flex-col items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.03] p-5 text-center backdrop-blur-sm transition-colors hover:border-emerald-400/30 hover:bg-emerald-400/[0.06]"
                 >
                   <Activity className="h-5 w-5 text-emerald-400 transition-transform group-hover:scale-110" />
@@ -473,10 +516,10 @@ export default function HoroscopePage() {
                   <span className="text-xs text-muted-foreground">
                     Best times for activities today
                   </span>
-                  <ArrowRight className="h-3.5 w-3.5 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
+                  <ArrowRight className="h-3.5 w-3.5 text-muted-foreground transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
                 </Link>
               </div>
-            </motion.div>
+            </motion.nav>
           </div>
         ) : null}
       </div>

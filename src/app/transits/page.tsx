@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import {
   Sun,
   Moon,
@@ -18,6 +18,7 @@ import {
   Clock,
   Heart,
   Compass,
+  Lock,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -91,7 +92,7 @@ function TransitSkeleton() {
       </div>
 
       {/* Stats row skeleton */}
-      <div className="grid grid-cols-3 gap-4 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
         {[1, 2, 3].map((i) => (
           <Skeleton key={i} className="h-20 rounded-xl bg-white/5" />
         ))}
@@ -325,6 +326,7 @@ function RelatedInsights() {
 export default function TransitsPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const prefersReducedMotion = useReducedMotion() ?? false;
   const [data, setData] = useState<TransitResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -382,11 +384,11 @@ export default function TransitsPage() {
 
   if (status === "loading" || loading) {
     return (
-      <div className="min-h-screen">
+      <main className="min-h-screen" aria-label="Transit Timeline" aria-busy="true">
         <section className="border-b border-white/10 bg-gradient-to-b from-cosmic-purple/5 to-transparent">
           <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
             <div className="flex items-center gap-3">
-              <Loader2 className="h-5 w-5 animate-spin text-cosmic-purple-light" />
+              <Loader2 className="h-5 w-5 animate-spin text-cosmic-purple-light" aria-hidden="true" />
               <span className="text-sm text-muted-foreground">
                 Loading your cosmic transits...
               </span>
@@ -403,7 +405,7 @@ export default function TransitsPage() {
             </div>
           </div>
         </div>
-      </div>
+      </main>
     );
   }
 
@@ -416,13 +418,14 @@ export default function TransitsPage() {
   const totalTransits = data?.transitCount || 0;
 
   return (
-    <div className="min-h-screen">
+    <main className="min-h-screen" aria-label="Transit Timeline">
       {/* Header */}
-      <section className="border-b border-white/10 bg-gradient-to-b from-cosmic-purple/5 to-transparent">
+      <section className="border-b border-white/10 bg-gradient-to-b from-cosmic-purple/5 to-transparent" aria-label="Page header">
         <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
           <motion.div
-            initial={{ opacity: 0, y: 10 }}
+            initial={prefersReducedMotion ? false : { opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
+            transition={prefersReducedMotion ? { duration: 0 } : undefined}
             className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
           >
             <div>
@@ -461,26 +464,40 @@ export default function TransitsPage() {
           <ErrorState message={error} onRetry={fetchTransits} />
         ) : (
           <>
+          {/* Premium Upgrade CTA */}
+          {session?.user?.plan === "FREE" && (
+            <Card className="glass-card border-white/10 bg-white/[0.03] p-8 text-center mb-8">
+              <Lock className="h-8 w-8 text-cosmic-purple-light mx-auto mb-3" />
+              <h2 className="text-xl font-semibold cosmic-text mb-2">Premium Feature</h2>
+              <p className="text-muted-foreground mb-4">Upgrade to access detailed transit analysis and personalized insights</p>
+              <Button asChild className="cosmic-gradient text-white hover:opacity-90">
+                <Link href="/pricing">Upgrade to Premium</Link>
+              </Button>
+            </Card>
+          )}
+
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Main timeline */}
             <div className="lg:col-span-2 space-y-8">
               {/* Stats overview */}
               {totalTransits > 0 && (
                 <motion.div
-                  initial={{ opacity: 0, y: 10 }}
+                  initial={prefersReducedMotion ? false : { opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.1 }}
-                  className="grid grid-cols-3 gap-4"
+                  transition={prefersReducedMotion ? { duration: 0 } : { delay: 0.1 }}
+                  className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
+                  role="list"
+                  aria-label="Transit statistics"
                 >
-                  <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4 text-center backdrop-blur-sm">
+                  <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4 text-center backdrop-blur-sm" role="listitem">
                     <p className="text-2xl font-bold text-foreground">{totalTransits}</p>
                     <p className="text-xs text-muted-foreground mt-1">Active Transits</p>
                   </div>
-                  <div className="rounded-xl border border-red-400/20 bg-red-400/[0.04] p-4 text-center backdrop-blur-sm">
+                  <div className="rounded-xl border border-red-400/20 bg-red-400/[0.04] p-4 text-center backdrop-blur-sm" role="listitem">
                     <p className="text-2xl font-bold text-red-400">{highTransits.length}</p>
                     <p className="text-xs text-muted-foreground mt-1">High Impact</p>
                   </div>
-                  <div className="rounded-xl border border-cosmic-purple/20 bg-cosmic-purple/[0.04] p-4 text-center backdrop-blur-sm">
+                  <div className="rounded-xl border border-cosmic-purple/20 bg-cosmic-purple/[0.04] p-4 text-center backdrop-blur-sm" role="listitem">
                     <p className="text-2xl font-bold text-cosmic-purple-light">
                       {mediumTransits.length}
                     </p>
@@ -492,8 +509,10 @@ export default function TransitsPage() {
               {/* Service error warning */}
               {data?.error && (
                 <motion.div
-                  initial={{ opacity: 0 }}
+                  initial={prefersReducedMotion ? false : { opacity: 0 }}
                   animate={{ opacity: 1 }}
+                  transition={prefersReducedMotion ? { duration: 0 } : undefined}
+                  role="alert"
                   className="flex items-center gap-3 rounded-xl border border-gold/20 bg-gold/[0.04] p-4"
                 >
                   <AlertTriangle className="h-4 w-4 text-gold shrink-0" />
@@ -504,8 +523,9 @@ export default function TransitsPage() {
               {/* Empty transits state */}
               {totalTransits === 0 && !data?.error && (
                 <motion.div
-                  initial={{ opacity: 0, scale: 0.98 }}
+                  initial={prefersReducedMotion ? false : { opacity: 0, scale: 0.98 }}
                   animate={{ opacity: 1, scale: 1 }}
+                  transition={prefersReducedMotion ? { duration: 0 } : undefined}
                   className="rounded-xl border border-dashed border-white/20 bg-white/[0.02] p-12 text-center"
                 >
                   <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-cosmic-purple/10">
@@ -525,12 +545,12 @@ export default function TransitsPage() {
               {highTransits.length > 0 && (
                 <div>
                   <motion.div
-                    initial={{ opacity: 0 }}
+                    initial={prefersReducedMotion ? false : { opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    transition={{ delay: 0.15 }}
+                    transition={prefersReducedMotion ? { duration: 0 } : { delay: 0.15 }}
                     className="flex items-center gap-2 mb-1"
                   >
-                    <Star className="h-4 w-4 text-red-400" />
+                    <Star className="h-4 w-4 text-red-400" aria-hidden="true" />
                     <h2 className="font-heading text-lg font-semibold text-red-400">
                       High Impact
                     </h2>
@@ -560,12 +580,12 @@ export default function TransitsPage() {
                     <Separator className="bg-white/10 mb-8" />
                   )}
                   <motion.div
-                    initial={{ opacity: 0 }}
+                    initial={prefersReducedMotion ? false : { opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    transition={{ delay: 0.25 }}
+                    transition={prefersReducedMotion ? { duration: 0 } : { delay: 0.25 }}
                     className="flex items-center gap-2 mb-4"
                   >
-                    <Orbit className="h-4 w-4 text-cosmic-purple-light" />
+                    <Orbit className="h-4 w-4 text-cosmic-purple-light" aria-hidden="true" />
                     <h2 className="font-heading text-lg font-semibold text-cosmic-purple-light">
                       Medium Influence
                     </h2>
@@ -594,12 +614,12 @@ export default function TransitsPage() {
                     <Separator className="bg-white/10 mb-8" />
                   )}
                   <motion.div
-                    initial={{ opacity: 0 }}
+                    initial={prefersReducedMotion ? false : { opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    transition={{ delay: 0.35 }}
+                    transition={prefersReducedMotion ? { duration: 0 } : { delay: 0.35 }}
                     className="flex items-center gap-2 mb-4"
                   >
-                    <Moon className="h-4 w-4 text-muted-foreground" />
+                    <Moon className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
                     <h2 className="font-heading text-lg font-semibold text-muted-foreground">
                       Subtle Influences
                     </h2>
@@ -632,37 +652,39 @@ export default function TransitsPage() {
                 <CardHeader className="pb-3">
                   <CardTitle className="text-sm">Explore More</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-2">
-                  <Button
-                    asChild
-                    variant="ghost"
-                    className="w-full justify-start text-sm text-muted-foreground hover:text-foreground"
-                  >
-                    <Link href="/dashboard">
-                      <ArrowRight className="mr-2 h-3 w-3" />
-                      Back to Dashboard
-                    </Link>
-                  </Button>
-                  <Button
-                    asChild
-                    variant="ghost"
-                    className="w-full justify-start text-sm text-muted-foreground hover:text-foreground"
-                  >
-                    <Link href="/compatibility">
-                      <ArrowRight className="mr-2 h-3 w-3" />
-                      Compatibility Check
-                    </Link>
-                  </Button>
-                  <Button
-                    asChild
-                    variant="ghost"
-                    className="w-full justify-start text-sm text-muted-foreground hover:text-foreground"
-                  >
-                    <Link href="/horoscope">
-                      <ArrowRight className="mr-2 h-3 w-3" />
-                      Daily Horoscope
-                    </Link>
-                  </Button>
+                <CardContent>
+                  <nav className="space-y-2" aria-label="Explore more features">
+                    <Button
+                      asChild
+                      variant="ghost"
+                      className="w-full justify-start text-sm text-muted-foreground hover:text-foreground"
+                    >
+                      <Link href="/dashboard" aria-label="Back to Dashboard">
+                        <ArrowRight className="mr-2 h-3 w-3" />
+                        Back to Dashboard
+                      </Link>
+                    </Button>
+                    <Button
+                      asChild
+                      variant="ghost"
+                      className="w-full justify-start text-sm text-muted-foreground hover:text-foreground"
+                    >
+                      <Link href="/compatibility" aria-label="Compatibility Check">
+                        <ArrowRight className="mr-2 h-3 w-3" />
+                        Compatibility Check
+                      </Link>
+                    </Button>
+                    <Button
+                      asChild
+                      variant="ghost"
+                      className="w-full justify-start text-sm text-muted-foreground hover:text-foreground"
+                    >
+                      <Link href="/horoscope" aria-label="Daily Horoscope">
+                        <ArrowRight className="mr-2 h-3 w-3" />
+                        Daily Horoscope
+                      </Link>
+                    </Button>
+                  </nav>
                 </CardContent>
               </Card>
             </div>
@@ -673,6 +695,6 @@ export default function TransitsPage() {
           </>
         )}
       </div>
-    </div>
+    </main>
   );
 }

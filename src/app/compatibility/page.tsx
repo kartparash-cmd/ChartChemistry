@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { useSession } from "next-auth/react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { ArrowRight, AlertTriangle, RefreshCw, LayoutDashboard, Crown, X } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -50,6 +50,8 @@ type PageState = "input" | "loading" | "results" | "error";
 
 export default function CompatibilityPage() {
   const { data: session } = useSession();
+  const prefersReducedMotion = useReducedMotion();
+  const rateLimitModalRef = useRef<HTMLDivElement>(null);
   const [personA, setPersonA] = useState<BirthData | null>(null);
   const [personB, setPersonB] = useState<BirthData | null>(null);
   const [pageState, setPageState] = useState<PageState>("input");
@@ -60,6 +62,59 @@ export default function CompatibilityPage() {
   const [savedProfiles, setSavedProfiles] = useState<any[]>([]);
   const [formKeyA, setFormKeyA] = useState(0);
   const [formKeyB, setFormKeyB] = useState(0);
+
+  // Reduced-motion-aware transition presets
+  const fade = prefersReducedMotion
+    ? { duration: 0 }
+    : { duration: 0.3 };
+  const fadeSlide = prefersReducedMotion
+    ? { duration: 0 }
+    : { duration: 0.4 };
+  const springPop = prefersReducedMotion
+    ? { duration: 0 }
+    : { type: "spring" as const, stiffness: 200 };
+  const springModal = prefersReducedMotion
+    ? { duration: 0 }
+    : { type: "spring" as const, stiffness: 300, damping: 25 };
+
+  // Trap focus inside the rate-limit modal when open
+  useEffect(() => {
+    if (!showRateLimitModal) return;
+
+    const modal = rateLimitModalRef.current;
+    if (!modal) return;
+
+    const focusableSelector =
+      'a[href], button:not([disabled]), textarea, input, select, [tabindex]:not([tabindex="-1"])';
+    const focusableEls = modal.querySelectorAll<HTMLElement>(focusableSelector);
+    const firstEl = focusableEls[0];
+    const lastEl = focusableEls[focusableEls.length - 1];
+
+    // Auto-focus the first interactive element
+    firstEl?.focus();
+
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        setShowRateLimitModal(false);
+        return;
+      }
+      if (e.key !== "Tab") return;
+      if (e.shiftKey) {
+        if (document.activeElement === firstEl) {
+          e.preventDefault();
+          lastEl?.focus();
+        }
+      } else {
+        if (document.activeElement === lastEl) {
+          e.preventDefault();
+          firstEl?.focus();
+        }
+      }
+    }
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [showRateLimitModal]);
 
   const bothValid = personA !== null && personB !== null;
   const personAReady = personA !== null;
@@ -169,9 +224,9 @@ export default function CompatibilityPage() {
         {/* Page Header */}
         <motion.div
           className="mb-10 text-center"
-          initial={{ opacity: 0, y: 20 }}
+          initial={prefersReducedMotion ? false : { opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
+          transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.5 }}
         >
           <h1 className="text-3xl font-bold sm:text-4xl md:text-5xl">
             Birth Chart{" "}
@@ -187,16 +242,23 @@ export default function CompatibilityPage() {
           {pageState === "input" && (
             <motion.div
               key="input"
-              initial={{ opacity: 0 }}
+              initial={prefersReducedMotion ? false : { opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.3 }}
+              transition={fade}
             >
               <div className="grid gap-6 md:grid-cols-2">
                 <div>
                   {savedProfiles.length > 0 && (
                     <div className="mb-3">
+                      <label
+                        htmlFor="saved-profile-a"
+                        className="mb-1 block text-sm font-medium text-muted-foreground"
+                      >
+                        Your saved profile
+                      </label>
                       <select
+                        id="saved-profile-a"
                         className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-foreground"
                         defaultValue=""
                         onChange={(e) => {
@@ -239,7 +301,14 @@ export default function CompatibilityPage() {
                 <div>
                   {savedProfiles.length > 0 && (
                     <div className="mb-3">
+                      <label
+                        htmlFor="saved-profile-b"
+                        className="mb-1 block text-sm font-medium text-muted-foreground"
+                      >
+                        Their saved profile
+                      </label>
                       <select
+                        id="saved-profile-b"
                         className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-foreground"
                         defaultValue=""
                         onChange={(e) => {
@@ -325,10 +394,10 @@ export default function CompatibilityPage() {
           {pageState === "loading" && (
             <motion.div
               key="loading"
-              initial={{ opacity: 0 }}
+              initial={prefersReducedMotion ? false : { opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.3 }}
+              transition={fade}
             >
               <LoadingFacts />
             </motion.div>
@@ -338,10 +407,10 @@ export default function CompatibilityPage() {
           {pageState === "results" && result && (
             <motion.div
               key="results"
-              initial={{ opacity: 0 }}
+              initial={prefersReducedMotion ? false : { opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.3 }}
+              transition={fade}
             >
               <CompatibilityResults
                 result={result}
@@ -352,9 +421,9 @@ export default function CompatibilityPage() {
               {remainingChecks !== null && !session && (
                 <motion.p
                   className="mt-6 text-center text-sm text-muted-foreground/70"
-                  initial={{ opacity: 0 }}
+                  initial={prefersReducedMotion ? false : { opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  transition={{ delay: 0.5 }}
+                  transition={prefersReducedMotion ? { duration: 0 } : { delay: 0.5 }}
                 >
                   {remainingChecks > 0
                     ? `${remainingChecks} free check${remainingChecks === 1 ? "" : "s"} remaining today`
@@ -378,17 +447,19 @@ export default function CompatibilityPage() {
           {pageState === "error" && (
             <motion.div
               key="error"
-              initial={{ opacity: 0, y: 10 }}
+              initial={prefersReducedMotion ? false : { opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.4 }}
+              transition={fadeSlide}
               className="mx-auto max-w-lg"
+              role="alert"
+              aria-live="polite"
             >
               <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-8 text-center backdrop-blur-sm">
                 <motion.div
-                  initial={{ scale: 0.8, opacity: 0 }}
+                  initial={prefersReducedMotion ? false : { scale: 0.8, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
-                  transition={{ delay: 0.1, type: "spring", stiffness: 200 }}
+                  transition={prefersReducedMotion ? { duration: 0 } : { delay: 0.1, ...springPop }}
                   className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-cosmic-purple/10"
                 >
                   <AlertTriangle className="h-8 w-8 text-cosmic-purple-light" />
@@ -440,17 +511,22 @@ export default function CompatibilityPage() {
           <motion.div
             key="rate-limit-overlay"
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4"
-            initial={{ opacity: 0 }}
+            initial={prefersReducedMotion ? false : { opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
+            transition={fade}
             onClick={() => setShowRateLimitModal(false)}
           >
             <motion.div
+              ref={rateLimitModalRef}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="rate-limit-title"
               className="glass-card relative w-full max-w-md rounded-2xl border border-cosmic-purple/40 p-8 text-center"
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              initial={prefersReducedMotion ? false : { opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              transition={{ type: "spring", stiffness: 300, damping: 25 }}
+              exit={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, scale: 0.9, y: 20 }}
+              transition={springModal}
               onClick={(e) => e.stopPropagation()}
             >
               <button
@@ -465,7 +541,10 @@ export default function CompatibilityPage() {
                 <Crown className="h-8 w-8 text-cosmic-purple-light" />
               </div>
 
-              <h3 className="font-heading text-xl font-semibold mb-2">
+              <h3
+                id="rate-limit-title"
+                className="font-heading text-xl font-semibold mb-2"
+              >
                 You&apos;ve used all 3 free checks today
               </h3>
               <p className="mx-auto max-w-sm text-sm text-muted-foreground mb-6">

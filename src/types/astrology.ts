@@ -218,6 +218,8 @@ export interface SynastryHighlight {
 export interface FullCompatibilityRequest {
   person1Id: string;
   person2Id: string;
+  /** If true, bypass cached report and regenerate fresh. */
+  regenerate?: boolean;
 }
 
 /** Parsed sections of a premium AI report. */

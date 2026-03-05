@@ -557,14 +557,76 @@ export function buildChatContext(
   lines.push(`Person 1: ${person1.name}`);
   lines.push(`Person 2: ${person2.name}`);
 
-  // Include synastry highlights if available
+  // Include natal chart details if available
+  if (person1.chartData && typeof person1.chartData === "object") {
+    const chart1 = person1.chartData as NatalChart;
+    if (chart1.planets) {
+      lines.push("");
+      lines.push(`=== ${person1.name.toUpperCase()}'S NATAL CHART ===`);
+      for (const p of chart1.planets) {
+        lines.push(formatPlanet(p));
+      }
+      if (chart1.dominantPlanet) {
+        lines.push(`Dominant Planet: ${chart1.dominantPlanet}`);
+      }
+      if (chart1.elementBalance) {
+        lines.push(
+          `Elements: Fire ${chart1.elementBalance.fire}, Earth ${chart1.elementBalance.earth}, Air ${chart1.elementBalance.air}, Water ${chart1.elementBalance.water}`
+        );
+      }
+      if (chart1.aspects) {
+        lines.push("");
+        lines.push(`=== ${person1.name.toUpperCase()}'S NATAL ASPECTS ===`);
+        for (const a of chart1.aspects) {
+          lines.push(formatAspect(a));
+        }
+      }
+    }
+  }
+
+  if (person2.chartData && typeof person2.chartData === "object") {
+    const chart2 = person2.chartData as NatalChart;
+    if (chart2.planets) {
+      lines.push("");
+      lines.push(`=== ${person2.name.toUpperCase()}'S NATAL CHART ===`);
+      for (const p of chart2.planets) {
+        lines.push(formatPlanet(p));
+      }
+      if (chart2.dominantPlanet) {
+        lines.push(`Dominant Planet: ${chart2.dominantPlanet}`);
+      }
+      if (chart2.elementBalance) {
+        lines.push(
+          `Elements: Fire ${chart2.elementBalance.fire}, Earth ${chart2.elementBalance.earth}, Air ${chart2.elementBalance.air}, Water ${chart2.elementBalance.water}`
+        );
+      }
+      if (chart2.aspects) {
+        lines.push("");
+        lines.push(`=== ${person2.name.toUpperCase()}'S NATAL ASPECTS ===`);
+        for (const a of chart2.aspects) {
+          lines.push(formatAspect(a));
+        }
+      }
+    }
+  }
+
+  // Include synastry aspects if available
   if (report.synastryData && typeof report.synastryData === "object") {
     const synastry = report.synastryData as SynastryResult;
     if (synastry.interAspects) {
       lines.push("");
-      lines.push("=== KEY SYNASTRY ASPECTS ===");
-      for (const a of synastry.interAspects.slice(0, 10)) {
+      lines.push("=== SYNASTRY ASPECTS ===");
+      for (const a of synastry.interAspects) {
         lines.push(formatAspect(a));
+      }
+    }
+    if (synastry.houseOverlays && synastry.houseOverlays.length > 0) {
+      lines.push("");
+      lines.push("=== HOUSE OVERLAYS ===");
+      for (const h of synastry.houseOverlays) {
+        lines.push(
+          `${h.planetOwner}'s ${h.planet} in ${h.houseOwner}'s House ${h.house} (${h.sign})`
+        );
       }
     }
   }
@@ -628,7 +690,7 @@ export async function generateDailyHoroscope(
   chartLines.push("");
 
   chartLines.push("=== CURRENT PLANETARY POSITIONS ===");
-  for (const p of transitData.transitingPositions.slice(0, 5)) {
+  for (const p of transitData.transitingPositions) {
     chartLines.push(formatPlanet(p));
   }
 

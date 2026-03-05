@@ -97,9 +97,9 @@ const OFFERINGS = [
   },
   {
     icon: Bell,
-    title: "Transit Alerts",
+    title: "Transit Tracking",
     description:
-      "Get notified when significant planetary transits are approaching your natal placements, so you can prepare for key cosmic moments.",
+      "View current planetary transits against your natal chart in real time, with significance ratings and AI-powered interpretations to help you understand the cosmic climate.",
   },
   {
     icon: MessageCircle,

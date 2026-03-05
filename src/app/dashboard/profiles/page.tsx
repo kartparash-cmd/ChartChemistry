@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -36,6 +36,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -62,6 +63,20 @@ interface ProfileFormData {
   birthTime: string;
   birthCity: string;
   birthCountry: string;
+}
+
+interface CityResult {
+  display: string;
+  city: string;
+  state: string;
+  country: string;
+  lat: number;
+  lon: number;
+}
+
+interface ProfileFormSubmitData extends ProfileFormData {
+  latitude: number | null;
+  longitude: number | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -107,7 +122,7 @@ function ProfileForm({
   isSubmitting,
 }: {
   initialData?: ProfileFormData;
-  onSubmit: (data: ProfileFormData) => void;
+  onSubmit: (data: ProfileFormSubmitData) => void;
   onCancel: () => void;
   isSubmitting: boolean;
 }) {
@@ -124,6 +139,97 @@ function ProfileForm({
     initialData ? !initialData.birthTime : false
   );
 
+  // City autocomplete state
+  const [selectedCoords, setSelectedCoords] = useState<{
+    lat: number;
+    lon: number;
+  } | null>(null);
+  const [citySuggestions, setCitySuggestions] = useState<CityResult[]>([]);
+  const [cityLoading, setCityLoading] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [highlightedIndex, setHighlightedIndex] = useState(-1);
+  const cityInputRef = useRef<HTMLInputElement>(null);
+  const suggestionsRef = useRef<HTMLDivElement>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>(null);
+
+  // City search with debounce
+  const searchCities = useCallback(
+    (query: string) => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+
+      if (query.length < 2) {
+        setCitySuggestions([]);
+        setShowSuggestions(false);
+        return;
+      }
+
+      setCityLoading(true);
+      debounceRef.current = setTimeout(async () => {
+        try {
+          const params = new URLSearchParams({ q: query });
+          if (form.birthCountry) params.set("country", form.birthCountry);
+
+          const res = await fetch(`/api/city-search?${params}`);
+          if (res.ok) {
+            const data: CityResult[] = await res.json();
+            setCitySuggestions(data);
+            setShowSuggestions(data.length > 0);
+          }
+        } catch {
+          // Silently fail — user can still type city name manually
+        } finally {
+          setCityLoading(false);
+        }
+      }, 500);
+    },
+    [form.birthCountry]
+  );
+
+  // Close suggestions when clicking outside
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (
+        suggestionsRef.current &&
+        !suggestionsRef.current.contains(e.target as Node) &&
+        cityInputRef.current &&
+        !cityInputRef.current.contains(e.target as Node)
+      ) {
+        setShowSuggestions(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleCitySelect = (result: CityResult) => {
+    setForm((prev) => ({ ...prev, birthCity: result.city }));
+    setSelectedCoords({ lat: result.lat, lon: result.lon });
+    setShowSuggestions(false);
+    setHighlightedIndex(-1);
+  };
+
+  const handleCityKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!showSuggestions || citySuggestions.length === 0) return;
+
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setHighlightedIndex((prev) =>
+        prev < citySuggestions.length - 1 ? prev + 1 : 0
+      );
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setHighlightedIndex((prev) =>
+        prev > 0 ? prev - 1 : citySuggestions.length - 1
+      );
+    } else if (e.key === "Enter" && highlightedIndex >= 0) {
+      e.preventDefault();
+      handleCitySelect(citySuggestions[highlightedIndex]);
+    } else if (e.key === "Escape") {
+      setShowSuggestions(false);
+      setHighlightedIndex(-1);
+    }
+  };
+
   const handleChange = (field: keyof ProfileFormData, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
   };
@@ -133,6 +239,8 @@ function ProfileForm({
     onSubmit({
       ...form,
       birthTime: unknownBirthTime ? "" : form.birthTime,
+      latitude: selectedCoords?.lat ?? null,
+      longitude: selectedCoords?.lon ?? null,
     });
   };
 
@@ -152,7 +260,7 @@ function ProfileForm({
           value={form.name}
           onChange={(e) => handleChange("name", e.target.value)}
           required
-          className="border-white/10 bg-white/5"
+          className="h-11 border-white/10 bg-white/5"
         />
       </div>
 
@@ -165,7 +273,7 @@ function ProfileForm({
             value={form.birthDate}
             onChange={(e) => handleChange("birthDate", e.target.value)}
             required
-            className="border-white/10 bg-white/5"
+            className="h-11 border-white/10 bg-white/5"
           />
         </div>
         <div className="space-y-2">
@@ -176,7 +284,7 @@ function ProfileForm({
             value={form.birthTime}
             onChange={(e) => handleChange("birthTime", e.target.value)}
             disabled={unknownBirthTime}
-            className="border-white/10 bg-white/5 disabled:opacity-40"
+            className="h-11 border-white/10 bg-white/5 disabled:opacity-40"
           />
           <label
             htmlFor="unknown-birth-time"
@@ -200,17 +308,91 @@ function ProfileForm({
       </div>
 
       <div className="grid grid-cols-2 gap-4">
+        {/* Birth City with autocomplete */}
         <div className="space-y-2">
           <Label htmlFor="profile-birth-city">Birth City *</Label>
-          <Input
-            id="profile-birth-city"
-            placeholder="e.g. New York"
-            value={form.birthCity}
-            onChange={(e) => handleChange("birthCity", e.target.value)}
-            required
-            className="border-white/10 bg-white/5"
-          />
+          <div className="relative">
+            <Input
+              ref={cityInputRef}
+              id="profile-birth-city"
+              placeholder="e.g. New York"
+              value={form.birthCity}
+              onChange={(e) => {
+                handleChange("birthCity", e.target.value);
+                setSelectedCoords(null);
+                setHighlightedIndex(-1);
+                searchCities(e.target.value);
+              }}
+              onFocus={() => {
+                if (citySuggestions.length > 0) setShowSuggestions(true);
+              }}
+              onKeyDown={handleCityKeyDown}
+              role="combobox"
+              aria-expanded={showSuggestions && citySuggestions.length > 0}
+              aria-autocomplete="list"
+              aria-controls="profile-city-listbox"
+              aria-activedescendant={
+                highlightedIndex >= 0
+                  ? `profile-city-option-${highlightedIndex}`
+                  : undefined
+              }
+              autoComplete="off"
+              required
+              className={cn(
+                "h-11 border-white/10 bg-white/5 pr-8",
+                selectedCoords && "border-green-500/50"
+              )}
+            />
+            {cityLoading ? (
+              <Loader2 className="absolute right-2.5 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-muted-foreground" />
+            ) : selectedCoords ? (
+              <MapPin className="absolute right-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-green-500" />
+            ) : null}
+
+            {/* Suggestions dropdown */}
+            {showSuggestions && citySuggestions.length > 0 && (
+              <div
+                ref={suggestionsRef}
+                id="profile-city-listbox"
+                role="listbox"
+                aria-live="polite"
+                className="absolute z-50 mt-1 w-full rounded-lg border border-white/10 bg-navy-light shadow-lg max-h-48 overflow-y-auto"
+              >
+                {citySuggestions.map((result, i) => (
+                  <button
+                    key={`${result.lat}-${result.lon}-${i}`}
+                    id={`profile-city-option-${i}`}
+                    role="option"
+                    aria-selected={i === highlightedIndex}
+                    type="button"
+                    className={cn(
+                      "flex w-full items-start gap-2 px-3 py-2.5 text-left text-sm hover:bg-white/5 transition-colors",
+                      i === highlightedIndex && "bg-white/5"
+                    )}
+                    onClick={() => handleCitySelect(result)}
+                  >
+                    <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                    <div className="min-w-0">
+                      <p className="font-medium truncate">{result.city}</p>
+                      <p className="text-xs text-muted-foreground truncate">
+                        {[result.state, result.country]
+                          .filter(Boolean)
+                          .join(", ")}
+                      </p>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+          {/* Warn if city typed but no coords picked */}
+          {form.birthCity.trim().length > 0 && !selectedCoords && (
+            <p className="text-[11px] text-amber-400/80">
+              Select a suggestion for accurate chart coordinates.
+            </p>
+          )}
         </div>
+
         <div className="space-y-2">
           <Label htmlFor="profile-birth-country">Birth Country *</Label>
           <Input
@@ -219,7 +401,7 @@ function ProfileForm({
             value={form.birthCountry}
             onChange={(e) => handleChange("birthCountry", e.target.value)}
             required
-            className="border-white/10 bg-white/5"
+            className="h-11 border-white/10 bg-white/5"
           />
         </div>
       </div>
@@ -303,7 +485,7 @@ export default function ProfilesPage() {
   }, [status, fetchProfiles]);
 
   // Create profile
-  const handleCreate = async (formData: ProfileFormData) => {
+  const handleCreate = async (formData: ProfileFormSubmitData) => {
     setIsSubmitting(true);
     try {
       const res = await fetch("/api/profile", {
@@ -315,8 +497,8 @@ export default function ProfilesPage() {
           birthTime: formData.birthTime || null,
           birthCity: formData.birthCity.trim(),
           birthCountry: formData.birthCountry.trim(),
-          latitude: 0,
-          longitude: 0,
+          latitude: formData.latitude ?? 0,
+          longitude: formData.longitude ?? 0,
           timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
         }),
       });
@@ -341,7 +523,7 @@ export default function ProfilesPage() {
   };
 
   // Update profile
-  const handleUpdate = async (formData: ProfileFormData) => {
+  const handleUpdate = async (formData: ProfileFormSubmitData) => {
     if (!activeProfile) return;
     setIsSubmitting(true);
     try {
@@ -354,6 +536,9 @@ export default function ProfilesPage() {
           birthTime: formData.birthTime || null,
           birthCity: formData.birthCity.trim(),
           birthCountry: formData.birthCountry.trim(),
+          ...(formData.latitude !== null && formData.longitude !== null
+            ? { latitude: formData.latitude, longitude: formData.longitude }
+            : {}),
         }),
       });
 
@@ -610,7 +795,7 @@ export default function ProfilesPage() {
                 <CardFooter className="flex flex-wrap gap-2">
                   <Button
                     asChild
-                    size="sm"
+                    size="default"
                     variant="outline"
                     className="border-white/10"
                   >
@@ -621,7 +806,7 @@ export default function ProfilesPage() {
                   </Button>
 
                   <Button
-                    size="sm"
+                    size="default"
                     variant="outline"
                     className="border-white/10"
                     onClick={() => {
@@ -635,7 +820,7 @@ export default function ProfilesPage() {
 
                   {!profile.isOwner && (
                     <Button
-                      size="sm"
+                      size="default"
                       variant="outline"
                       className="border-red-500/20 text-red-400 hover:bg-red-500/10 hover:text-red-300"
                       onClick={() => {

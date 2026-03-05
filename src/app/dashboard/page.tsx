@@ -4,7 +4,7 @@ import { Suspense, useEffect, useState } from "react";
 import { useSession, signOut } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import {
   Sun,
   Moon,
@@ -41,6 +41,7 @@ import {
 } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
+import { Confetti } from "@/components/confetti";
 
 // Types for dashboard data
 interface BirthProfile {
@@ -71,6 +72,7 @@ interface CompatibilityReport {
 
 interface DashboardData {
   profile: BirthProfile | null;
+  profiles?: BirthProfile[];
   reports: CompatibilityReport[];
   stats: {
     totalReports: number;
@@ -169,6 +171,8 @@ interface StreakData {
   count: number;
 }
 
+const STREAK_MILESTONES = [7, 30, 100];
+
 function getStreakMilestoneBadge(count: number): string | null {
   if (count >= 100) return "Cosmic Master";
   if (count >= 30) return "Star Voyager";
@@ -176,20 +180,30 @@ function getStreakMilestoneBadge(count: number): string | null {
   return null;
 }
 
+function getTimeOfDayGreeting(): string {
+  const hour = new Date().getHours();
+  if (hour >= 5 && hour <= 11) return "Good morning";
+  if (hour >= 12 && hour <= 16) return "Good afternoon";
+  if (hour >= 17 && hour <= 20) return "Good evening";
+  return "Late night stargazing";
+}
+
 function StatCard({
   icon,
   label,
   value,
   color,
+  shouldAnimate,
 }: {
   icon: React.ReactNode;
   label: string;
   value: string;
   color: string;
+  shouldAnimate: boolean;
 }) {
   return (
     <motion.div
-      whileHover={{ y: -2, scale: 1.01 }}
+      whileHover={shouldAnimate ? { y: -2, scale: 1.01 } : {}}
       className="rounded-xl border border-white/10 bg-white/[0.03] p-4 backdrop-blur-sm"
     >
       <div className="flex items-center gap-3">
@@ -237,7 +251,7 @@ function SignCard({
   );
 }
 
-function ReportCard({ report }: { report: CompatibilityReport }) {
+function ReportCard({ report, shouldAnimate }: { report: CompatibilityReport; shouldAnimate: boolean }) {
   const scoreColor =
     report.overallScore >= 70
       ? "text-emerald-400"
@@ -246,7 +260,7 @@ function ReportCard({ report }: { report: CompatibilityReport }) {
         : "text-red-400";
 
   return (
-    <motion.div whileHover={{ y: -3, scale: 1.01 }} transition={{ duration: 0.2 }}>
+    <motion.div whileHover={shouldAnimate ? { y: -3, scale: 1.01 } : {}} transition={{ duration: 0.2 }}>
       <Link
         href={`/report/${report.id}`}
         className="block rounded-xl border border-white/10 bg-white/[0.03] p-5 backdrop-blur-sm transition-colors hover:border-white/20 hover:bg-white/[0.05]"
@@ -310,6 +324,9 @@ function DashboardContent() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const prefersReducedMotion = useReducedMotion();
+  const shouldAnimate = !prefersReducedMotion;
+
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -317,8 +334,34 @@ function DashboardContent() {
   const [activeTab, setActiveTab] = useState(initialTab);
   const [upgraded, setUpgraded] = useState(searchParams.get("upgraded") === "true");
   const [streak, setStreak] = useState<number>(0);
+  const [showConfetti, setShowConfetti] = useState(false);
+  const [greetingPrefix, setGreetingPrefix] = useState("Welcome back");
 
-  // Track daily check-in streak
+  // Determine greeting: first-visit detection + time-of-day
+  useEffect(() => {
+    try {
+      const isFirstVisit = !localStorage.getItem("cc_first_dashboard_visit");
+      if (isFirstVisit) {
+        setGreetingPrefix("Welcome to ChartChemistry");
+        localStorage.setItem("cc_first_dashboard_visit", "true");
+      } else {
+        setGreetingPrefix(getTimeOfDayGreeting());
+      }
+    } catch {
+      setGreetingPrefix(getTimeOfDayGreeting());
+    }
+  }, []);
+
+  // Trigger confetti on upgrade
+  useEffect(() => {
+    if (upgraded && shouldAnimate) {
+      setShowConfetti(true);
+      const timer = setTimeout(() => setShowConfetti(false), 3500);
+      return () => clearTimeout(timer);
+    }
+  }, [upgraded, shouldAnimate]);
+
+  // Track daily check-in streak and detect milestone celebrations
   useEffect(() => {
     try {
       const today = new Date().toISOString().split("T")[0];
@@ -329,9 +372,13 @@ function DashboardContent() {
         streakData = JSON.parse(raw) as StreakData;
       }
 
+      let newCount = streakData.count;
+      let updatedToday = false;
+
       if (streakData.lastDate === today) {
         // Already visited today
-        setStreak(streakData.count);
+        newCount = streakData.count;
+        updatedToday = true;
       } else {
         // Check if yesterday
         const yesterday = new Date();
@@ -339,26 +386,43 @@ function DashboardContent() {
         const yesterdayStr = yesterday.toISOString().split("T")[0];
 
         if (streakData.lastDate === yesterdayStr) {
-          const newCount = streakData.count + 1;
+          newCount = streakData.count + 1;
           localStorage.setItem(
             "cc_streak",
             JSON.stringify({ lastDate: today, count: newCount })
           );
-          setStreak(newCount);
         } else {
           // Reset streak
+          newCount = 1;
           localStorage.setItem(
             "cc_streak",
             JSON.stringify({ lastDate: today, count: 1 })
           );
-          setStreak(1);
+        }
+      }
+
+      setStreak(newCount);
+
+      // Check for milestone celebration (only when count just changed, i.e. not already visited today)
+      if (!updatedToday && shouldAnimate) {
+        const prevCount = streakData.count;
+        const lastMilestoneRaw = localStorage.getItem("cc_last_milestone");
+        const lastMilestone = lastMilestoneRaw ? parseInt(lastMilestoneRaw, 10) : 0;
+
+        for (const milestone of STREAK_MILESTONES) {
+          if (prevCount < milestone && newCount >= milestone && lastMilestone < milestone) {
+            localStorage.setItem("cc_last_milestone", String(milestone));
+            setShowConfetti(true);
+            setTimeout(() => setShowConfetti(false), 3500);
+            break;
+          }
         }
       }
     } catch {
       // localStorage unavailable or parse error
       setStreak(1);
     }
-  }, []);
+  }, [shouldAnimate]);
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -382,6 +446,7 @@ function DashboardContent() {
           // API not built yet; use empty state
           setData({
             profile: null,
+            profiles: [],
             reports: [],
             stats: {
               totalReports: 0,
@@ -394,6 +459,7 @@ function DashboardContent() {
           setError(errData.message || errData.error || "Failed to load dashboard data. Please try again.");
           setData({
             profile: null,
+            profiles: [],
             reports: [],
             stats: {
               totalReports: 0,
@@ -406,6 +472,7 @@ function DashboardContent() {
         setError("Could not connect to the server. Please try again.");
         setData({
           profile: null,
+          profiles: [],
           reports: [],
           stats: {
             totalReports: 0,
@@ -453,19 +520,26 @@ function DashboardContent() {
         ? "Premium (Annual)"
         : "Free";
 
+  // Determine whether the user has any birth profiles (for sidebar widget gating)
+  const hasProfiles =
+    (data?.profiles && data.profiles.length > 0) || data?.profile != null;
+
   return (
     <div className="min-h-screen">
+      {/* Confetti overlay */}
+      <Confetti trigger={showConfetti} />
+
       {/* Header */}
       <section className="border-b border-white/10 bg-gradient-to-b from-cosmic-purple/5 to-transparent">
         <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
           <motion.div
-            initial={{ opacity: 0, y: 10 }}
+            initial={shouldAnimate ? { opacity: 0, y: 10 } : false}
             animate={{ opacity: 1, y: 0 }}
             className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
           >
             <div>
               <h1 className="font-heading text-3xl font-bold">
-                Welcome back,{" "}
+                {greetingPrefix},{" "}
                 <span className="cosmic-text">
                   {session.user.name || "Stargazer"}
                 </span>
@@ -521,7 +595,7 @@ function DashboardContent() {
       {isMercuryRetrograde() && (
         <div className="mx-auto max-w-7xl px-4 pt-4 sm:px-6 lg:px-8">
           <motion.div
-            initial={{ opacity: 0, y: -5 }}
+            initial={shouldAnimate ? { opacity: 0, y: -5 } : false}
             animate={{ opacity: 1, y: 0 }}
             className="flex items-center gap-3 rounded-lg border border-amber-400/20 bg-amber-400/10 p-3 text-sm text-amber-400"
           >
@@ -537,23 +611,43 @@ function DashboardContent() {
       {upgraded && (
         <div className="mx-auto max-w-7xl px-4 pt-6 sm:px-6 lg:px-8">
           <motion.div
-            initial={{ opacity: 0, y: -10 }}
+            initial={shouldAnimate ? { opacity: 0, y: -10 } : false}
             animate={{ opacity: 1, y: 0 }}
-            className="mb-6 rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-4 text-center"
+            className="mb-6 rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-5 text-center"
           >
-            <p className="text-lg font-semibold text-emerald-400">Welcome to Premium!</p>
-            <p className="text-sm text-muted-foreground mt-1">
-              All features are now unlocked. Start by generating a full compatibility report.
+            <p className="text-xl font-bold text-emerald-400">
+              Welcome to Premium!
             </p>
+            <p className="text-sm font-semibold text-emerald-300 mt-1 mb-3">
+              Here&apos;s what you&apos;ve unlocked:
+            </p>
+            <ul className="text-sm text-muted-foreground space-y-1 mb-4 text-left max-w-xs mx-auto">
+              <li className="flex items-center gap-2">
+                <Sparkles className="h-3 w-3 text-emerald-400 shrink-0" />
+                Full compatibility reports with in-depth analysis
+              </li>
+              <li className="flex items-center gap-2">
+                <MessageCircle className="h-3 w-3 text-emerald-400 shrink-0" />
+                AI Astrologer chat for personalized guidance
+              </li>
+              <li className="flex items-center gap-2">
+                <Sun className="h-3 w-3 text-emerald-400 shrink-0" />
+                Daily horoscope tailored to your natal chart
+              </li>
+              <li className="flex items-center gap-2">
+                <Orbit className="h-3 w-3 text-emerald-400 shrink-0" />
+                Live transit alerts affecting your chart
+              </li>
+            </ul>
             <Button
               size="sm"
-              className="mt-3 bg-cosmic-purple hover:bg-cosmic-purple-dark text-white"
+              className="bg-cosmic-purple hover:bg-cosmic-purple-dark text-white"
               onClick={() => {
                 setUpgraded(false);
                 router.replace("/dashboard");
               }}
             >
-              Got it!
+              Let&apos;s explore!
             </Button>
           </motion.div>
         </div>
@@ -597,9 +691,9 @@ function DashboardContent() {
                 <AnimatePresence mode="wait">
                   <motion.div
                     key="chart-tab"
-                    initial={{ opacity: 0, y: 10 }}
+                    initial={shouldAnimate ? { opacity: 0, y: 10 } : false}
                     animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
+                    exit={shouldAnimate ? { opacity: 0, y: -10 } : {}}
                   >
                     {data?.profile ? (
                       <div className="space-y-6">
@@ -676,7 +770,7 @@ function DashboardContent() {
                     ) : (
                       /* No profile CTA */
                       <motion.div
-                        initial={{ opacity: 0, scale: 0.98 }}
+                        initial={shouldAnimate ? { opacity: 0, scale: 0.98 } : false}
                         animate={{ opacity: 1, scale: 1 }}
                         className="rounded-xl border border-dashed border-white/20 bg-white/[0.02] p-12 text-center"
                       >
@@ -727,9 +821,9 @@ function DashboardContent() {
                 <AnimatePresence mode="wait">
                   <motion.div
                     key="connections-tab"
-                    initial={{ opacity: 0, y: 10 }}
+                    initial={shouldAnimate ? { opacity: 0, y: 10 } : false}
                     animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
+                    exit={shouldAnimate ? { opacity: 0, y: -10 } : {}}
                   >
                     {data?.reports && data.reports.length > 0 ? (
                       <div className="space-y-6">
@@ -752,11 +846,11 @@ function DashboardContent() {
                           {data.reports.map((report, i) => (
                             <motion.div
                               key={report.id}
-                              initial={{ opacity: 0, y: 10 }}
+                              initial={shouldAnimate ? { opacity: 0, y: 10 } : false}
                               animate={{ opacity: 1, y: 0 }}
-                              transition={{ delay: i * 0.05 }}
+                              transition={{ delay: shouldAnimate ? i * 0.05 : 0 }}
                             >
-                              <ReportCard report={report} />
+                              <ReportCard report={report} shouldAnimate={shouldAnimate} />
                             </motion.div>
                           ))}
                         </div>
@@ -791,7 +885,7 @@ function DashboardContent() {
               {/* Settings Tab */}
               <TabsContent value="settings">
                 <motion.div
-                  initial={{ opacity: 0, y: 10 }}
+                  initial={shouldAnimate ? { opacity: 0, y: 10 } : false}
                   animate={{ opacity: 1, y: 0 }}
                   className="space-y-6"
                 >
@@ -866,6 +960,7 @@ function DashboardContent() {
               label="Total Comparisons"
               value={String(data?.stats.totalReports || 0)}
               color="bg-cosmic-purple/10"
+              shouldAnimate={shouldAnimate}
             />
             <StatCard
               icon={<Award className="h-5 w-5 text-gold" />}
@@ -876,18 +971,20 @@ function DashboardContent() {
                   : "N/A"
               }
               color="bg-gold/10"
+              shouldAnimate={shouldAnimate}
             />
             <StatCard
               icon={<Crown className="h-5 w-5 text-cosmic-purple-light" />}
               label="Account Plan"
               value={planLabel}
               color="bg-cosmic-purple/10"
+              shouldAnimate={shouldAnimate}
             />
 
             {/* Daily Check-in Streak */}
             {streak > 0 && (
               <motion.div
-                whileHover={{ y: -2, scale: 1.01 }}
+                whileHover={shouldAnimate ? { y: -2, scale: 1.01 } : {}}
                 className="rounded-xl border border-orange-500/20 bg-gradient-to-br from-orange-500/[0.08] to-transparent p-4 backdrop-blur-sm"
               >
                 <div className="flex items-center gap-3">
@@ -924,39 +1021,70 @@ function DashboardContent() {
 
             {/* Daily Horoscope Quick Link */}
             <motion.div
-              whileHover={{ scale: 1.02 }}
+              whileHover={shouldAnimate ? { scale: 1.02 } : {}}
               className="rounded-xl border border-gold/20 bg-gradient-to-br from-gold/[0.06] to-transparent p-4"
             >
               <div className="flex items-center gap-2 mb-2">
                 <Sun className="h-4 w-4 text-gold" />
                 <h4 className="font-heading text-sm font-semibold">Daily Horoscope</h4>
               </div>
-              <p className="text-xs text-muted-foreground mb-3">
-                Your personalized cosmic reading for today
-              </p>
-              <Button asChild size="sm" variant="outline" className="w-full border-gold/20 text-gold hover:bg-gold/10">
-                <Link href="/horoscope">
-                  <Lightbulb className="mr-2 h-3 w-3" />
-                  Read Today&apos;s Horoscope
-                </Link>
-              </Button>
+              {hasProfiles ? (
+                <>
+                  <p className="text-xs text-muted-foreground mb-3">
+                    Your personalized cosmic reading for today
+                  </p>
+                  <Button asChild size="sm" variant="outline" className="w-full border-gold/20 text-gold hover:bg-gold/10">
+                    <Link href="/horoscope">
+                      <Lightbulb className="mr-2 h-3 w-3" />
+                      Read Today&apos;s Horoscope
+                    </Link>
+                  </Button>
+                </>
+              ) : (
+                <p className="text-xs text-muted-foreground">
+                  <Link
+                    href="/dashboard/profiles"
+                    className="underline hover:no-underline text-gold/80 hover:text-gold"
+                  >
+                    Create a birth profile
+                  </Link>{" "}
+                  to unlock your daily horoscope
+                </p>
+              )}
             </motion.div>
 
             {/* Transit Alerts */}
             <motion.div
-              whileHover={{ scale: 1.02 }}
+              whileHover={shouldAnimate ? { scale: 1.02 } : {}}
               className="rounded-xl border border-cosmic-purple/20 bg-gradient-to-br from-cosmic-purple/[0.06] to-transparent p-4"
             >
               <div className="flex items-center gap-2 mb-2">
                 <Orbit className="h-4 w-4 text-cosmic-purple-light" />
                 <h4 className="font-heading text-sm font-semibold">Active Transits</h4>
               </div>
-              <p className="text-xs text-muted-foreground mb-1">
-                Planetary influences on your chart today
-              </p>
-              <p className="text-[10px] text-muted-foreground/60">
-                Available when you have a birth profile with chart data
-              </p>
+              {hasProfiles ? (
+                <>
+                  <p className="text-xs text-muted-foreground mb-3">
+                    Planetary influences on your chart today
+                  </p>
+                  <Button asChild size="sm" variant="outline" className="w-full border-cosmic-purple/20 text-cosmic-purple-light hover:bg-cosmic-purple/10">
+                    <Link href="/transits">
+                      <Orbit className="mr-2 h-3 w-3" />
+                      View Active Transits
+                    </Link>
+                  </Button>
+                </>
+              ) : (
+                <p className="text-xs text-muted-foreground">
+                  <Link
+                    href="/dashboard/profiles"
+                    className="underline hover:no-underline text-cosmic-purple-light/80 hover:text-cosmic-purple-light"
+                  >
+                    Create a birth profile
+                  </Link>{" "}
+                  to unlock transit alerts
+                </p>
+              )}
             </motion.div>
 
             {data?.stats.plan === "FREE" && (
@@ -1008,7 +1136,7 @@ function DashboardContent() {
                 </div>
 
                 <motion.div
-                  whileHover={{ scale: 1.02 }}
+                  whileHover={shouldAnimate ? { scale: 1.02 } : {}}
                   className="rounded-xl border border-cosmic-purple/20 bg-gradient-to-br from-cosmic-purple/10 to-transparent p-4"
                 >
                   <h4 className="font-heading text-sm font-semibold mb-1">

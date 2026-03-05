@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import {
   Heart,
   Briefcase,
@@ -21,6 +21,7 @@ import {
   Sun,
   Compass,
   Users,
+  Lock,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -110,8 +111,8 @@ function ConfidenceIndicator({ confidence }: { confidence: number }) {
   }
 
   return (
-    <div className="flex items-center gap-2">
-      <div className="flex gap-0.5">
+    <div className="flex items-center gap-2" role="meter" aria-label={`Confidence: ${label}`} aria-valuenow={percentage} aria-valuemin={0} aria-valuemax={100}>
+      <div className="flex gap-0.5" aria-hidden="true">
         {Array.from({ length: segments }).map((_, i) => (
           <div
             key={i}
@@ -140,9 +141,11 @@ function hasSpecificTimeWindow(timing: string): boolean {
 function SuggestionCard({
   suggestion,
   index,
+  prefersReducedMotion,
 }: {
   suggestion: WellnessSuggestion;
   index: number;
+  prefersReducedMotion: boolean;
 }) {
   const config = CATEGORY_CONFIG[suggestion.category] || CATEGORY_CONFIG.career;
   const isRelationships = suggestion.category === "relationships";
@@ -150,11 +153,13 @@ function SuggestionCard({
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 15 }}
+      initial={prefersReducedMotion ? false : { opacity: 0, y: 15 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.08, duration: 0.4 }}
+      transition={prefersReducedMotion ? { duration: 0 } : { delay: index * 0.08, duration: 0.4 }}
     >
       <Card
+        role="article"
+        aria-label={`${config.label} suggestion: ${suggestion.title}`}
         className={cn(
           "border bg-transparent transition-colors hover:bg-white/[0.02]",
           config.borderColor
@@ -199,6 +204,7 @@ function SuggestionCard({
           {isRelationships && (
             <Link
               href="/connections"
+              aria-label="See how today's energy affects your connections"
               className="group/link mb-4 flex items-center gap-1.5 text-xs text-rose-400/80 hover:text-rose-400 transition-colors"
             >
               <Users className="h-3 w-3" />
@@ -264,6 +270,7 @@ function LoadingSkeleton() {
 export default function WellnessPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const prefersReducedMotion = useReducedMotion() ?? false;
   const [data, setData] = useState<WellnessData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -332,13 +339,14 @@ export default function WellnessPage() {
     : [];
 
   return (
-    <div className="min-h-screen">
+    <main className="min-h-screen" aria-label="Wellness and Timing">
       {/* Header */}
-      <section className="relative overflow-hidden border-b border-white/10 bg-gradient-to-b from-cosmic-purple/5 to-transparent">
+      <section className="relative overflow-hidden border-b border-white/10 bg-gradient-to-b from-cosmic-purple/5 to-transparent" aria-label="Page header">
         <div className="mx-auto max-w-4xl px-4 py-10 text-center">
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={prefersReducedMotion ? false : { opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
+            transition={prefersReducedMotion ? { duration: 0 } : undefined}
           >
             <Badge
               variant="outline"
@@ -362,7 +370,7 @@ export default function WellnessPage() {
       {/* Content */}
       <div className="mx-auto max-w-4xl px-4 py-8">
         {loading ? (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+          <motion.div initial={prefersReducedMotion ? false : { opacity: 0 }} animate={{ opacity: 1 }} transition={prefersReducedMotion ? { duration: 0 } : undefined}>
             <div className="flex flex-col items-center gap-4 py-8 mb-8">
               <div className="relative">
                 <div className="h-16 w-16 rounded-full bg-cosmic-purple/10 animate-pulse" />
@@ -384,14 +392,15 @@ export default function WellnessPage() {
               error.toLowerCase().includes("temporarily");
             return (
               <motion.div
-                initial={{ opacity: 0, y: 10 }}
+                initial={prefersReducedMotion ? false : { opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
+                transition={prefersReducedMotion ? { duration: 0 } : undefined}
                 className="rounded-2xl border border-white/10 bg-white/[0.03] p-8 text-center backdrop-blur-sm"
               >
                 <motion.div
-                  initial={{ scale: 0.8, opacity: 0 }}
+                  initial={prefersReducedMotion ? false : { scale: 0.8, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
-                  transition={{ delay: 0.1, type: "spring", stiffness: 200 }}
+                  transition={prefersReducedMotion ? { duration: 0 } : { delay: 0.1, type: "spring", stiffness: 200 }}
                   className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-full bg-cosmic-purple/10"
                 >
                   {isServiceError ? (
@@ -415,6 +424,7 @@ export default function WellnessPage() {
                     <>
                       <Button
                         onClick={fetchWellness}
+                        aria-label="Retry loading wellness suggestions"
                         className="bg-cosmic-purple text-white hover:bg-cosmic-purple-dark"
                       >
                         <RefreshCw className="mr-2 h-4 w-4" />
@@ -425,7 +435,7 @@ export default function WellnessPage() {
                         variant="outline"
                         className="border-white/10"
                       >
-                        <Link href="/dashboard">
+                        <Link href="/dashboard" aria-label="Go to Dashboard">
                           <LayoutDashboard className="mr-2 h-4 w-4" />
                           Go to Dashboard
                         </Link>
@@ -437,13 +447,14 @@ export default function WellnessPage() {
                         asChild
                         className="bg-cosmic-purple hover:bg-cosmic-purple-dark text-white"
                       >
-                        <Link href="/compatibility">
+                        <Link href="/compatibility" aria-label="Create your birth chart">
                           <Sparkles className="mr-2 h-4 w-4" />
                           Create Your Chart
                         </Link>
                       </Button>
                       <Button
                         onClick={fetchWellness}
+                        aria-label="Retry loading wellness suggestions"
                         variant="outline"
                         className="border-white/10"
                       >
@@ -458,10 +469,23 @@ export default function WellnessPage() {
           })()
         ) : data ? (
           <div className="space-y-8">
+            {/* Premium Upgrade CTA */}
+            {session?.user?.plan === "FREE" && (
+              <Card className="glass-card border-white/10 bg-white/[0.03] p-8 text-center">
+                <Lock className="h-8 w-8 text-cosmic-purple-light mx-auto mb-3" />
+                <h2 className="text-xl font-semibold cosmic-text mb-2">Premium Feature</h2>
+                <p className="text-muted-foreground mb-4">Upgrade to access personalized wellness and cosmic timing suggestions</p>
+                <Button asChild className="cosmic-gradient text-white hover:opacity-90">
+                  <Link href="/pricing">Upgrade to Premium</Link>
+                </Button>
+              </Card>
+            )}
+
             {/* Summary Bar */}
             <motion.div
-              initial={{ opacity: 0, y: 10 }}
+              initial={prefersReducedMotion ? false : { opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
+              transition={prefersReducedMotion ? { duration: 0 } : undefined}
               className="rounded-2xl border border-white/10 bg-gradient-to-br from-cosmic-purple/[0.06] to-transparent p-5"
             >
               <div className="flex items-center justify-between">
@@ -482,6 +506,7 @@ export default function WellnessPage() {
                   variant="ghost"
                   size="icon"
                   onClick={fetchWellness}
+                  aria-label="Refresh wellness suggestions"
                   className="text-muted-foreground hover:text-foreground"
                 >
                   <RefreshCw className="h-4 w-4" />
@@ -490,28 +515,29 @@ export default function WellnessPage() {
             </motion.div>
 
             {/* Suggestion Cards Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4" role="list" aria-label="Wellness suggestions">
               {orderedSuggestions.map((suggestion, i) => (
                 <SuggestionCard
                   key={suggestion.category}
                   suggestion={suggestion}
                   index={i}
+                  prefersReducedMotion={prefersReducedMotion}
                 />
               ))}
             </div>
 
             {/* Continue Exploring */}
             <motion.div
-              initial={{ opacity: 0, y: 10 }}
+              initial={prefersReducedMotion ? false : { opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.5 }}
+              transition={prefersReducedMotion ? { duration: 0 } : { delay: 0.5 }}
               className="pt-4"
             >
               <h3 className="font-heading text-base font-semibold text-center mb-4">
                 Continue Exploring
               </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <Link href="/horoscope" className="group">
+              <nav className="grid grid-cols-1 sm:grid-cols-3 gap-4" aria-label="Related features">
+                <Link href="/horoscope" className="group" aria-label="View today's horoscope">
                   <div className="glass-card flex flex-col items-center gap-3 rounded-2xl p-6 text-center transition-all hover:border-cosmic-purple/30">
                     <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gold/10 text-gold transition-colors group-hover:bg-gold/20">
                       <Sun className="h-6 w-6" />
@@ -525,7 +551,7 @@ export default function WellnessPage() {
                     <ArrowRight className="h-4 w-4 text-muted-foreground opacity-0 transition-all group-hover:opacity-100 group-hover:translate-x-1" />
                   </div>
                 </Link>
-                <Link href="/transits" className="group">
+                <Link href="/transits" className="group" aria-label="View active transits">
                   <div className="glass-card flex flex-col items-center gap-3 rounded-2xl p-6 text-center transition-all hover:border-cosmic-purple/30">
                     <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-cosmic-purple/10 text-cosmic-purple-light transition-colors group-hover:bg-cosmic-purple/20">
                       <Compass className="h-6 w-6" />
@@ -539,7 +565,7 @@ export default function WellnessPage() {
                     <ArrowRight className="h-4 w-4 text-muted-foreground opacity-0 transition-all group-hover:opacity-100 group-hover:translate-x-1" />
                   </div>
                 </Link>
-                <Link href="/compatibility" className="group">
+                <Link href="/compatibility" className="group" aria-label="Check compatibility">
                   <div className="glass-card flex flex-col items-center gap-3 rounded-2xl p-6 text-center transition-all hover:border-cosmic-purple/30">
                     <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-rose-400/10 text-rose-400 transition-colors group-hover:bg-rose-400/20">
                       <Heart className="h-6 w-6" />
@@ -553,11 +579,11 @@ export default function WellnessPage() {
                     <ArrowRight className="h-4 w-4 text-muted-foreground opacity-0 transition-all group-hover:opacity-100 group-hover:translate-x-1" />
                   </div>
                 </Link>
-              </div>
+              </nav>
             </motion.div>
           </div>
         ) : null}
       </div>
-    </div>
+    </main>
   );
 }

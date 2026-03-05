@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { motion } from "framer-motion";
+import { useState, useEffect, useRef } from "react";
+import { motion, useReducedMotion } from "framer-motion";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -63,6 +63,7 @@ interface CompatibilityResultsProps {
   personAData?: BirthData | null;
   personBData?: BirthData | null;
   remainingChecks?: number | null;
+  reportId?: string | null;
   className?: string;
 }
 
@@ -189,15 +190,30 @@ export function CompatibilityResults({
   personAData,
   personBData,
   remainingChecks,
+  reportId: initialReportId,
   className,
 }: CompatibilityResultsProps) {
   const { data: session } = useSession();
   const router = useRouter();
+  const prefersReducedMotion = useReducedMotion();
 
   const isPremium =
     session?.user?.plan === "PREMIUM" || session?.user?.plan === "ANNUAL";
 
   const isHighScore = result.overallScore >= 85;
+
+  // First-check celebration: fires once when the component first mounts
+  const hasShownCelebration = useRef(false);
+  const [showCelebration, setShowCelebration] = useState(false);
+
+  useEffect(() => {
+    if (hasShownCelebration.current || prefersReducedMotion) return;
+    hasShownCelebration.current = true;
+    setShowCelebration(true);
+  }, [prefersReducedMotion]);
+
+  // Track report ID (from initial prop or after generating a full report)
+  const [reportId, setReportId] = useState<string | null>(initialReportId ?? null);
 
   // Premium report state
   const [premiumReport, setPremiumReport] = useState<PremiumReport | null>(null);
@@ -249,9 +265,12 @@ export function CompatibilityResults({
   };
 
   const handleCopyLink = async () => {
-    const shareText = `${result.personA.name} & ${result.personB.name} scored ${result.overallScore}/100 on ChartChemistry! Check your compatibility at ${typeof window !== "undefined" ? window.location.origin : "https://chartchemistry.com"}/compatibility`;
+    const origin = typeof window !== "undefined" ? window.location.origin : "https://chartchemistry.com";
+    const url = reportId
+      ? `${origin}/report/${reportId}`
+      : `${origin}/compatibility`;
     try {
-      await navigator.clipboard.writeText(shareText);
+      await navigator.clipboard.writeText(url);
       setLinkCopied(true);
       setTimeout(() => setLinkCopied(false), 2000);
     } catch {
@@ -290,6 +309,9 @@ export function CompatibilityResults({
       }
 
       const data = await res.json();
+      if (data.id) {
+        setReportId(data.id);
+      }
       setPremiumReport({
         sections: data.sections || {},
         redFlags: data.redFlags || [],
@@ -339,16 +361,18 @@ export function CompatibilityResults({
 
   return (
     <div className={cn("mx-auto max-w-3xl space-y-10", className)}>
-      {/* Confetti for high scores */}
-      <Confetti trigger={isHighScore} />
+      {/* Confetti celebration on first result or high scores */}
+      {!prefersReducedMotion && (
+        <Confetti trigger={showCelebration || isHighScore} />
+      )}
 
       {/* Names & Signs */}
       <motion.div
         className="flex flex-col items-center gap-4 text-center sm:flex-row sm:justify-center sm:gap-8"
-        initial="hidden"
+        initial={prefersReducedMotion ? "visible" : "hidden"}
         animate="visible"
         variants={fadeInUp}
-        transition={{ duration: 0.5 }}
+        transition={{ duration: prefersReducedMotion ? 0 : 0.5 }}
       >
         <div className="flex flex-col items-center gap-1">
           <span className="text-3xl">
@@ -377,9 +401,9 @@ export function CompatibilityResults({
       {isHighScore && (
         <motion.div
           className="flex justify-center"
-          initial={{ opacity: 0, scale: 0.5 }}
+          initial={prefersReducedMotion ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.5 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.6, delay: 0.15, type: "spring", stiffness: 200 }}
+          transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.6, delay: 0.15, type: "spring", stiffness: 200 }}
         >
           <div className="inline-flex items-center gap-2 rounded-full border border-gold/40 bg-gold/10 px-5 py-2 backdrop-blur-sm">
             <Sparkles className="h-5 w-5 text-gold animate-pulse" />
@@ -394,10 +418,12 @@ export function CompatibilityResults({
       {/* Overall Score */}
       <motion.div
         className="flex justify-center"
-        initial="hidden"
+        initial={prefersReducedMotion ? "visible" : "hidden"}
         animate="visible"
         variants={fadeInUp}
-        transition={{ duration: 0.5, delay: 0.2 }}
+        transition={{ duration: prefersReducedMotion ? 0 : 0.5, delay: prefersReducedMotion ? 0 : 0.2 }}
+        role="figure"
+        aria-label={`Compatibility score: ${result.overallScore} out of 100`}
       >
         <CompatibilityScoreCard
           score={result.overallScore}
@@ -409,10 +435,10 @@ export function CompatibilityResults({
       {/* Radar Chart */}
       <motion.div
         className="glass-card rounded-2xl p-4 sm:p-6"
-        initial="hidden"
+        initial={prefersReducedMotion ? "visible" : "hidden"}
         animate="visible"
         variants={fadeInUp}
-        transition={{ duration: 0.5, delay: 0.4 }}
+        transition={{ duration: prefersReducedMotion ? 0 : 0.5, delay: prefersReducedMotion ? 0 : 0.4 }}
       >
         <h3 className="mb-2 text-center text-lg font-semibold">
           Dimension Breakdown
@@ -423,29 +449,37 @@ export function CompatibilityResults({
       {/* Individual Score Bars */}
       <motion.div
         className="glass-card space-y-5 rounded-2xl p-6"
-        initial="hidden"
+        initial={prefersReducedMotion ? "visible" : "hidden"}
         animate="visible"
         variants={fadeInUp}
-        transition={{ duration: 0.5, delay: 0.6 }}
+        transition={{ duration: prefersReducedMotion ? 0 : 0.5, delay: prefersReducedMotion ? 0 : 0.6 }}
       >
         <h3 className="text-lg font-semibold">Detailed Scores</h3>
         {dimensionBars.map((dim, i) => (
-          <ScoreBar
+          <div
             key={dim.label}
-            label={dim.label}
-            score={dim.score}
-            delay={0.7 + i * 0.1}
-          />
+            role="meter"
+            aria-label={`${dim.label}: ${dim.score} out of 100`}
+            aria-valuenow={dim.score}
+            aria-valuemin={0}
+            aria-valuemax={100}
+          >
+            <ScoreBar
+              label={dim.label}
+              score={dim.score}
+              delay={prefersReducedMotion ? 0 : 0.7 + i * 0.1}
+            />
+          </div>
         ))}
       </motion.div>
 
       {/* The Big Picture - AI Narrative */}
       <motion.div
         className="glass-card rounded-2xl p-6"
-        initial="hidden"
+        initial={prefersReducedMotion ? "visible" : "hidden"}
         animate="visible"
         variants={fadeInUp}
-        transition={{ duration: 0.5, delay: 0.8 }}
+        transition={{ duration: prefersReducedMotion ? 0 : 0.5, delay: prefersReducedMotion ? 0 : 0.8 }}
       >
         <h3 className="mb-4 text-lg font-semibold">The Big Picture</h3>
         <div className="prose prose-sm prose-invert max-w-none">
@@ -458,10 +492,10 @@ export function CompatibilityResults({
       {/* Premium Sections */}
       <motion.div
         className="space-y-6"
-        initial="hidden"
+        initial={prefersReducedMotion ? "visible" : "hidden"}
         animate="visible"
         variants={fadeInUp}
-        transition={{ duration: 0.5, delay: 1 }}
+        transition={{ duration: prefersReducedMotion ? 0 : 0.5, delay: prefersReducedMotion ? 0 : 1 }}
       >
         {premiumReport ? (
           /* ---- Premium content unlocked ---- */
@@ -576,10 +610,10 @@ export function CompatibilityResults({
       {/* Action Buttons */}
       <motion.div
         className="flex flex-col items-center gap-3 sm:flex-row sm:justify-center"
-        initial="hidden"
+        initial={prefersReducedMotion ? "visible" : "hidden"}
         animate="visible"
         variants={fadeInUp}
-        transition={{ duration: 0.5, delay: 1.1 }}
+        transition={{ duration: prefersReducedMotion ? 0 : 0.5, delay: prefersReducedMotion ? 0 : 1.1 }}
       >
         <Button
           onClick={handleShare}
@@ -612,10 +646,10 @@ export function CompatibilityResults({
       {/* "Send to them" viral CTA */}
       <motion.div
         className="glass-card rounded-2xl border border-cosmic-purple/30 p-6 text-center"
-        initial="hidden"
+        initial={prefersReducedMotion ? "visible" : "hidden"}
         animate="visible"
         variants={fadeInUp}
-        transition={{ duration: 0.5, delay: 1.2 }}
+        transition={{ duration: prefersReducedMotion ? 0 : 0.5, delay: prefersReducedMotion ? 0 : 1.2 }}
       >
         <Heart className="mx-auto mb-3 h-8 w-8 text-pink-400" />
         <h3 className="mb-1 text-lg font-semibold">
@@ -657,10 +691,10 @@ export function CompatibilityResults({
       {!session && (
         <motion.div
           className="glass-card rounded-2xl p-6 text-center"
-          initial="hidden"
+          initial={prefersReducedMotion ? "visible" : "hidden"}
           animate="visible"
           variants={fadeInUp}
-          transition={{ duration: 0.5, delay: 1.3 }}
+          transition={{ duration: prefersReducedMotion ? 0 : 0.5, delay: prefersReducedMotion ? 0 : 1.3 }}
         >
           <UserPlus className="mx-auto mb-3 h-7 w-7 text-cosmic-purple-light" />
           <h3 className="mb-1 text-lg font-semibold">
@@ -698,10 +732,10 @@ export function CompatibilityResults({
       {typeof remainingChecks === "number" && (
         <motion.div
           className="flex justify-center"
-          initial="hidden"
+          initial={prefersReducedMotion ? "visible" : "hidden"}
           animate="visible"
           variants={fadeInUp}
-          transition={{ duration: 0.5, delay: 1.4 }}
+          transition={{ duration: prefersReducedMotion ? 0 : 0.5, delay: prefersReducedMotion ? 0 : 1.4 }}
         >
           {remainingChecks > 0 ? (
             <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-4 py-2 text-xs text-muted-foreground">
@@ -727,9 +761,9 @@ export function CompatibilityResults({
 
       {/* Share toast */}
       {shareToast && (
-        <div className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2">
+        <div className="fixed bottom-24 left-1/2 z-50 -translate-x-1/2 md:bottom-6">
           <motion.div
-            initial={{ opacity: 0, y: 10 }}
+            initial={prefersReducedMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 10 }}
             className="flex items-center gap-2 rounded-full border border-white/10 bg-background/90 px-4 py-2 text-sm font-medium shadow-lg backdrop-blur-sm"

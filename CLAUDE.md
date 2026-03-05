@@ -121,8 +121,8 @@ ASTRO_SERVICE_URL     # http://localhost:8000 in dev
 
 ## Known Gaps (MVP State)
 
-- `/api/dashboard` route not implemented yet (dashboard page handles empty state)
-- Stripe Checkout flow not wired up (pricing page shows "Coming soon")
+- Prisma migration pending for UserAchievement model and User streak fields
+- Stripe Customer Portal needs configuration in Stripe Dashboard
 - No middleware.ts — route protection is inline per-route
 - No test framework configured for Next.js (astro-service has pytest)
 

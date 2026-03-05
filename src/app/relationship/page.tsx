@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import {
   Heart,
   MessageCircle,
@@ -16,6 +16,8 @@ import {
   TrendingUp,
   RefreshCw,
   LayoutDashboard,
+  Crown,
+  ArrowLeft,
 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -104,11 +106,12 @@ function InsightsSkeleton() {
 /* -------------------------------------------------------------------------- */
 
 function CompatibilityStyleCard({ style }: { style: string }) {
+  const prefersReducedMotion = useReducedMotion();
   return (
     <motion.div
-      initial={{ opacity: 0, y: 12 }}
+      initial={prefersReducedMotion ? false : { opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.1 }}
+      transition={prefersReducedMotion ? { duration: 0 } : { delay: 0.1 }}
     >
       <Card className="border-cosmic-purple/20 bg-gradient-to-br from-cosmic-purple/[0.08] to-transparent backdrop-blur-sm">
         <CardHeader>
@@ -116,7 +119,7 @@ function CompatibilityStyleCard({ style }: { style: string }) {
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-cosmic-purple/10">
               <Heart className="h-4 w-4 text-cosmic-purple-light" />
             </div>
-            Compatibility Style
+            <h3 className="text-lg font-semibold">Compatibility Style</h3>
           </CardTitle>
           <CardDescription>
             How you naturally relate as romantic partners
@@ -139,19 +142,20 @@ function LoveLanguagesCard({
   name1: string;
   name2: string;
 }) {
+  const prefersReducedMotion = useReducedMotion();
   return (
     <motion.div
-      initial={{ opacity: 0, y: 12 }}
+      initial={prefersReducedMotion ? false : { opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.2 }}
+      transition={prefersReducedMotion ? { duration: 0 } : { delay: 0.2 }}
     >
-      <Card className="border-pink-500/20 bg-gradient-to-br from-pink-500/[0.06] to-transparent backdrop-blur-sm">
+      <Card className="border-cosmic-purple/20 bg-gradient-to-br from-cosmic-purple/[0.06] to-transparent backdrop-blur-sm">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-lg">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-pink-500/10">
-              <Sparkles className="h-4 w-4 text-pink-400" />
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-cosmic-purple/10">
+              <Sparkles className="h-4 w-4 text-cosmic-purple-light" />
             </div>
-            Love Languages
+            <h3 className="text-lg font-semibold">Love Languages</h3>
           </CardTitle>
           <CardDescription>
             How each person gives and receives love
@@ -163,7 +167,7 @@ function LoveLanguagesCard({
               <span className="text-sm font-medium">{name1}</span>
               <Badge
                 variant="outline"
-                className="border-pink-500/30 text-pink-400"
+                className="border-cosmic-purple/30 text-cosmic-purple-light"
               >
                 {prediction.person1.primary}
               </Badge>
@@ -178,7 +182,7 @@ function LoveLanguagesCard({
               <span className="text-sm font-medium">{name2}</span>
               <Badge
                 variant="outline"
-                className="border-pink-500/30 text-pink-400"
+                className="border-cosmic-purple/30 text-cosmic-purple-light"
               >
                 {prediction.person2.primary}
               </Badge>
@@ -211,11 +215,12 @@ function ChallengesAndGrowthCard({
   challenges: string[];
   growthAreas: string[];
 }) {
+  const prefersReducedMotion = useReducedMotion();
   return (
     <motion.div
-      initial={{ opacity: 0, y: 12 }}
+      initial={prefersReducedMotion ? false : { opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.3 }}
+      transition={prefersReducedMotion ? { duration: 0 } : { delay: 0.3 }}
     >
       <Card className="border-gold/20 bg-gradient-to-br from-gold/[0.06] to-transparent backdrop-blur-sm">
         <CardHeader>
@@ -223,7 +228,7 @@ function ChallengesAndGrowthCard({
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gold/10">
               <TrendingUp className="h-4 w-4 text-gold" />
             </div>
-            Challenges & Growth
+            <h3 className="text-lg font-semibold">Challenges & Growth</h3>
           </CardTitle>
           <CardDescription>
             Navigate friction and grow together
@@ -232,7 +237,7 @@ function ChallengesAndGrowthCard({
         <CardContent className="space-y-5">
           <div>
             <div className="mb-3 flex items-center gap-2">
-              <AlertTriangle className="h-4 w-4 text-amber-400" />
+              <AlertTriangle className="h-4 w-4 text-gold" />
               <p className="text-sm font-medium">Potential Challenges</p>
             </div>
             <ul className="space-y-2">
@@ -241,7 +246,7 @@ function ChallengesAndGrowthCard({
                   key={i}
                   className="flex gap-2 text-sm text-foreground/80"
                 >
-                  <span className="mt-1.5 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-amber-400/60" />
+                  <span className="mt-1.5 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-gold/60" />
                   {challenge}
                 </li>
               ))}
@@ -252,7 +257,7 @@ function ChallengesAndGrowthCard({
 
           <div>
             <div className="mb-3 flex items-center gap-2">
-              <Lightbulb className="h-4 w-4 text-emerald-400" />
+              <Lightbulb className="h-4 w-4 text-gold-light" />
               <p className="text-sm font-medium">Growth Areas</p>
             </div>
             <ul className="space-y-2">
@@ -261,7 +266,7 @@ function ChallengesAndGrowthCard({
                   key={i}
                   className="flex gap-2 text-sm text-foreground/80"
                 >
-                  <span className="mt-1.5 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-emerald-400/60" />
+                  <span className="mt-1.5 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-gold-light/60" />
                   {area}
                 </li>
               ))}
@@ -278,19 +283,20 @@ function DateNightCard({
 }: {
   suggestions: DateNightSuggestion[];
 }) {
+  const prefersReducedMotion = useReducedMotion();
   return (
     <motion.div
-      initial={{ opacity: 0, y: 12 }}
+      initial={prefersReducedMotion ? false : { opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.4 }}
+      transition={prefersReducedMotion ? { duration: 0 } : { delay: 0.4 }}
     >
-      <Card className="border-violet-500/20 bg-gradient-to-br from-violet-500/[0.06] to-transparent backdrop-blur-sm">
+      <Card className="border-cosmic-purple/20 bg-gradient-to-br from-cosmic-purple/[0.06] to-transparent backdrop-blur-sm">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-lg">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-violet-500/10">
-              <Calendar className="h-4 w-4 text-violet-400" />
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-cosmic-purple/10">
+              <Calendar className="h-4 w-4 text-cosmic-purple-light" />
             </div>
-            Date Night Suggestions
+            <h3 className="text-lg font-semibold">Date Night Suggestions</h3>
           </CardTitle>
           <CardDescription>
             Cosmically aligned ideas for your next outing
@@ -317,19 +323,20 @@ function DateNightCard({
 }
 
 function CommunicationTipsCard({ tips }: { tips: string[] }) {
+  const prefersReducedMotion = useReducedMotion();
   return (
     <motion.div
-      initial={{ opacity: 0, y: 12 }}
+      initial={prefersReducedMotion ? false : { opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.5 }}
+      transition={prefersReducedMotion ? { duration: 0 } : { delay: 0.5 }}
     >
-      <Card className="border-cyan-500/20 bg-gradient-to-br from-cyan-500/[0.06] to-transparent backdrop-blur-sm">
+      <Card className="border-gold/20 bg-gradient-to-br from-gold/[0.06] to-transparent backdrop-blur-sm">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-lg">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-cyan-500/10">
-              <MessageCircle className="h-4 w-4 text-cyan-400" />
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gold/10">
+              <MessageCircle className="h-4 w-4 text-gold" />
             </div>
-            Communication Tips
+            <h3 className="text-lg font-semibold">Communication Tips</h3>
           </CardTitle>
           <CardDescription>
             How to talk, listen, and connect more deeply
@@ -341,7 +348,7 @@ function CommunicationTipsCard({ tips }: { tips: string[] }) {
               <li key={i} className="flex gap-3 text-sm text-foreground/80">
                 <Badge
                   variant="outline"
-                  className="mt-0.5 h-5 w-5 flex-shrink-0 items-center justify-center border-cyan-500/30 p-0 text-[10px] text-cyan-400"
+                  className="mt-0.5 h-5 w-5 flex-shrink-0 items-center justify-center border-gold/30 p-0 text-[10px] text-gold"
                 >
                   {i + 1}
                 </Badge>
@@ -362,6 +369,10 @@ function CommunicationTipsCard({ tips }: { tips: string[] }) {
 export default function RelationshipPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const prefersReducedMotion = useReducedMotion();
+
+  const isPremium =
+    session?.user?.plan === "PREMIUM" || session?.user?.plan === "ANNUAL";
 
   const [profiles, setProfiles] = useState<BirthProfile[]>([]);
   const [profilesLoading, setProfilesLoading] = useState(true);
@@ -450,18 +461,62 @@ export default function RelationshipPage() {
 
   if (!session) return null;
 
+  // Premium gate
+  if (!isPremium) {
+    return (
+      <div className="flex min-h-screen items-center justify-center px-4">
+        <motion.div
+          initial={prefersReducedMotion ? false : { opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={prefersReducedMotion ? { duration: 0 } : undefined}
+          className="max-w-md text-center"
+        >
+          <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-cosmic-purple/10">
+            <Crown className="h-10 w-10 text-cosmic-purple-light" />
+          </div>
+          <h1 className="font-heading text-2xl font-bold mb-2">
+            Premium Feature
+          </h1>
+          <p className="text-muted-foreground mb-6">
+            Relationship Insights is available for Premium subscribers. Upgrade
+            to get AI-powered love language predictions, communication tips, and
+            personalized dating advice based on your birth charts.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <Button
+              asChild
+              className="bg-cosmic-purple hover:bg-cosmic-purple-dark text-white"
+            >
+              <Link href="/pricing">
+                <Sparkles className="mr-2 h-4 w-4" />
+                Upgrade to Premium
+              </Link>
+            </Button>
+            <Button asChild variant="outline" className="border-white/10">
+              <Link href="/dashboard">
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Back to Dashboard
+              </Link>
+            </Button>
+          </div>
+        </motion.div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen">
       {/* Header */}
-      <section className="border-b border-white/10 bg-gradient-to-b from-pink-500/5 via-cosmic-purple/5 to-transparent">
+      <section className="border-b border-white/10 bg-gradient-to-b from-cosmic-purple/5 via-cosmic-purple/5 to-transparent">
         <div className="mx-auto max-w-4xl px-4 py-10 sm:px-6 lg:px-8">
           <motion.div
-            initial={{ opacity: 0, y: 10 }}
+            initial={prefersReducedMotion ? false : { opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
+            transition={prefersReducedMotion ? { duration: 0 } : undefined}
             className="text-center"
           >
-            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-pink-500/20 to-cosmic-purple/20">
-              <Heart className="h-7 w-7 text-pink-400" />
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-cosmic-purple-light/20 to-cosmic-purple/20">
+              <Heart className="h-7 w-7 text-cosmic-purple-light" />
             </div>
             <h1 className="font-heading text-3xl font-bold sm:text-4xl">
               Relationship{" "}
@@ -480,15 +535,15 @@ export default function RelationshipPage() {
       <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
         {/* Profile selectors */}
         <motion.div
-          initial={{ opacity: 0, y: 10 }}
+          initial={prefersReducedMotion ? false : { opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
+          transition={prefersReducedMotion ? { duration: 0 } : { delay: 0.1 }}
         >
           <Card className="mb-8 border-white/10 bg-white/[0.03] backdrop-blur-sm">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-lg">
                 <Users className="h-5 w-5 text-cosmic-purple-light" />
-                Select Two Profiles
+                <h2 className="text-lg font-semibold">Select Two Profiles</h2>
               </CardTitle>
               <CardDescription>
                 Choose two birth profiles to analyze their romantic
@@ -584,7 +639,7 @@ export default function RelationshipPage() {
                       className={cn(
                         "h-12 rounded-full px-8 text-base font-semibold shadow-lg transition-all",
                         canSubmit
-                          ? "bg-gradient-to-r from-pink-500 to-cosmic-purple text-white hover:shadow-pink-500/30 hover:shadow-xl hover:brightness-110"
+                          ? "bg-gradient-to-r from-cosmic-purple-light to-cosmic-purple text-white hover:shadow-cosmic-purple/30 hover:shadow-xl hover:brightness-110"
                           : "cursor-not-allowed opacity-50"
                       )}
                     >

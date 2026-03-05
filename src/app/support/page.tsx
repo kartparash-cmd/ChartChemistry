@@ -102,26 +102,30 @@ export default function SupportPage() {
       {showForm && (
         <form onSubmit={handleCreate} className="rounded-xl border border-border bg-card p-6 space-y-4">
           <div>
-            <label className="text-sm font-medium">Subject</label>
+            <label htmlFor="support-subject" className="text-sm font-medium">Subject</label>
             <Input
+              id="support-subject"
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
               placeholder="Brief summary of your issue"
               className="mt-1"
+              aria-required="true"
             />
           </div>
           <div>
-            <label className="text-sm font-medium">Description</label>
+            <label htmlFor="support-description" className="text-sm font-medium">Description</label>
             <textarea
+              id="support-description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Describe your issue in detail..."
               rows={4}
+              aria-required="true"
               className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-cosmic-purple/50"
             />
           </div>
           {error && (
-            <div className="rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+            <div role="alert" className="rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400">
               {error}
             </div>
           )}

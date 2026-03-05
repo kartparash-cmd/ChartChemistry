@@ -271,22 +271,15 @@ export async function DELETE(request: Request) {
       );
     }
 
-    // Verify the profile exists and belongs to this user
+    // Verify the profile exists and belongs to the authenticated user
     const profile = await prisma.birthProfile.findUnique({
       where: { id: profileId },
     });
 
-    if (!profile) {
+    if (!profile || profile.userId !== session.user.id) {
       return NextResponse.json(
-        { error: "Profile not found" },
+        { error: "Not found" },
         { status: 404 }
-      );
-    }
-
-    if (profile.userId !== session.user.id) {
-      return NextResponse.json(
-        { error: "You do not own this profile" },
-        { status: 403 }
       );
     }
 

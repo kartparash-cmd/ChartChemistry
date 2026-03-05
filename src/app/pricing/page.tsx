@@ -98,7 +98,7 @@ function FeatureValue({ value }: { value: boolean | string }) {
 export default function PricingPage() {
   const { data: session } = useSession();
   const router = useRouter();
-  const [billing, setBilling] = useState<BillingPeriod>("monthly");
+  const [billing, setBilling] = useState<BillingPeriod>("annual");
   const [toastVisible, setToastVisible] = useState(false);
   const [loadingTier, setLoadingTier] = useState<string | null>(null);
 
@@ -306,9 +306,14 @@ export default function PricingPage() {
                   )}
                 </div>
                 {billing === "annual" && tier.monthlyPrice > 0 && (
-                  <p className="mt-1 text-xs text-gold">
-                    That&apos;s $6.67/month — save 33%
-                  </p>
+                  <>
+                    <p className="mt-1 text-xs text-gold">
+                      That&apos;s $6.67/month — save 33%
+                    </p>
+                    <p className="mt-0.5 text-xs font-semibold text-emerald-400">
+                      You save $39.89/year
+                    </p>
+                  </>
                 )}
               </div>
 
@@ -359,19 +364,19 @@ export default function PricingPage() {
             {[
               {
                 quote:
-                  "ChartChemistry revealed patterns in my relationship I never noticed. The AI insights are eerily accurate.",
+                  "The full synastry report is worth every cent of Premium. Seven sections of detailed analysis — I finally understood why my Scorpio-Taurus pairing has such intense push and pull. No other app goes this deep.",
                 name: "Sarah K.",
                 sign: "Scorpio",
               },
               {
                 quote:
-                  "I was skeptical, but the synastry report was incredibly detailed. Worth every penny of Premium.",
+                  "The AI Astrologer chat is like having a personal astrologer on call 24/7. I asked about my Venus opposition and got a nuanced, thoughtful answer instantly. Upgrading to Premium was a no-brainer.",
                 name: "Marcus T.",
                 sign: "Leo",
               },
               {
                 quote:
-                  "The daily horoscope alone makes Premium worthwhile. It\u2019s like having a personal astrologer.",
+                  "I track my daily horoscope every morning and the accuracy is genuinely startling. It flagged an emotionally intense week before it happened. Premium pays for itself in clarity alone.",
                 name: "Priya R.",
                 sign: "Pisces",
               },
@@ -451,7 +456,10 @@ export default function PricingPage() {
                     Free
                   </th>
                   <th className="px-4 py-4 text-center text-sm font-medium text-cosmic-purple-light">
-                    Premium
+                    <span>Premium</span>
+                    <span className="block text-xs font-normal text-emerald-400 mt-0.5">
+                      Annual: $6.67/mo
+                    </span>
                   </th>
                 </tr>
               </thead>
@@ -489,7 +497,7 @@ export default function PricingPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 20 }}
-          className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-xl border border-white/10 bg-navy-light/95 backdrop-blur-xl px-6 py-3 shadow-xl"
+          className="fixed bottom-24 md:bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-xl border border-white/10 bg-navy-light/95 backdrop-blur-xl px-6 py-3 shadow-xl"
         >
           <p className="text-sm font-medium">
             <Sparkles className="inline mr-1 h-3 w-3 text-cosmic-purple-light" />

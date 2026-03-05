@@ -18,6 +18,7 @@ import {
   Heart,
   Sun,
   MessageCircle,
+  UserPlus,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -44,6 +45,8 @@ const authedNavLinks = [
   { href: "/horoscope", label: "Horoscope" },
   { href: "/connections", label: "Connections" },
   { href: "/chat", label: "AI Chat" },
+  { href: "/relationship", label: "Insights" },
+  { href: "/learn", label: "Learn" },
   { href: "/pricing", label: "Pricing" },
 ];
 
@@ -103,6 +106,7 @@ export function Navigation() {
                 <Link
                   key={link.href}
                   href={link.href}
+                  aria-current={isActive ? "page" : undefined}
                   className={cn(
                     "relative px-4 py-2 text-sm font-medium rounded-lg transition-colors",
                     isActive
@@ -246,12 +250,20 @@ export function Navigation() {
                 </AnimatePresence>
               </div>
             ) : (
-              <Button asChild size="sm" className="bg-cosmic-purple hover:bg-cosmic-purple-dark text-white">
-                <Link href="/auth/signin">
-                  <LogIn className="mr-2 h-4 w-4" />
-                  Sign In
-                </Link>
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button asChild size="sm" variant="outline" className="border-border text-foreground hover:bg-muted">
+                  <Link href="/auth/signin">
+                    <LogIn className="mr-2 h-4 w-4" />
+                    Sign In
+                  </Link>
+                </Button>
+                <Button asChild size="sm" className="cosmic-gradient text-white hover:opacity-90">
+                  <Link href="/auth/signup">
+                    <UserPlus className="mr-2 h-4 w-4" />
+                    Sign Up
+                  </Link>
+                </Button>
+              </div>
             )}
           </div>
 
@@ -259,7 +271,7 @@ export function Navigation() {
           <div className="md:hidden">
             <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
               <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-9 w-9" aria-label="Open menu">
+                <Button variant="ghost" size="icon" className="h-11 w-11" aria-label="Open menu">
                   <Menu className="h-5 w-5" />
                 </Button>
               </SheetTrigger>
@@ -285,6 +297,7 @@ export function Navigation() {
                         key={link.href}
                         href={link.href}
                         onClick={() => setMobileOpen(false)}
+                        aria-current={isActive ? "page" : undefined}
                         className={cn(
                           "rounded-lg px-4 py-3 text-sm font-medium transition-colors",
                           isActive
@@ -370,14 +383,24 @@ export function Navigation() {
                       </button>
                     </>
                   ) : (
-                    <Link
-                      href="/auth/signin"
-                      onClick={() => setMobileOpen(false)}
-                      className="flex items-center gap-2 rounded-lg px-4 py-3 text-sm font-medium text-cosmic-purple-light transition-colors hover:bg-muted"
-                    >
-                      <LogIn className="h-4 w-4" />
-                      Sign In
-                    </Link>
+                    <>
+                      <Link
+                        href="/auth/signin"
+                        onClick={() => setMobileOpen(false)}
+                        className="flex items-center gap-2 rounded-lg px-4 py-3 text-sm font-medium text-cosmic-purple-light transition-colors hover:bg-muted"
+                      >
+                        <LogIn className="h-4 w-4" />
+                        Sign In
+                      </Link>
+                      <Link
+                        href="/auth/signup"
+                        onClick={() => setMobileOpen(false)}
+                        className="flex items-center gap-2 rounded-lg px-4 py-3 text-sm font-medium cosmic-text transition-colors hover:bg-muted"
+                      >
+                        <UserPlus className="h-4 w-4" />
+                        Sign Up
+                      </Link>
+                    </>
                   )}
                 </div>
               </SheetContent>
@@ -401,6 +424,7 @@ export function Navigation() {
                 <Link
                   key={item.href}
                   href={item.href}
+                  aria-current={isActive ? "page" : undefined}
                   className={cn(
                     "flex flex-1 flex-col items-center justify-center gap-1 transition-colors",
                     isActive
@@ -416,6 +440,8 @@ export function Navigation() {
             <button
               type="button"
               onClick={() => setMobileOpen(true)}
+              aria-label="Open menu"
+              aria-expanded={mobileOpen}
               className={cn(
                 "flex flex-1 flex-col items-center justify-center gap-1 transition-colors",
                 mobileOpen

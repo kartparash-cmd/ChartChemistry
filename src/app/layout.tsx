@@ -7,6 +7,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { Navigation } from "@/components/navigation";
 import { Footer } from "@/components/footer";
 import { ImpersonationBanner } from "@/components/admin/impersonation-banner";
+import { StarField } from "@/components/star-field";
 import "./globals.css";
 
 const inter = Inter({
@@ -46,14 +47,13 @@ export const metadata: Metadata = {
       "Go beyond sun signs. Analyze full birth chart compatibility with AI-powered synastry, composite charts, house overlays, and planetary aspects.",
     type: "website",
     siteName: "ChartChemistry",
-    images: ["/og-image.png"],
   },
   twitter: {
     card: "summary_large_image",
     title: "ChartChemistry — AI-Powered Astrological Compatibility",
     description:
       "Go beyond sun signs. Analyze full birth chart compatibility with AI-powered synastry and composite charts.",
-    images: ["/og-image.png"],
+    site: "@chartchemistry",
   },
   robots: {
     index: true,
@@ -99,12 +99,13 @@ export default function RootLayout({
         >
           Skip to main content
         </a>
+        <StarField starCount={30} className="fixed inset-0 z-0 opacity-20 pointer-events-none" />
         <ThemeProvider>
           <SessionProvider>
             <TooltipProvider>
               <ImpersonationBanner />
               <Navigation />
-              <main id="main-content" className="min-h-screen">{children}</main>
+              <main id="main-content" className="min-h-screen pb-20 md:pb-0">{children}</main>
               <Footer />
             </TooltipProvider>
           </SessionProvider>

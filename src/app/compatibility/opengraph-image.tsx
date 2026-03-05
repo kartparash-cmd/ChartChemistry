@@ -1,7 +1,7 @@
 import { ImageResponse } from "next/og";
 
 export const runtime = "edge";
-export const alt = "Chart Chemistry — AI-Powered Astrology";
+export const alt = "Chart Chemistry — Astrological Compatibility";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -55,7 +55,7 @@ export default async function Image() {
             fontWeight: 600,
           }}
         >
-          AI-Powered Astrology
+          Astrological Compatibility Analysis
         </div>
         <div
           style={{
@@ -65,7 +65,7 @@ export default async function Image() {
             textAlign: "center",
           }}
         >
-          Discover your cosmic connections through the stars
+          Discover your cosmic connection with AI-powered synastry analysis
         </div>
       </div>
     ),

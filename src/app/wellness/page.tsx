@@ -18,6 +18,9 @@ import {
   ArrowRight,
   AlertTriangle,
   LayoutDashboard,
+  Sun,
+  Compass,
+  Users,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -126,6 +129,14 @@ function ConfidenceIndicator({ confidence }: { confidence: number }) {
   );
 }
 
+/**
+ * Detects if a timing string contains a specific time window
+ * (e.g. "Morning hours, 9-11 AM", "Evening, 6:00-8:00 PM", "2-4 PM").
+ */
+function hasSpecificTimeWindow(timing: string): boolean {
+  return /\d{1,2}[:\s]?\d{0,2}\s*[-\u2013]\s*\d{1,2}[:\s]?\d{0,2}\s*(AM|PM|am|pm)/i.test(timing);
+}
+
 function SuggestionCard({
   suggestion,
   index,
@@ -134,6 +145,8 @@ function SuggestionCard({
   index: number;
 }) {
   const config = CATEGORY_CONFIG[suggestion.category] || CATEGORY_CONFIG.career;
+  const isRelationships = suggestion.category === "relationships";
+  const showTimingBadge = hasSpecificTimeWindow(suggestion.timing);
 
   return (
     <motion.div
@@ -181,14 +194,37 @@ function SuggestionCard({
           <p className="text-sm leading-relaxed text-foreground/80 mb-4">
             {suggestion.description}
           </p>
+
+          {/* Contextual relationship hint */}
+          {isRelationships && (
+            <Link
+              href="/connections"
+              className="group/link mb-4 flex items-center gap-1.5 text-xs text-rose-400/80 hover:text-rose-400 transition-colors"
+            >
+              <Users className="h-3 w-3" />
+              <span>See how today&apos;s energy affects your connections</span>
+              <ArrowRight className="h-3 w-3 opacity-0 -translate-x-1 transition-all group-hover/link:opacity-100 group-hover/link:translate-x-0" />
+            </Link>
+          )}
+
           <Separator className="mb-3 bg-white/5" />
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-1.5">
-              <Clock className="h-3.5 w-3.5 text-muted-foreground" />
-              <span className="text-xs text-muted-foreground">
+            {showTimingBadge ? (
+              <Badge
+                variant="outline"
+                className="border-gold/30 bg-gold/[0.08] text-gold gap-1.5 text-xs font-medium"
+              >
+                <Clock className="h-3 w-3" />
                 {suggestion.timing}
-              </span>
-            </div>
+              </Badge>
+            ) : (
+              <div className="flex items-center gap-1.5">
+                <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+                <span className="text-xs text-muted-foreground">
+                  {suggestion.timing}
+                </span>
+              </div>
+            )}
             <ConfidenceIndicator confidence={suggestion.confidence} />
           </div>
         </CardContent>
@@ -464,34 +500,59 @@ export default function WellnessPage() {
               ))}
             </div>
 
-            {/* Bottom CTA */}
+            {/* Continue Exploring */}
             <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.5 }}
-              className="text-center pt-4"
+              className="pt-4"
             >
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-                <Button
-                  asChild
-                  variant="outline"
-                  className="rounded-full border-white/10"
-                >
-                  <Link href="/horoscope">
-                    Read Today&apos;s Horoscope
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Link>
-                </Button>
-                <Button
-                  asChild
-                  variant="outline"
-                  className="rounded-full border-white/10"
-                >
-                  <Link href="/compatibility">
-                    Check Compatibility
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Link>
-                </Button>
+              <h3 className="font-heading text-base font-semibold text-center mb-4">
+                Continue Exploring
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <Link href="/horoscope" className="group">
+                  <div className="glass-card flex flex-col items-center gap-3 rounded-2xl p-6 text-center transition-all hover:border-cosmic-purple/30">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gold/10 text-gold transition-colors group-hover:bg-gold/20">
+                      <Sun className="h-6 w-6" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold">Today&apos;s Horoscope</p>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        See your full cosmic reading
+                      </p>
+                    </div>
+                    <ArrowRight className="h-4 w-4 text-muted-foreground opacity-0 transition-all group-hover:opacity-100 group-hover:translate-x-1" />
+                  </div>
+                </Link>
+                <Link href="/transits" className="group">
+                  <div className="glass-card flex flex-col items-center gap-3 rounded-2xl p-6 text-center transition-all hover:border-cosmic-purple/30">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-cosmic-purple/10 text-cosmic-purple-light transition-colors group-hover:bg-cosmic-purple/20">
+                      <Compass className="h-6 w-6" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold">Active Transits</p>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        What&apos;s influencing your timing
+                      </p>
+                    </div>
+                    <ArrowRight className="h-4 w-4 text-muted-foreground opacity-0 transition-all group-hover:opacity-100 group-hover:translate-x-1" />
+                  </div>
+                </Link>
+                <Link href="/compatibility" className="group">
+                  <div className="glass-card flex flex-col items-center gap-3 rounded-2xl p-6 text-center transition-all hover:border-cosmic-purple/30">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-rose-400/10 text-rose-400 transition-colors group-hover:bg-rose-400/20">
+                      <Heart className="h-6 w-6" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold">Check Compatibility</p>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        See how timing affects relationships
+                      </p>
+                    </div>
+                    <ArrowRight className="h-4 w-4 text-muted-foreground opacity-0 transition-all group-hover:opacity-100 group-hover:translate-x-1" />
+                  </div>
+                </Link>
               </div>
             </motion.div>
           </div>

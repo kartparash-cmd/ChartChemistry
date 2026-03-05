@@ -15,6 +15,8 @@ import {
   MapPin,
   Clock,
   Sparkles,
+  CheckCircle2,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -68,7 +70,7 @@ interface ProfileFormData {
 
 function SkeletonCard() {
   return (
-    <Card className="glass-card animate-pulse">
+    <Card className="rounded-2xl border-white/10 bg-white/[0.03] animate-pulse">
       <CardHeader>
         <div className="flex items-center gap-3">
           <div className="h-10 w-10 rounded-full bg-white/10" />
@@ -118,6 +120,9 @@ function ProfileForm({
       birthCountry: "",
     }
   );
+  const [unknownBirthTime, setUnknownBirthTime] = useState(
+    initialData ? !initialData.birthTime : false
+  );
 
   const handleChange = (field: keyof ProfileFormData, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -125,7 +130,10 @@ function ProfileForm({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(form);
+    onSubmit({
+      ...form,
+      birthTime: unknownBirthTime ? "" : form.birthTime,
+    });
   };
 
   const isValid =
@@ -167,9 +175,27 @@ function ProfileForm({
             type="time"
             value={form.birthTime}
             onChange={(e) => handleChange("birthTime", e.target.value)}
-            className="border-white/10 bg-white/5"
+            disabled={unknownBirthTime}
+            className="border-white/10 bg-white/5 disabled:opacity-40"
           />
-          <p className="text-xs text-muted-foreground">Optional</p>
+          <label
+            htmlFor="unknown-birth-time"
+            className="flex cursor-pointer items-center gap-2 rounded-lg py-2 text-xs text-muted-foreground select-none"
+          >
+            <input
+              id="unknown-birth-time"
+              type="checkbox"
+              checked={unknownBirthTime}
+              onChange={(e) => {
+                setUnknownBirthTime(e.target.checked);
+                if (e.target.checked) {
+                  handleChange("birthTime", "");
+                }
+              }}
+              className="h-4 w-4 rounded border-white/20 bg-white/5 accent-cosmic-purple"
+            />
+            I don&apos;t know the birth time
+          </label>
         </div>
       </div>
 
@@ -240,6 +266,12 @@ export default function ProfilesPage() {
   const [activeProfile, setActiveProfile] = useState<BirthProfile | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Success toast state
+  const [successToast, setSuccessToast] = useState<{
+    message: string;
+    profileId: string;
+  } | null>(null);
+
   // Redirect unauthenticated users
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -294,8 +326,13 @@ export default function ProfilesPage() {
         throw new Error(data.error || "Failed to create profile");
       }
 
+      const created = await res.json();
       setAddDialogOpen(false);
       await fetchProfiles();
+      setSuccessToast({
+        message: "Profile created! View your chart?",
+        profileId: created.profile?.id ?? created.id ?? "",
+      });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create profile");
     } finally {
@@ -461,12 +498,37 @@ export default function ProfilesPage() {
         </div>
       )}
 
+      {/* Success toast */}
+      {successToast && (
+        <div className="mx-auto max-w-7xl px-4 pt-4 sm:px-6 lg:px-8">
+          <div className="flex items-center gap-3 rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-4 text-sm text-emerald-400">
+            <CheckCircle2 className="h-5 w-5 shrink-0 text-emerald-400" />
+            <span className="flex-1">{successToast.message}</span>
+            {successToast.profileId && (
+              <Link
+                href={`/chart/${successToast.profileId}`}
+                className="shrink-0 font-medium underline hover:no-underline"
+              >
+                View Chart
+              </Link>
+            )}
+            <button
+              type="button"
+              onClick={() => setSuccessToast(null)}
+              className="shrink-0 text-emerald-400 hover:text-emerald-300"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Main content */}
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         {profiles.length === 0 ? (
           /* ---- Empty state ---- */
-          <div className="rounded-xl border border-dashed border-white/20 bg-white/[0.02] p-16 text-center">
-            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-cosmic-purple/10">
+          <div className="rounded-2xl border border-dashed border-white/20 bg-white/[0.02] p-16 text-center">
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-cosmic-purple/10">
               <Sparkles className="h-8 w-8 text-cosmic-purple-light" />
             </div>
             <h2 className="font-heading text-xl font-semibold mb-2">
@@ -501,7 +563,7 @@ export default function ProfilesPage() {
           /* ---- Profile grid ---- */
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {profiles.map((profile) => (
-              <Card key={profile.id} className="glass-card flex flex-col">
+              <Card key={profile.id} className="rounded-2xl border-white/10 bg-white/[0.03] flex flex-col">
                 <CardHeader>
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-3 min-w-0">

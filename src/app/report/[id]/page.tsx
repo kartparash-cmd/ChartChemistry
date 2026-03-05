@@ -22,6 +22,8 @@ import {
   ArrowLeft,
   Printer,
   Download,
+  TrendingUp,
+  Sun,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -50,6 +52,7 @@ interface Report {
   redFlags: string[];
   growthAreas: string[];
   tier: "FREE" | "PREMIUM" | "BOUTIQUE";
+  createdAt: string;
 }
 
 interface NarrativeSection {
@@ -409,6 +412,28 @@ function NarrativeSectionCard({
   );
 }
 
+// Helper: format report age
+function formatReportAge(createdAt: string): { label: string; isStale: boolean } {
+  const created = new Date(createdAt);
+  const now = new Date();
+  const diffMs = now.getTime() - created.getTime();
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+  if (diffDays === 0) {
+    return { label: "Generated today", isStale: false };
+  } else if (diffDays === 1) {
+    return { label: "Generated yesterday", isStale: false };
+  } else if (diffDays < 30) {
+    return { label: `Generated ${diffDays} days ago`, isStale: false };
+  } else {
+    const weeks = Math.floor(diffDays / 7);
+    const label = weeks < 8
+      ? `Generated ${weeks} weeks ago`
+      : `Generated ${Math.floor(diffDays / 30)} months ago`;
+    return { label, isStale: true };
+  }
+}
+
 export default function ReportPage() {
   const params = useParams();
   const router = useRouter();
@@ -565,7 +590,7 @@ export default function ReportPage() {
         <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
           <Link
             href="/dashboard"
-            className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors mb-6 print:hidden"
+            className="inline-flex items-center gap-1.5 text-sm font-medium text-foreground/80 hover:text-foreground bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg px-3 py-1.5 transition-colors mb-6 print:hidden"
           >
             <ArrowLeft className="h-4 w-4" />
             Back to Dashboard
@@ -585,6 +610,20 @@ export default function ReportPage() {
               <p className="text-sm text-muted-foreground mt-1">
                 Compatibility Report
               </p>
+              {report.createdAt && (() => {
+                const { label, isStale } = formatReportAge(report.createdAt);
+                return (
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                    <span className="text-xs text-muted-foreground">{label}</span>
+                    {isStale && (
+                      <span className="inline-flex items-center gap-1 text-xs text-gold/80 bg-gold/10 border border-gold/20 rounded-full px-2 py-0.5">
+                        <AlertTriangle className="h-3 w-3" />
+                        Transits may have shifted — consider regenerating
+                      </span>
+                    )}
+                  </div>
+                );
+              })()}
             </div>
             <Badge
               className={cn(
@@ -713,6 +752,57 @@ export default function ReportPage() {
                 <Download className="mr-2 h-4 w-4" />
                 Export HTML
               </Button>
+            </div>
+
+            {/* Continue Your Journey */}
+            <div className="pt-6 print:hidden">
+              <h3 className="font-heading text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-4">
+                Continue Your Journey
+              </h3>
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                {[
+                  {
+                    href: `/chat?reportId=${reportId}`,
+                    icon: <MessageCircle className="h-5 w-5" />,
+                    label: "Ask AI About This",
+                    description: "Dive deeper with your AI astrologer",
+                  },
+                  {
+                    href: "/transits",
+                    icon: <TrendingUp className="h-5 w-5" />,
+                    label: "Check Your Transits",
+                    description: "See what the stars say right now",
+                  },
+                  {
+                    href: "/horoscope",
+                    icon: <Sun className="h-5 w-5" />,
+                    label: "View Your Horoscope",
+                    description: "Your daily cosmic guidance",
+                  },
+                  {
+                    href: "/compatibility",
+                    icon: <Heart className="h-5 w-5" />,
+                    label: "Run Another Check",
+                    description: "Test a different pairing",
+                  },
+                ].map((card) => (
+                  <Link
+                    key={card.href}
+                    href={card.href}
+                    className="group glass-card rounded-xl border border-white/10 p-4 flex flex-col items-center text-center gap-2 transition-all hover:border-cosmic-purple/50 hover:bg-cosmic-purple/5"
+                  >
+                    <span className="text-cosmic-purple-light group-hover:text-cosmic-purple transition-colors">
+                      {card.icon}
+                    </span>
+                    <span className="text-sm font-medium leading-tight">
+                      {card.label}
+                    </span>
+                    <span className="text-[11px] leading-snug text-muted-foreground hidden sm:block">
+                      {card.description}
+                    </span>
+                  </Link>
+                ))}
+              </div>
             </div>
           </div>
         </div>

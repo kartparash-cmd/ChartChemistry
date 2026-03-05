@@ -15,6 +15,9 @@ import {
   Loader2,
   Orbit,
   Sparkles,
+  Clock,
+  Heart,
+  Compass,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -30,6 +33,49 @@ interface TransitResponse {
   transitCount: number;
   highSignificance: number;
   error?: string;
+}
+
+/**
+ * Estimate how long a transit remains active based on the transiting planet's
+ * average speed (days per degree of ecliptic longitude) and the current orb.
+ * The orb tells us roughly how far the transiting planet is from exact -- we
+ * use half the remaining orb travel as an approximation of "time left" since
+ * the transit is already active (orb is shrinking or has passed exact).
+ */
+const PLANET_DAYS_PER_DEGREE: Record<string, number> = {
+  Sun: 1,
+  Moon: 0.083, // ~2 hours per degree
+  Mercury: 1.5,
+  Venus: 1.5,
+  Mars: 2.5,
+  Jupiter: 12,
+  Saturn: 14,
+  Uranus: 20,
+  Neptune: 25,
+  Pluto: 30,
+};
+
+const OUTER_PLANETS = new Set(["Jupiter", "Saturn", "Uranus", "Neptune", "Pluto"]);
+
+function getTransitDurationLabel(planet: string, orb: number): string {
+  const daysPerDeg = PLANET_DAYS_PER_DEGREE[planet] ?? 2;
+  // Estimate remaining active time: the orb is the current distance from exact.
+  // The transit stays active while the orb is within the allowed threshold.
+  // We approximate remaining time as orb * daysPerDeg (how long to traverse the current orb).
+  const totalDays = orb * daysPerDeg;
+
+  if (planet === "Moon") {
+    const hours = Math.max(1, Math.round(totalDays * 24));
+    return `~${hours} more hour${hours !== 1 ? "s" : ""}`;
+  }
+
+  if (OUTER_PLANETS.has(planet)) {
+    const weeks = Math.max(1, Math.round(totalDays / 7));
+    return `~${weeks} more week${weeks !== 1 ? "s" : ""}`;
+  }
+
+  const days = Math.max(1, Math.round(totalDays));
+  return `~${days} more day${days !== 1 ? "s" : ""}`;
 }
 
 function TransitSkeleton() {
@@ -206,6 +252,76 @@ function TransitLegend() {
   );
 }
 
+function TransitDuration({ planet, orb }: { planet: string; orb: number }) {
+  const label = getTransitDurationLabel(planet, orb);
+  return (
+    <div className="flex items-center gap-1 mt-2 ml-5">
+      <Clock className="h-3 w-3 text-muted-foreground" />
+      <span className="text-xs text-muted-foreground">Active for {label}</span>
+    </div>
+  );
+}
+
+function HighImpactNote() {
+  return (
+    <p className="text-xs text-muted-foreground/80 italic mt-1 ml-6">
+      High-impact transits can bring noticeable life events and shifts. Pay attention to this area.
+    </p>
+  );
+}
+
+function RelatedInsights() {
+  const links = [
+    {
+      title: "Today\u2019s Horoscope",
+      description: "Your personalized daily cosmic forecast",
+      href: "/horoscope",
+      icon: Sun,
+    },
+    {
+      title: "Wellness Timing",
+      description: "Align your wellness routine with the stars",
+      href: "/wellness",
+      icon: Compass,
+    },
+    {
+      title: "Check Compatibility",
+      description: "Explore relationship chemistry",
+      href: "/compatibility",
+      icon: Heart,
+    },
+  ];
+
+  return (
+    <motion.section
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.5 }}
+      className="mt-12"
+    >
+      <h2 className="font-heading text-lg font-semibold mb-4">Related Insights</h2>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        {links.map((link) => {
+          const Icon = link.icon;
+          return (
+            <Link key={link.href} href={link.href}>
+              <div className="glass-card rounded-xl border border-white/10 p-4 hover:border-white/20 transition-colors">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-cosmic-purple/10">
+                    <Icon className="h-4 w-4 text-cosmic-purple-light" />
+                  </div>
+                  <h3 className="text-sm font-medium text-foreground">{link.title}</h3>
+                </div>
+                <p className="text-xs text-muted-foreground">{link.description}</p>
+              </div>
+            </Link>
+          );
+        })}
+      </div>
+    </motion.section>
+  );
+}
+
 export default function TransitsPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
@@ -344,6 +460,7 @@ export default function TransitsPage() {
         ) : error ? (
           <ErrorState message={error} onRetry={fetchTransits} />
         ) : (
+          <>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Main timeline */}
             <div className="lg:col-span-2 space-y-8">
@@ -411,7 +528,7 @@ export default function TransitsPage() {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ delay: 0.15 }}
-                    className="flex items-center gap-2 mb-4"
+                    className="flex items-center gap-2 mb-1"
                   >
                     <Star className="h-4 w-4 text-red-400" />
                     <h2 className="font-heading text-lg font-semibold text-red-400">
@@ -421,13 +538,16 @@ export default function TransitsPage() {
                       ({highTransits.length})
                     </span>
                   </motion.div>
-                  <div className="space-y-3">
+                  <HighImpactNote />
+                  <div className="space-y-3 mt-4">
                     {highTransits.map((transit, i) => (
-                      <TransitCard
-                        key={`high-${transit.transitingPlanet}-${transit.aspect}-${transit.natalPlanet}`}
-                        transit={transit}
-                        index={i}
-                      />
+                      <div key={`high-${transit.transitingPlanet}-${transit.aspect}-${transit.natalPlanet}`}>
+                        <TransitCard
+                          transit={transit}
+                          index={i}
+                        />
+                        <TransitDuration planet={transit.transitingPlanet} orb={transit.orb} />
+                      </div>
                     ))}
                   </div>
                 </div>
@@ -455,11 +575,13 @@ export default function TransitsPage() {
                   </motion.div>
                   <div className="space-y-3">
                     {mediumTransits.map((transit, i) => (
-                      <TransitCard
-                        key={`med-${transit.transitingPlanet}-${transit.aspect}-${transit.natalPlanet}`}
-                        transit={transit}
-                        index={i + highTransits.length}
-                      />
+                      <div key={`med-${transit.transitingPlanet}-${transit.aspect}-${transit.natalPlanet}`}>
+                        <TransitCard
+                          transit={transit}
+                          index={i + highTransits.length}
+                        />
+                        <TransitDuration planet={transit.transitingPlanet} orb={transit.orb} />
+                      </div>
                     ))}
                   </div>
                 </div>
@@ -487,11 +609,13 @@ export default function TransitsPage() {
                   </motion.div>
                   <div className="space-y-3">
                     {lowTransits.map((transit, i) => (
-                      <TransitCard
-                        key={`low-${transit.transitingPlanet}-${transit.aspect}-${transit.natalPlanet}`}
-                        transit={transit}
-                        index={i + highTransits.length + mediumTransits.length}
-                      />
+                      <div key={`low-${transit.transitingPlanet}-${transit.aspect}-${transit.natalPlanet}`}>
+                        <TransitCard
+                          transit={transit}
+                          index={i + highTransits.length + mediumTransits.length}
+                        />
+                        <TransitDuration planet={transit.transitingPlanet} orb={transit.orb} />
+                      </div>
                     ))}
                   </div>
                 </div>
@@ -543,6 +667,10 @@ export default function TransitsPage() {
               </Card>
             </div>
           </div>
+
+          {/* Related Insights */}
+          {totalTransits > 0 && <RelatedInsights />}
+          </>
         )}
       </div>
     </div>

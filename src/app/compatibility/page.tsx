@@ -3,7 +3,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, AlertTriangle, RefreshCw, LayoutDashboard } from "lucide-react";
+import { ArrowRight, AlertTriangle, RefreshCw, LayoutDashboard, Crown, X } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { StarField } from "@/components/star-field";
@@ -55,6 +55,8 @@ export default function CompatibilityPage() {
   const [pageState, setPageState] = useState<PageState>("input");
   const [result, setResult] = useState<CompatibilityResult | null>(null);
   const [error, setError] = useState<string>("");
+  const [remainingChecks, setRemainingChecks] = useState<number | null>(null);
+  const [showRateLimitModal, setShowRateLimitModal] = useState(false);
   const [savedProfiles, setSavedProfiles] = useState<any[]>([]);
   const [formKeyA, setFormKeyA] = useState(0);
   const [formKeyB, setFormKeyB] = useState(0);
@@ -94,12 +96,22 @@ export default function CompatibilityPage() {
       });
 
       if (!response.ok) {
+        if (response.status === 429) {
+          setShowRateLimitModal(true);
+          setPageState("input");
+          return;
+        }
         throw new Error(
           `Analysis failed (${response.status}). Please try again.`
         );
       }
 
       const data = await response.json();
+
+      // Capture remaining checks from API response
+      if (data.remainingChecks !== undefined) {
+        setRemainingChecks(data.remainingChecks as number | null);
+      }
 
       // Map API response shape to CompatibilityResult format
       const mappedResult: CompatibilityResult = {
@@ -301,8 +313,8 @@ export default function CompatibilityPage() {
                   </p>
                 ) : null}
                 {!session && (
-                  <p className="mt-1 text-center text-xs text-muted-foreground/60">
-                    Free: 3 checks per day
+                  <p className="mt-2 text-center text-xs text-muted-foreground/70">
+                    Free: 3 compatibility checks per day
                   </p>
                 )}
               </div>
@@ -336,6 +348,19 @@ export default function CompatibilityPage() {
                 personAData={personA}
                 personBData={personB}
               />
+
+              {remainingChecks !== null && !session && (
+                <motion.p
+                  className="mt-6 text-center text-sm text-muted-foreground/70"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.5 }}
+                >
+                  {remainingChecks > 0
+                    ? `${remainingChecks} free check${remainingChecks === 1 ? "" : "s"} remaining today`
+                    : "No free checks remaining today"}
+                </motion.p>
+              )}
 
               <div className="mt-10 flex justify-center">
                 <Button
@@ -408,6 +433,69 @@ export default function CompatibilityPage() {
           )}
         </AnimatePresence>
       </div>
+
+      {/* =================== RATE LIMIT MODAL =================== */}
+      <AnimatePresence>
+        {showRateLimitModal && (
+          <motion.div
+            key="rate-limit-overlay"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setShowRateLimitModal(false)}
+          >
+            <motion.div
+              className="glass-card relative w-full max-w-md rounded-2xl border border-cosmic-purple/40 p-8 text-center"
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              transition={{ type: "spring", stiffness: 300, damping: 25 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                onClick={() => setShowRateLimitModal(false)}
+                className="absolute right-4 top-4 text-muted-foreground hover:text-foreground transition-colors"
+                aria-label="Close"
+              >
+                <X className="h-5 w-5" />
+              </button>
+
+              <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-cosmic-purple/15">
+                <Crown className="h-8 w-8 text-cosmic-purple-light" />
+              </div>
+
+              <h3 className="font-heading text-xl font-semibold mb-2">
+                You&apos;ve used all 3 free checks today
+              </h3>
+              <p className="mx-auto max-w-sm text-sm text-muted-foreground mb-6">
+                Upgrade to Premium for unlimited compatibility checks, full
+                reports, and AI chat.
+              </p>
+
+              <div className="flex flex-col items-center gap-3">
+                <Button
+                  asChild
+                  size="lg"
+                  className="w-full rounded-full bg-gradient-to-r from-cosmic-purple to-gold text-white font-semibold hover:shadow-cosmic-purple/40 hover:shadow-xl hover:brightness-110"
+                >
+                  <Link href="/pricing">
+                    Upgrade to Premium
+                    <ArrowRight className="ml-2 h-5 w-5" />
+                  </Link>
+                </Button>
+                <Button
+                  variant="ghost"
+                  className="w-full rounded-full text-muted-foreground hover:text-foreground"
+                  onClick={() => setShowRateLimitModal(false)}
+                >
+                  Come back tomorrow
+                </Button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </main>
   );
 }

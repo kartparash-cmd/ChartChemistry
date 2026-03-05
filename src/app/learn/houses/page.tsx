@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight, Compass } from "lucide-react";
+import { ArrowRight, Compass, Star, Sun, Moon } from "lucide-react";
 import {
   Card,
   CardHeader,
@@ -318,6 +318,59 @@ export default function HousesPage() {
               </Card>
             );
           })}
+        </div>
+      </section>
+
+      {/* Personalization CTA */}
+      <section className="px-4 pb-12">
+        <div className="mx-auto max-w-2xl">
+          <div className="glass-card rounded-2xl border border-white/10 p-8 text-center">
+            <p className="text-muted-foreground mb-4">
+              See which houses are most active in your chart and how they shape
+              your life path.
+            </p>
+            <Link
+              href="/dashboard/profiles"
+              className="inline-flex items-center justify-center rounded-lg bg-gradient-to-r from-cosmic-purple to-cosmic-purple-light px-6 py-2.5 text-sm font-medium text-white shadow-lg shadow-cosmic-purple/25 transition-all hover:shadow-xl hover:shadow-cosmic-purple/30 hover:brightness-110"
+            >
+              Create Your Birth Profile
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Continue Learning */}
+      <section className="px-4 pb-12">
+        <div className="mx-auto max-w-2xl text-center">
+          <p className="text-sm text-muted-foreground mb-4">Continue Learning</p>
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            <Link
+              href="/learn/zodiac"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium text-muted-foreground transition-all hover:bg-white/10 hover:border-white/20 hover:text-foreground"
+            >
+              <Star className="h-3.5 w-3.5" />
+              Zodiac Signs
+            </Link>
+            <Link
+              href="/learn/planets"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium text-muted-foreground transition-all hover:bg-white/10 hover:border-white/20 hover:text-foreground"
+            >
+              <Sun className="h-3.5 w-3.5" />
+              Planets
+            </Link>
+            <span className="inline-flex items-center gap-1.5 rounded-lg border border-cosmic-purple/30 bg-cosmic-purple/10 px-4 py-2 text-sm font-medium text-cosmic-purple-light">
+              <Compass className="h-3.5 w-3.5" />
+              Houses
+            </span>
+            <Link
+              href="/learn/aspects"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium text-muted-foreground transition-all hover:bg-white/10 hover:border-white/20 hover:text-foreground"
+            >
+              <Moon className="h-3.5 w-3.5" />
+              Aspects
+            </Link>
+          </div>
         </div>
       </section>
 

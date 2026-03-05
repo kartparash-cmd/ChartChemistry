@@ -403,7 +403,7 @@ export function BirthDataForm({
           placeholder="Enter name"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          className="bg-background/50"
+          className="h-11 bg-background/50"
         />
       </div>
 
@@ -416,7 +416,7 @@ export function BirthDataForm({
           value={birthDate}
           onChange={(e) => setBirthDate(e.target.value)}
           max={new Date().toISOString().split("T")[0]}
-          className="bg-background/50"
+          className="h-11 bg-background/50"
         />
       </div>
 
@@ -425,21 +425,23 @@ export function BirthDataForm({
         <div className="flex items-center justify-between">
           <Label htmlFor={`birthTime-${label}`}>Birth Time</Label>
           <div className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              id={`unknownTime-${label}`}
-              checked={unknownTime}
-              onChange={(e) => {
-                setUnknownTime(e.target.checked);
-                if (e.target.checked) setBirthTime("");
-              }}
-              className="h-4 w-4 rounded border-border accent-cosmic-purple"
-            />
             <label
               htmlFor={`unknownTime-${label}`}
-              className="text-xs text-muted-foreground cursor-pointer"
+              className="flex items-center gap-2 py-2 px-1 cursor-pointer"
             >
-              I don&apos;t know my birth time
+              <input
+                type="checkbox"
+                id={`unknownTime-${label}`}
+                checked={unknownTime}
+                onChange={(e) => {
+                  setUnknownTime(e.target.checked);
+                  if (e.target.checked) setBirthTime("");
+                }}
+                className="h-4 w-4 rounded border-border accent-cosmic-purple"
+              />
+              <span className="text-xs text-muted-foreground">
+                I don&apos;t know my birth time
+              </span>
             </label>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -467,7 +469,7 @@ export function BirthDataForm({
             type="time"
             value={birthTime}
             onChange={(e) => setBirthTime(e.target.value)}
-            className="bg-background/50"
+            className="h-11 bg-background/50"
           />
         )}
       </div>
@@ -502,7 +504,7 @@ export function BirthDataForm({
             }
             autoComplete="off"
             className={cn(
-              "bg-background/50 pr-8",
+              "h-11 bg-background/50 pr-8",
               selectedCoords && "border-green-500/50"
             )}
           />
@@ -519,7 +521,7 @@ export function BirthDataForm({
               id={`city-listbox-${label}`}
               role="listbox"
               aria-live="polite"
-              className="absolute z-50 mt-1 w-full rounded-lg border border-border bg-popover shadow-lg overflow-hidden"
+              className="absolute z-50 mt-1 w-full rounded-lg border border-border bg-popover shadow-lg max-h-48 overflow-y-auto"
             >
               {citySuggestions.map((result, i) => (
                 <button
@@ -557,10 +559,10 @@ export function BirthDataForm({
           value={birthCountry}
           onValueChange={(value) => setBirthCountry(value)}
         >
-          <SelectTrigger className="w-full bg-background/50" aria-label="Select birth country">
+          <SelectTrigger className="w-full h-11 bg-background/50" aria-label="Select birth country">
             <SelectValue placeholder="Select country" />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className="max-h-60">
             {COUNTRIES.map((country) => (
               <SelectItem key={country} value={country}>
                 {country}

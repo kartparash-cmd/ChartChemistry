@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useState, useRef } from "react";
+import { Suspense, useCallback, useEffect, useState, useRef } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
@@ -13,6 +13,8 @@ import {
   ChevronDown,
   Crown,
   ArrowLeft,
+  Lightbulb,
+  RotateCcw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -32,6 +34,14 @@ interface Message {
   timestamp: Date;
 }
 
+/** Serializable shape stored in localStorage (Date -> ISO string) */
+interface StoredMessage {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+  timestamp: string;
+}
+
 interface ReportSummary {
   id: string;
   person1Name: string;
@@ -46,7 +56,34 @@ const SUGGESTED_QUESTIONS = [
   "How can we improve our communication?",
 ];
 
+const STORAGE_KEY_PREFIX = "cc_chat_";
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+function serializeMessages(msgs: Message[]): string {
+  const stored: StoredMessage[] = msgs.map((m) => ({
+    ...m,
+    timestamp: m.timestamp instanceof Date ? m.timestamp.toISOString() : m.timestamp,
+  }));
+  return JSON.stringify(stored);
+}
+
+function deserializeMessages(raw: string): Message[] | null {
+  try {
+    const parsed: StoredMessage[] = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return null;
+    return parsed.map((m) => ({ ...m, timestamp: new Date(m.timestamp) }));
+  } catch {
+    return null;
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Typing indicator
+// ---------------------------------------------------------------------------
+
 function TypingIndicator() {
   return (
     <div className="flex items-center gap-1 px-4 py-3">
@@ -66,7 +103,10 @@ function TypingIndicator() {
   );
 }
 
+// ---------------------------------------------------------------------------
 // Chat bubble
+// ---------------------------------------------------------------------------
+
 function ChatBubble({ message }: { message: Message }) {
   const isUser = message.role === "user";
 
@@ -119,6 +159,10 @@ function ChatBubble({ message }: { message: Message }) {
   );
 }
 
+// ---------------------------------------------------------------------------
+// Page wrapper (Suspense boundary for useSearchParams)
+// ---------------------------------------------------------------------------
+
 export default function ChatPage() {
   return (
     <Suspense>
@@ -126,6 +170,10 @@ export default function ChatPage() {
     </Suspense>
   );
 }
+
+// ---------------------------------------------------------------------------
+// Main content
+// ---------------------------------------------------------------------------
 
 function ChatPageContent() {
   const { data: session, status } = useSession();
@@ -140,20 +188,103 @@ function ChatPageContent() {
   const [loadingReports, setLoadingReports] = useState(true);
   const [sessionId, setSessionId] = useState<string | undefined>();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [suggestionsOpen, setSuggestionsOpen] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  /** True once there has been at least one user message in this conversation */
+  const hasUserMessage = messages.some((m) => m.role === "user");
 
   const isPremium =
     session?.user?.plan === "PREMIUM" || session?.user?.plan === "ANNUAL";
 
+  // -------------------------------------------------------------------
+  // localStorage helpers (scoped to selectedReportId)
+  // -------------------------------------------------------------------
+
+  const storageKey = selectedReportId
+    ? `${STORAGE_KEY_PREFIX}${selectedReportId}`
+    : `${STORAGE_KEY_PREFIX}__general`;
+
+  /** Persist messages to localStorage whenever they change */
+  useEffect(() => {
+    if (!isPremium) return;
+    // Only persist when there are real messages beyond the welcome message
+    const hasRealContent = messages.some((m) => m.id !== "welcome");
+    if (hasRealContent) {
+      try {
+        localStorage.setItem(storageKey, serializeMessages(messages));
+      } catch {
+        // localStorage full or unavailable – silently ignore
+      }
+    }
+  }, [messages, storageKey, isPremium]);
+
+  // -------------------------------------------------------------------
+  // Restore messages from localStorage when report selection changes
+  // -------------------------------------------------------------------
+
+  const buildWelcomeMessage = useCallback((): Message => ({
+    id: "welcome",
+    role: "assistant",
+    content:
+      "Welcome to your AI Astrologer session! I can help you understand your compatibility reports, explore specific aspects of your relationship dynamics, or answer any astrology questions you have.\n\nSelect a relationship from the sidebar and ask me anything. You can also use the suggested questions below to get started.",
+    timestamp: new Date(),
+  }), []);
+
+  useEffect(() => {
+    if (!isPremium) return;
+
+    // Try restoring from localStorage
+    try {
+      const stored = localStorage.getItem(storageKey);
+      if (stored) {
+        const restored = deserializeMessages(stored);
+        if (restored && restored.length > 0) {
+          setMessages(restored);
+          // Collapse suggestions when there is already conversation history
+          setSuggestionsOpen(false);
+          return;
+        }
+      }
+    } catch {
+      // localStorage unavailable
+    }
+
+    // No stored history – show welcome message
+    setMessages([buildWelcomeMessage()]);
+    setSuggestionsOpen(true);
+  }, [storageKey, isPremium, buildWelcomeMessage]);
+
+  // -------------------------------------------------------------------
+  // "New Conversation" handler – clear stored messages and reset
+  // -------------------------------------------------------------------
+
+  const handleNewConversation = () => {
+    try {
+      localStorage.removeItem(storageKey);
+    } catch {
+      // ignore
+    }
+    setMessages([buildWelcomeMessage()]);
+    setSessionId(undefined);
+    setSuggestionsOpen(true);
+  };
+
+  // -------------------------------------------------------------------
   // Redirect if not authenticated
+  // -------------------------------------------------------------------
+
   useEffect(() => {
     if (status === "unauthenticated") {
       router.push("/auth/signin");
     }
   }, [status, router]);
 
+  // -------------------------------------------------------------------
   // Fetch user's reports for the selector
+  // -------------------------------------------------------------------
+
   useEffect(() => {
     if (status !== "authenticated") return;
 
@@ -193,28 +324,23 @@ function ChatPageContent() {
     fetchReports();
   }, [status, reportId]);
 
+  // -------------------------------------------------------------------
   // Scroll to bottom on new messages
+  // -------------------------------------------------------------------
+
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isLoading]);
 
-  // Add welcome message
-  useEffect(() => {
-    if (messages.length === 0 && isPremium) {
-      setMessages([
-        {
-          id: "welcome",
-          role: "assistant",
-          content:
-            "Welcome to your AI Astrologer session! I can help you understand your compatibility reports, explore specific aspects of your relationship dynamics, or answer any astrology questions you have.\n\nSelect a relationship from the sidebar and ask me anything. You can also use the suggested questions below to get started.",
-          timestamp: new Date(),
-        },
-      ]);
-    }
-  }, [isPremium, messages.length]);
+  // -------------------------------------------------------------------
+  // Send message
+  // -------------------------------------------------------------------
 
   const sendMessage = async (content: string) => {
     if (!content.trim() || isLoading) return;
+
+    // Collapse suggestions after the first user message
+    setSuggestionsOpen(false);
 
     const userMessage: Message = {
       id: `user-${Date.now()}`,
@@ -286,6 +412,10 @@ function ChatPageContent() {
     }
   };
 
+  // -------------------------------------------------------------------
+  // Loading / auth guards
+  // -------------------------------------------------------------------
+
   if (status === "loading") {
     return (
       <div className="flex min-h-screen items-center justify-center">
@@ -352,6 +482,10 @@ function ChatPageContent() {
     );
   }
 
+  // -------------------------------------------------------------------
+  // Main chat layout
+  // -------------------------------------------------------------------
+
   return (
     <div className="flex h-[calc(100dvh-4rem)] flex-col lg:flex-row">
       {/* Sidebar */}
@@ -374,7 +508,13 @@ function ChatPageContent() {
               <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
             </div>
           ) : reports.length > 0 ? (
-            <Select value={selectedReportId} onValueChange={(v) => { setSelectedReportId(v); setSessionId(undefined); }}>
+            <Select
+              value={selectedReportId}
+              onValueChange={(v) => {
+                setSelectedReportId(v);
+                setSessionId(undefined);
+              }}
+            >
               <SelectTrigger className="w-full bg-white/5 border-white/10">
                 <SelectValue placeholder="Select a relationship..." />
               </SelectTrigger>
@@ -407,12 +547,26 @@ function ChatPageContent() {
             Select a relationship for context-aware answers, or ask general
             astrology questions.
           </p>
+
+          {/* New Conversation button */}
+          {hasUserMessage && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="mt-3 w-full border-white/10 text-xs"
+              onClick={handleNewConversation}
+            >
+              <RotateCcw className="mr-1.5 h-3 w-3" />
+              New Conversation
+            </Button>
+          )}
         </div>
       </aside>
 
       {/* Chat Area */}
       <div className="flex flex-1 flex-col min-w-0">
         <h1 className="sr-only">AI Astrologer Chat</h1>
+
         {/* Messages */}
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
           {messages.map((message) => (
@@ -431,30 +585,74 @@ function ChatPageContent() {
             </motion.div>
           )}
 
+          {/* No-report empty-state hint (mobile only) */}
+          {!selectedReportId && !hasUserMessage && !loadingReports && reports.length > 0 && (
+            <div className="flex justify-center lg:hidden mt-4">
+              <motion.div
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="rounded-xl border border-cosmic-purple/20 bg-cosmic-purple/5 px-5 py-4 text-center max-w-xs"
+              >
+                <p className="text-sm font-medium text-cosmic-purple-light mb-1">
+                  Select a relationship from the menu above
+                </p>
+                <ChevronDown className="mx-auto h-5 w-5 text-cosmic-purple-light rotate-180" />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Tap &ldquo;Relationship Context&rdquo; to pick a report for personalised answers.
+                </p>
+              </motion.div>
+            </div>
+          )}
+
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Suggested Questions */}
-        {messages.length <= 1 && (
-          <div className="px-4 pb-2">
-            <p className="text-xs text-muted-foreground mb-2">
-              Suggested questions:
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {SUGGESTED_QUESTIONS.map((q) => (
-                <button
-                  key={q}
-                  onClick={() => sendMessage(q)}
-                  disabled={isLoading}
-                  aria-label={q}
-                  className="rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-white/[0.06] hover:text-foreground disabled:opacity-50"
-                >
-                  {q}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
+        {/* Collapsible Suggested Questions */}
+        <div className="px-4 pb-2">
+          <button
+            type="button"
+            onClick={() => setSuggestionsOpen((prev) => !prev)}
+            className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors mb-1.5"
+            aria-expanded={suggestionsOpen}
+            aria-controls="suggested-questions"
+          >
+            <Lightbulb className="h-3.5 w-3.5" />
+            <span>Suggestions</span>
+            <ChevronDown
+              className={cn(
+                "h-3 w-3 transition-transform",
+                suggestionsOpen && "rotate-180"
+              )}
+            />
+          </button>
+
+          <AnimatePresence initial={false}>
+            {suggestionsOpen && (
+              <motion.div
+                id="suggested-questions"
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="overflow-hidden"
+              >
+                <div className="flex flex-wrap gap-2 pb-1">
+                  {SUGGESTED_QUESTIONS.map((q) => (
+                    <button
+                      key={q}
+                      onClick={() => sendMessage(q)}
+                      disabled={isLoading}
+                      aria-label={q}
+                      className="rounded-full border border-white/10 bg-white/[0.03] px-4 py-2.5 text-sm text-muted-foreground transition-colors hover:bg-white/[0.06] hover:text-foreground disabled:opacity-50"
+                    >
+                      {q}
+                    </button>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
 
         {/* Input Bar */}
         <div className="border-t border-white/10 bg-white/[0.02] p-4">

@@ -101,7 +101,7 @@ function LoadingSkeleton() {
       </div>
 
       {/* Compare section skeleton */}
-      <div className="rounded-xl border border-white/10 bg-white/[0.03] p-6">
+      <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-6">
         <Skeleton className="h-6 w-40 mb-6 bg-white/5" />
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
           <Skeleton className="h-10 w-full bg-white/5" />
@@ -115,7 +115,7 @@ function LoadingSkeleton() {
         <Skeleton className="h-6 w-48 bg-white/5" />
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {[1, 2, 3, 4].map((i) => (
-            <Skeleton key={i} className="h-32 w-full rounded-xl bg-white/5" />
+            <Skeleton key={i} className="h-32 w-full rounded-2xl bg-white/5" />
           ))}
         </div>
       </div>
@@ -160,7 +160,7 @@ function ReportCard({ report }: { report: CompatibilityReport }) {
     >
       <Link
         href={`/report/${report.id}`}
-        className="block rounded-xl border border-white/10 bg-white/[0.03] p-5 backdrop-blur-sm transition-colors hover:border-white/20 hover:bg-white/[0.05]"
+        className="block rounded-2xl border border-white/10 bg-white/[0.03] p-5 backdrop-blur-sm transition-colors hover:border-white/20 hover:bg-white/[0.05]"
       >
         <div className="mb-3 flex items-start justify-between">
           <div className="min-w-0 flex-1">
@@ -204,9 +204,9 @@ function EmptyState() {
     <motion.div
       initial={{ opacity: 0, scale: 0.98 }}
       animate={{ opacity: 1, scale: 1 }}
-      className="rounded-xl border border-dashed border-white/20 bg-white/[0.02] p-12 text-center"
+      className="rounded-2xl border border-dashed border-white/20 bg-white/[0.02] p-12 text-center"
     >
-      <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-cosmic-purple/10">
+      <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-cosmic-purple/10">
         <Users className="h-8 w-8 text-cosmic-purple-light" />
       </div>
       <h2 className="mb-2 font-heading text-xl font-semibold">
@@ -464,7 +464,7 @@ export default function ConnectionsPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
           >
-            <Card className="border-white/10 bg-white/[0.03] backdrop-blur-sm">
+            <Card className="rounded-2xl border-white/10 bg-white/[0.03] backdrop-blur-sm">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Heart className="h-5 w-5 text-cosmic-purple-light" />
@@ -510,7 +510,7 @@ export default function ConnectionsPage() {
                     disabled={!person1Id || !person2Id || comparing}
                     onClick={handleCompare}
                     className={cn(
-                      "h-12 rounded-full px-8 text-base font-semibold shadow-lg transition-all",
+                      "h-14 rounded-full px-8 text-base font-semibold shadow-lg transition-all",
                       person1Id && person2Id && !comparing
                         ? "bg-gradient-to-r from-cosmic-purple to-gold text-white hover:shadow-cosmic-purple/40 hover:shadow-xl hover:brightness-110"
                         : "cursor-not-allowed opacity-50"
@@ -621,7 +621,7 @@ export default function ConnectionsPage() {
                       </div>
 
                       {/* Score dimensions */}
-                      <div className="rounded-xl border border-white/10 bg-white/[0.02] p-5">
+                      <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-5">
                         <h3 className="mb-4 flex items-center gap-2 text-sm font-semibold">
                           <BarChart3 className="h-4 w-4 text-cosmic-purple-light" />
                           Score Breakdown
@@ -727,13 +727,13 @@ export default function ConnectionsPage() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
-            className="rounded-xl border border-dashed border-white/20 bg-white/[0.02] p-8 text-center"
+            className="rounded-2xl border border-dashed border-white/20 bg-white/[0.02] p-8 text-center"
           >
-            <BarChart3 className="mx-auto mb-3 h-8 w-8 text-muted-foreground/40" />
+            <BarChart3 className="mx-auto mb-3 h-8 w-8 text-muted-foreground" />
             <h2 className="mb-1 font-medium text-muted-foreground">
               No reports yet
             </h2>
-            <p className="text-xs text-muted-foreground/70">
+            <p className="text-xs text-muted-foreground">
               Compare two profiles above to see your first compatibility result
             </p>
           </motion.div>

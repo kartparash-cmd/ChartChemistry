@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Sun,
   Sparkles,
@@ -15,6 +15,9 @@ import {
   ArrowRight,
   AlertTriangle,
   LayoutDashboard,
+  X,
+  Heart,
+  Activity,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -30,6 +33,52 @@ function isAstroServiceError(message: string): boolean {
     lower.includes("service") ||
     lower.includes("temporarily")
   );
+}
+
+// --- Mercury Retrograde Periods for 2026 ---
+const MERCURY_RETROGRADE_2026 = [
+  { start: new Date(2026, 2, 15), end: new Date(2026, 3, 7) },   // Mar 15 - Apr 7
+  { start: new Date(2026, 6, 18), end: new Date(2026, 7, 11) },  // Jul 18 - Aug 11
+  { start: new Date(2026, 10, 9), end: new Date(2026, 10, 29) }, // Nov 9 - Nov 29
+];
+
+function isMercuryRetrograde(date: Date): boolean {
+  return MERCURY_RETROGRADE_2026.some(
+    (period) => date >= period.start && date <= period.end
+  );
+}
+
+// --- Moon Phase Calculation ---
+// Reference new moon: January 6, 2000 18:14 UTC
+const KNOWN_NEW_MOON = new Date(Date.UTC(2000, 0, 6, 18, 14, 0));
+const SYNODIC_MONTH = 29.53058867; // days
+
+interface MoonPhaseInfo {
+  emoji: string;
+  label: string;
+  dayInCycle: number;
+}
+
+function getMoonPhase(date: Date): MoonPhaseInfo {
+  const diffMs = date.getTime() - KNOWN_NEW_MOON.getTime();
+  const diffDays = diffMs / (1000 * 60 * 60 * 24);
+  const dayInCycle = ((diffDays % SYNODIC_MONTH) + SYNODIC_MONTH) % SYNODIC_MONTH;
+
+  // 8 phases, each ~3.69 days
+  const phaseIndex = Math.floor((dayInCycle / SYNODIC_MONTH) * 8) % 8;
+
+  const phases: { emoji: string; label: string }[] = [
+    { emoji: "\u{1F311}", label: "New Moon" },
+    { emoji: "\u{1F312}", label: "Waxing Crescent" },
+    { emoji: "\u{1F313}", label: "First Quarter" },
+    { emoji: "\u{1F314}", label: "Waxing Gibbous" },
+    { emoji: "\u{1F315}", label: "Full Moon" },
+    { emoji: "\u{1F316}", label: "Waning Gibbous" },
+    { emoji: "\u{1F317}", label: "Last Quarter" },
+    { emoji: "\u{1F318}", label: "Waning Crescent" },
+  ];
+
+  return { ...phases[phaseIndex], dayInCycle: Math.round(dayInCycle) };
 }
 
 interface Horoscope {
@@ -59,6 +108,12 @@ export default function HoroscopePage() {
   const [horoscope, setHoroscope] = useState<Horoscope | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [retrogradedismissed, setRetrogradeDissmissed] = useState(false);
+  const [fetchedAt, setFetchedAt] = useState<Date | null>(null);
+
+  const now = useMemo(() => new Date(), []);
+  const mercuryRetrograde = useMemo(() => isMercuryRetrograde(now), [now]);
+  const moonPhase = useMemo(() => getMoonPhase(now), [now]);
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -80,6 +135,7 @@ export default function HoroscopePage() {
 
       if (res.ok) {
         setHoroscope(data);
+        setFetchedAt(new Date());
       } else {
         setError(data.message || data.error || "Failed to load horoscope");
       }
@@ -136,6 +192,36 @@ export default function HoroscopePage() {
           </motion.div>
         </div>
       </section>
+
+      {/* Mercury Retrograde Banner */}
+      <AnimatePresence>
+        {mercuryRetrograde && !retrogradedismissed && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            className="mx-auto max-w-3xl px-4 pt-4"
+          >
+            <div className="relative flex items-start gap-3 rounded-2xl bg-amber-400/10 px-5 py-4 text-amber-400">
+              <span className="mt-0.5 text-lg shrink-0" aria-hidden="true">
+                ☿
+              </span>
+              <p className="text-sm leading-relaxed">
+                <span className="font-semibold">Mercury is in retrograde</span>{" "}
+                — expect communication challenges and tech glitches. Double-check
+                important messages.
+              </p>
+              <button
+                onClick={() => setRetrogradeDissmissed(true)}
+                className="absolute right-3 top-3 rounded-lg p-1 text-amber-400/60 transition-colors hover:bg-amber-400/10 hover:text-amber-400"
+                aria-label="Dismiss Mercury retrograde banner"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Content */}
       <div className="mx-auto max-w-3xl px-4 py-8">
@@ -227,6 +313,30 @@ export default function HoroscopePage() {
           </motion.div>
         ) : horoscope ? (
           <div className="space-y-6">
+            {/* Updated Timestamp + Moon Phase */}
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              {fetchedAt && (
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <Clock className="h-3 w-3" />
+                  <span>
+                    Updated today at{" "}
+                    {fetchedAt.toLocaleTimeString("en-US", {
+                      hour: "numeric",
+                      minute: "2-digit",
+                      hour12: true,
+                    })}
+                  </span>
+                </div>
+              )}
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <span className="text-base leading-none">{moonPhase.emoji}</span>
+                <span>{moonPhase.label}</span>
+                <span className="text-muted-foreground/50">
+                  (Day {moonPhase.dayInCycle})
+                </span>
+              </div>
+            </div>
+
             {/* Mood + Summary Card */}
             <motion.div
               initial={{ opacity: 0, y: 10 }}
@@ -321,23 +431,51 @@ export default function HoroscopePage() {
               </motion.div>
             </div>
 
-            {/* CTA */}
+            {/* Continue Your Cosmic Journey */}
             <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
-              className="text-center pt-4"
+              className="pt-4"
             >
-              <Button
-                asChild
-                variant="outline"
-                className="rounded-full border-white/10"
-              >
-                <Link href="/transits">
-                  View Your Transits
-                  <ArrowRight className="ml-2 h-4 w-4" />
+              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider text-center mb-4">
+                Continue Your Cosmic Journey
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <Link
+                  href="/transits"
+                  className="glass-card group flex flex-col items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.03] p-5 text-center backdrop-blur-sm transition-colors hover:border-cosmic-purple/30 hover:bg-cosmic-purple/[0.06]"
+                >
+                  <RefreshCw className="h-5 w-5 text-cosmic-purple-light transition-transform group-hover:rotate-45" />
+                  <span className="text-sm font-medium">View Your Transits</span>
+                  <span className="text-xs text-muted-foreground">
+                    What the planets are doing right now
+                  </span>
+                  <ArrowRight className="h-3.5 w-3.5 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
                 </Link>
-              </Button>
+                <Link
+                  href="/compatibility"
+                  className="glass-card group flex flex-col items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.03] p-5 text-center backdrop-blur-sm transition-colors hover:border-gold/30 hover:bg-gold/[0.06]"
+                >
+                  <Heart className="h-5 w-5 text-gold transition-transform group-hover:scale-110" />
+                  <span className="text-sm font-medium">Check Compatibility</span>
+                  <span className="text-xs text-muted-foreground">
+                    How today affects your relationships
+                  </span>
+                  <ArrowRight className="h-3.5 w-3.5 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
+                </Link>
+                <Link
+                  href="/wellness"
+                  className="glass-card group flex flex-col items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.03] p-5 text-center backdrop-blur-sm transition-colors hover:border-emerald-400/30 hover:bg-emerald-400/[0.06]"
+                >
+                  <Activity className="h-5 w-5 text-emerald-400 transition-transform group-hover:scale-110" />
+                  <span className="text-sm font-medium">Wellness Timing</span>
+                  <span className="text-xs text-muted-foreground">
+                    Best times for activities today
+                  </span>
+                  <ArrowRight className="h-3.5 w-3.5 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
+                </Link>
+              </div>
             </motion.div>
           </div>
         ) : null}

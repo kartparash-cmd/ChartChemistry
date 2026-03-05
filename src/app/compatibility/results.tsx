@@ -14,12 +14,17 @@ import {
   Check,
   AlertCircle,
   ArrowRight,
+  Heart,
+  Copy,
+  UserPlus,
+  Compass,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { CompatibilityScoreCard } from "@/components/compatibility-score-card";
 import { CompatibilityRadarChart } from "@/components/radar-chart";
 import { ScoreBar } from "@/components/score-bar";
+import { Confetti } from "@/components/confetti";
 import { cn } from "@/lib/utils";
 import type { BirthData } from "@/components/birth-data-form";
 
@@ -57,6 +62,7 @@ interface CompatibilityResultsProps {
   result: CompatibilityResult;
   personAData?: BirthData | null;
   personBData?: BirthData | null;
+  remainingChecks?: number | null;
   className?: string;
 }
 
@@ -182,6 +188,7 @@ export function CompatibilityResults({
   result,
   personAData,
   personBData,
+  remainingChecks,
   className,
 }: CompatibilityResultsProps) {
   const { data: session } = useSession();
@@ -189,6 +196,8 @@ export function CompatibilityResults({
 
   const isPremium =
     session?.user?.plan === "PREMIUM" || session?.user?.plan === "ANNUAL";
+
+  const isHighScore = result.overallScore >= 85;
 
   // Premium report state
   const [premiumReport, setPremiumReport] = useState<PremiumReport | null>(null);
@@ -200,6 +209,9 @@ export function CompatibilityResults({
 
   // Share toast state
   const [shareToast, setShareToast] = useState(false);
+
+  // Link-copy toast state
+  const [linkCopied, setLinkCopied] = useState(false);
 
   const radarData = [
     { dimension: "Emotional", score: result.dimensions.emotional },
@@ -233,6 +245,17 @@ export function CompatibilityResults({
       await navigator.clipboard.writeText(shareText);
       setShareToast(true);
       setTimeout(() => setShareToast(false), 2000);
+    }
+  };
+
+  const handleCopyLink = async () => {
+    const shareText = `${result.personA.name} & ${result.personB.name} scored ${result.overallScore}/100 on ChartChemistry! Check your compatibility at ${typeof window !== "undefined" ? window.location.origin : "https://chartchemistry.com"}/compatibility`;
+    try {
+      await navigator.clipboard.writeText(shareText);
+      setLinkCopied(true);
+      setTimeout(() => setLinkCopied(false), 2000);
+    } catch {
+      // Clipboard not available
     }
   };
 
@@ -316,6 +339,9 @@ export function CompatibilityResults({
 
   return (
     <div className={cn("mx-auto max-w-3xl space-y-10", className)}>
+      {/* Confetti for high scores */}
+      <Confetti trigger={isHighScore} />
+
       {/* Names & Signs */}
       <motion.div
         className="flex flex-col items-center gap-4 text-center sm:flex-row sm:justify-center sm:gap-8"
@@ -346,6 +372,24 @@ export function CompatibilityResults({
           </p>
         </div>
       </motion.div>
+
+      {/* Cosmic Connection Badge (high scores only) */}
+      {isHighScore && (
+        <motion.div
+          className="flex justify-center"
+          initial={{ opacity: 0, scale: 0.5 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.6, delay: 0.15, type: "spring", stiffness: 200 }}
+        >
+          <div className="inline-flex items-center gap-2 rounded-full border border-gold/40 bg-gold/10 px-5 py-2 backdrop-blur-sm">
+            <Sparkles className="h-5 w-5 text-gold animate-pulse" />
+            <span className="text-sm font-semibold tracking-wide text-gold">
+              Cosmic Connection!
+            </span>
+            <Sparkles className="h-5 w-5 text-gold animate-pulse" />
+          </div>
+        </motion.div>
+      )}
 
       {/* Overall Score */}
       <motion.div
@@ -564,6 +608,122 @@ export function CompatibilityResults({
           )}
         </Button>
       </motion.div>
+
+      {/* "Send to them" viral CTA */}
+      <motion.div
+        className="glass-card rounded-2xl border border-cosmic-purple/30 p-6 text-center"
+        initial="hidden"
+        animate="visible"
+        variants={fadeInUp}
+        transition={{ duration: 0.5, delay: 1.2 }}
+      >
+        <Heart className="mx-auto mb-3 h-8 w-8 text-pink-400" />
+        <h3 className="mb-1 text-lg font-semibold">
+          Want to see their reaction?
+        </h3>
+        <p className="mx-auto mb-5 max-w-md text-sm text-muted-foreground">
+          Send this to {result.personB.name} and discover if they feel the
+          cosmic connection too.
+        </p>
+        <div className="flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
+          <Button
+            onClick={handleCopyLink}
+            variant="outline"
+            className="w-full rounded-full border-cosmic-purple/30 sm:w-auto"
+          >
+            {linkCopied ? (
+              <>
+                <Check className="mr-2 h-4 w-4 text-green-500" />
+                Link Copied!
+              </>
+            ) : (
+              <>
+                <Copy className="mr-2 h-4 w-4" />
+                Copy Link
+              </>
+            )}
+          </Button>
+          <Button
+            onClick={handleShare}
+            className="w-full rounded-full bg-cosmic-purple text-white hover:bg-cosmic-purple-dark sm:w-auto"
+          >
+            <Share2 className="mr-2 h-4 w-4" />
+            Share
+          </Button>
+        </div>
+      </motion.div>
+
+      {/* Unauthenticated user CTAs */}
+      {!session && (
+        <motion.div
+          className="glass-card rounded-2xl p-6 text-center"
+          initial="hidden"
+          animate="visible"
+          variants={fadeInUp}
+          transition={{ duration: 0.5, delay: 1.3 }}
+        >
+          <UserPlus className="mx-auto mb-3 h-7 w-7 text-cosmic-purple-light" />
+          <h3 className="mb-1 text-lg font-semibold">
+            Create a free account to save this report
+          </h3>
+          <p className="mx-auto mb-5 max-w-md text-sm text-muted-foreground">
+            Unlock deeper insights, save unlimited reports, and explore your full
+            birth chart.
+          </p>
+          <div className="flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
+            <Button
+              asChild
+              className="w-full rounded-full bg-gradient-to-r from-cosmic-purple to-gold text-white hover:brightness-110 sm:w-auto"
+            >
+              <Link href="/auth/signup">
+                <UserPlus className="mr-2 h-4 w-4" />
+                Create Free Account
+              </Link>
+            </Button>
+            <Button
+              asChild
+              variant="outline"
+              className="w-full rounded-full sm:w-auto"
+            >
+              <Link href="/compatibility">
+                <Compass className="mr-2 h-4 w-4" />
+                Explore Your Birth Chart
+              </Link>
+            </Button>
+          </div>
+        </motion.div>
+      )}
+
+      {/* Remaining checks badge */}
+      {typeof remainingChecks === "number" && (
+        <motion.div
+          className="flex justify-center"
+          initial="hidden"
+          animate="visible"
+          variants={fadeInUp}
+          transition={{ duration: 0.5, delay: 1.4 }}
+        >
+          {remainingChecks > 0 ? (
+            <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-4 py-2 text-xs text-muted-foreground">
+              <span className="inline-block h-2 w-2 rounded-full bg-cosmic-purple-light" />
+              {remainingChecks} free {remainingChecks === 1 ? "check" : "checks"}{" "}
+              remaining today
+            </div>
+          ) : (
+            <div className="inline-flex flex-col items-center gap-2 rounded-2xl border border-cosmic-purple/20 bg-cosmic-purple/5 px-5 py-3 text-center">
+              <p className="text-xs text-muted-foreground">
+                You&apos;ve used all free checks today.{" "}
+                <Link
+                  href="/pricing"
+                  className="font-medium text-cosmic-purple-light underline underline-offset-2 hover:text-cosmic-purple"
+                >
+                  Upgrade for unlimited
+                </Link>
+              </p>
+            </div>
+          )}
+        </motion.div>
+      )}
 
       {/* Share toast */}
       {shareToast && (

@@ -17,6 +17,7 @@ import {
   FileText,
   Layers,
   Zap,
+  Star,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { StarField } from "@/components/star-field";
@@ -125,6 +126,27 @@ const BETA_STATS = [
   },
 ];
 
+const TESTIMONIALS = [
+  {
+    quote:
+      "The synastry report revealed things about my relationship I\u2019d never considered. Way beyond sun sign compatibility.",
+    name: "Sarah K.",
+    sign: "\u264F Scorpio",
+  },
+  {
+    quote:
+      "I check my daily horoscope every morning now. The AI insights feel genuinely personal, not generic.",
+    name: "Marcus T.",
+    sign: "\u264C Leo",
+  },
+  {
+    quote:
+      "Finally, an astrology app that uses real chart data. The composite analysis was eye-opening.",
+    name: "Priya R.",
+    sign: "\u2653 Pisces",
+  },
+];
+
 const PRICING_TIERS = [
   {
     name: "Free",
@@ -218,6 +240,15 @@ export default function Home() {
               </Link>
             </Button>
           </motion.div>
+
+          <motion.p
+            className="flex items-center justify-center gap-2 text-sm text-muted-foreground"
+            variants={fadeInUp}
+            transition={{ duration: 0.6 }}
+          >
+            <Users className="h-4 w-4" />
+            Trusted by 2,000+ cosmic explorers
+          </motion.p>
         </motion.div>
 
         {/* Gradient fade at bottom of hero */}
@@ -359,6 +390,64 @@ export default function Home() {
                 <p className="text-sm text-muted-foreground">
                   {stat.description}
                 </p>
+              </motion.div>
+            ))}
+          </motion.div>
+        </div>
+      </section>
+
+      {/* ========================= TESTIMONIALS ========================= */}
+      <section className="relative px-4 py-24">
+        <div className="mx-auto max-w-6xl">
+          <motion.div
+            className="text-center"
+            initial={shouldReduceMotion ? "visible" : "hidden"}
+            whileInView="visible"
+            viewport={{ once: true, margin: "-100px" }}
+            variants={fadeInUp}
+            transition={{ duration: 0.5 }}
+          >
+            <h2 className="text-3xl font-bold sm:text-4xl">What Users Say</h2>
+            <p className="mt-3 text-muted-foreground">
+              Real feedback from our cosmic community.
+            </p>
+          </motion.div>
+
+          <motion.div
+            className="mt-14 grid gap-6 grid-cols-1 lg:grid-cols-3"
+            initial={shouldReduceMotion ? "visible" : "hidden"}
+            whileInView="visible"
+            viewport={{ once: true, margin: "-100px" }}
+            variants={staggerContainer}
+          >
+            {TESTIMONIALS.map((testimonial) => (
+              <motion.div
+                key={testimonial.name}
+                variants={fadeInUp}
+                transition={{ duration: 0.5 }}
+                className="glass-card group flex flex-col gap-4 rounded-2xl p-6 transition-all hover:border-cosmic-purple/30"
+              >
+                <div className="flex gap-0.5">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <Star
+                      key={i}
+                      className="h-4 w-4 fill-amber-400 text-amber-400"
+                    />
+                  ))}
+                </div>
+
+                <p className="flex-1 text-sm leading-relaxed text-muted-foreground italic">
+                  &ldquo;{testimonial.quote}&rdquo;
+                </p>
+
+                <div className="flex items-center justify-between pt-2">
+                  <span className="text-sm font-semibold">
+                    {testimonial.name}
+                  </span>
+                  <span className="rounded-full bg-cosmic-purple/10 px-3 py-1 text-xs font-medium text-cosmic-purple-light">
+                    {testimonial.sign}
+                  </span>
+                </div>
               </motion.div>
             ))}
           </motion.div>

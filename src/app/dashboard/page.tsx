@@ -27,6 +27,9 @@ import {
   Mail,
   Shield,
   AlertTriangle,
+  MessageCircle,
+  Lock,
+  Flame,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -101,6 +104,76 @@ function getSignIcon(sign: string | null): string {
     Pisces: "\u2653",
   };
   return sign ? glyphs[sign] || "" : "";
+}
+
+function getSignEmoji(sign: string): string {
+  const emojis: Record<string, string> = {
+    Aries: "\u2648\uFE0F",
+    Taurus: "\u2649\uFE0F",
+    Gemini: "\u264A\uFE0F",
+    Cancer: "\u264B\uFE0F",
+    Leo: "\u264C\uFE0F",
+    Virgo: "\u264D\uFE0F",
+    Libra: "\u264E\uFE0F",
+    Scorpio: "\u264F\uFE0F",
+    Sagittarius: "\u2650\uFE0F",
+    Capricorn: "\u2651\uFE0F",
+    Aquarius: "\u2652\uFE0F",
+    Pisces: "\u2653\uFE0F",
+  };
+  return emojis[sign] || "";
+}
+
+function getSignGreeting(sign: string): string {
+  const greetings: Record<string, string> = {
+    Aries: "fiery Aries energy is fueling your drive today",
+    Taurus: "grounded Taurus energy is keeping you centered today",
+    Gemini: "curious Gemini energy is sparking new ideas today",
+    Cancer: "nurturing Cancer energy is guiding your heart today",
+    Leo: "radiant Leo energy is lighting up your path today",
+    Virgo: "detail-oriented Virgo energy is sharpening your focus today",
+    Libra: "harmonious Libra energy is balancing your world today",
+    Scorpio: "transformative Scorpio energy is deepening your insight today",
+    Sagittarius: "adventurous Sagittarius energy is expanding your horizons today",
+    Capricorn: "ambitious Capricorn energy is building your foundation today",
+    Aquarius: "visionary Aquarius energy is inspiring your creativity today",
+    Pisces: "intuitive Pisces energy is flowing through you today",
+  };
+  return greetings[sign] || `${sign} season energy is with you today`;
+}
+
+function isMercuryRetrograde(): boolean {
+  const now = new Date();
+  const year = now.getFullYear();
+  if (year !== 2026) return false;
+
+  // Approximate 2026 Mercury retrograde windows
+  const retrogradeWindows: Array<[number, number, number, number]> = [
+    // [startMonth (0-indexed), startDay, endMonth, endDay]
+    [2, 15, 3, 7],   // Mar 15 - Apr 7
+    [6, 18, 7, 11],  // Jul 18 - Aug 11
+    [10, 9, 10, 29], // Nov 9 - Nov 29
+  ];
+
+  for (const [startMonth, startDay, endMonth, endDay] of retrogradeWindows) {
+    const start = new Date(year, startMonth, startDay);
+    const end = new Date(year, endMonth, endDay, 23, 59, 59);
+    if (now >= start && now <= end) return true;
+  }
+
+  return false;
+}
+
+interface StreakData {
+  lastDate: string;
+  count: number;
+}
+
+function getStreakMilestoneBadge(count: number): string | null {
+  if (count >= 100) return "Cosmic Master";
+  if (count >= 30) return "Star Voyager";
+  if (count >= 7) return "Rising Star";
+  return null;
 }
 
 function StatCard({
@@ -243,6 +316,49 @@ function DashboardContent() {
   const initialTab = searchParams.get("tab") || "chart";
   const [activeTab, setActiveTab] = useState(initialTab);
   const [upgraded, setUpgraded] = useState(searchParams.get("upgraded") === "true");
+  const [streak, setStreak] = useState<number>(0);
+
+  // Track daily check-in streak
+  useEffect(() => {
+    try {
+      const today = new Date().toISOString().split("T")[0];
+      const raw = localStorage.getItem("cc_streak");
+      let streakData: StreakData = { lastDate: "", count: 0 };
+
+      if (raw) {
+        streakData = JSON.parse(raw) as StreakData;
+      }
+
+      if (streakData.lastDate === today) {
+        // Already visited today
+        setStreak(streakData.count);
+      } else {
+        // Check if yesterday
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        const yesterdayStr = yesterday.toISOString().split("T")[0];
+
+        if (streakData.lastDate === yesterdayStr) {
+          const newCount = streakData.count + 1;
+          localStorage.setItem(
+            "cc_streak",
+            JSON.stringify({ lastDate: today, count: newCount })
+          );
+          setStreak(newCount);
+        } else {
+          // Reset streak
+          localStorage.setItem(
+            "cc_streak",
+            JSON.stringify({ lastDate: today, count: 1 })
+          );
+          setStreak(1);
+        }
+      }
+    } catch {
+      // localStorage unavailable or parse error
+      setStreak(1);
+    }
+  }, []);
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -353,9 +469,16 @@ function DashboardContent() {
                 <span className="cosmic-text">
                   {session.user.name || "Stargazer"}
                 </span>
+                {sunSign && (
+                  <span className="text-2xl ml-1">
+                    {" "}&mdash; {getSignEmoji(sunSign)}
+                  </span>
+                )}
               </h1>
               <p className="mt-1 text-sm text-muted-foreground">
-                Your cosmic dashboard awaits
+                {sunSign
+                  ? getSignGreeting(sunSign)
+                  : "Your cosmic dashboard awaits"}
               </p>
             </div>
             <div className="flex items-center gap-3">
@@ -391,6 +514,22 @@ function DashboardContent() {
               Dismiss
             </button>
           </div>
+        </div>
+      )}
+
+      {/* Mercury Retrograde Banner */}
+      {isMercuryRetrograde() && (
+        <div className="mx-auto max-w-7xl px-4 pt-4 sm:px-6 lg:px-8">
+          <motion.div
+            initial={{ opacity: 0, y: -5 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="flex items-center gap-3 rounded-lg border border-amber-400/20 bg-amber-400/10 p-3 text-sm text-amber-400"
+          >
+            <span className="text-lg shrink-0">{"\u263F"}</span>
+            <span>
+              <strong>Mercury Retrograde</strong> &mdash; communications may feel challenging. Double-check messages and travel plans.
+            </span>
+          </motion.div>
         </div>
       )}
 
@@ -745,6 +884,44 @@ function DashboardContent() {
               color="bg-cosmic-purple/10"
             />
 
+            {/* Daily Check-in Streak */}
+            {streak > 0 && (
+              <motion.div
+                whileHover={{ y: -2, scale: 1.01 }}
+                className="rounded-xl border border-orange-500/20 bg-gradient-to-br from-orange-500/[0.08] to-transparent p-4 backdrop-blur-sm"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-orange-500/10">
+                    <Flame className="h-5 w-5 text-orange-400" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Daily Streak</p>
+                    <p className="text-lg font-semibold text-orange-400">
+                      Day {streak}
+                    </p>
+                  </div>
+                </div>
+                {getStreakMilestoneBadge(streak) && (
+                  <div className="mt-3">
+                    <Badge
+                      variant="outline"
+                      className={cn(
+                        "text-[10px]",
+                        streak >= 100
+                          ? "border-gold/40 bg-gold/10 text-gold"
+                          : streak >= 30
+                            ? "border-cosmic-purple/30 bg-cosmic-purple/10 text-cosmic-purple-light"
+                            : "border-orange-500/30 bg-orange-500/10 text-orange-400"
+                      )}
+                    >
+                      <Award className="mr-1 h-3 w-3" />
+                      {getStreakMilestoneBadge(streak)}
+                    </Badge>
+                  </div>
+                )}
+              </motion.div>
+            )}
+
             {/* Daily Horoscope Quick Link */}
             <motion.div
               whileHover={{ scale: 1.02 }}
@@ -783,24 +960,72 @@ function DashboardContent() {
             </motion.div>
 
             {data?.stats.plan === "FREE" && (
-              <motion.div
-                whileHover={{ scale: 1.02 }}
-                className="rounded-xl border border-cosmic-purple/20 bg-gradient-to-br from-cosmic-purple/10 to-transparent p-4"
-              >
-                <h4 className="font-heading text-sm font-semibold mb-1">
-                  Unlock Full Insights
-                </h4>
-                <p className="text-xs text-muted-foreground mb-3">
-                  Upgrade to Premium for unlimited checks, full reports, and AI
-                  chat.
-                </p>
-                <Button asChild size="sm" className="w-full bg-cosmic-purple hover:bg-cosmic-purple-dark text-white">
-                  <Link href="/pricing">
-                    <Sparkles className="mr-2 h-3 w-3" />
-                    View Plans
-                  </Link>
-                </Button>
-              </motion.div>
+              <>
+                {/* Premium Feature Discovery Tiles */}
+                <div className="space-y-2">
+                  <h4 className="font-heading text-sm font-semibold text-muted-foreground">
+                    Premium Features
+                  </h4>
+                  <div className="grid grid-cols-2 gap-2">
+                    {[
+                      {
+                        icon: <MessageCircle className="h-4 w-4" />,
+                        label: "AI Astrologer Chat",
+                      },
+                      {
+                        icon: <Sun className="h-4 w-4" />,
+                        label: "Daily Horoscope",
+                      },
+                      {
+                        icon: <TrendingUp className="h-4 w-4" />,
+                        label: "Transit Alerts",
+                      },
+                      {
+                        icon: <Heart className="h-4 w-4" />,
+                        label: "Wellness Insights",
+                      },
+                    ].map((tile) => (
+                      <Link
+                        key={tile.label}
+                        href="/pricing"
+                        className="group relative rounded-lg border border-white/10 bg-white/[0.03] p-3 opacity-60 backdrop-blur-sm transition-all hover:opacity-80 hover:border-cosmic-purple/30"
+                      >
+                        <div className="absolute top-1.5 right-1.5">
+                          <Lock className="h-3 w-3 text-muted-foreground" />
+                        </div>
+                        <div className="mb-1.5 text-muted-foreground">
+                          {tile.icon}
+                        </div>
+                        <p className="text-[11px] font-medium leading-tight">
+                          {tile.label}
+                        </p>
+                        <p className="mt-1 text-[9px] text-cosmic-purple-light opacity-0 group-hover:opacity-100 transition-opacity">
+                          Unlock with Premium
+                        </p>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+
+                <motion.div
+                  whileHover={{ scale: 1.02 }}
+                  className="rounded-xl border border-cosmic-purple/20 bg-gradient-to-br from-cosmic-purple/10 to-transparent p-4"
+                >
+                  <h4 className="font-heading text-sm font-semibold mb-1">
+                    Unlock Full Insights
+                  </h4>
+                  <p className="text-xs text-muted-foreground mb-3">
+                    Upgrade to Premium for unlimited checks, full reports, and AI
+                    chat.
+                  </p>
+                  <Button asChild size="sm" className="w-full bg-cosmic-purple hover:bg-cosmic-purple-dark text-white">
+                    <Link href="/pricing">
+                      <Sparkles className="mr-2 h-3 w-3" />
+                      View Plans
+                    </Link>
+                  </Button>
+                </motion.div>
+              </>
             )}
           </div>
         </div>

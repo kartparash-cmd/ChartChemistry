@@ -165,25 +165,33 @@ export default function LearnPage() {
           viewport={{ once: true, margin: "-100px" }}
           variants={fadeInUp}
           transition={{ duration: 0.5 }}
-          className="mx-auto max-w-2xl text-center"
+          className="mx-auto max-w-2xl"
         >
-          <p className="text-muted-foreground text-sm">
-            Ready to see your own chart?{" "}
-            <Link
-              href="/compatibility"
-              className="text-cosmic-purple-light hover:text-cosmic-purple underline underline-offset-4"
-            >
-              Check your compatibility
-            </Link>{" "}
-            or{" "}
-            <Link
-              href="/auth/signup"
-              className="text-cosmic-purple-light hover:text-cosmic-purple underline underline-offset-4"
-            >
-              create a free account
-            </Link>{" "}
-            to save your birth chart.
-          </p>
+          <div className="glass-card rounded-2xl border border-white/10 p-8 text-center">
+            <h2 className="font-heading text-2xl font-bold mb-3">
+              Ready to see how this applies to{" "}
+              <span className="cosmic-text">you</span>?
+            </h2>
+            <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+              Explore your personal birth chart or discover how your stars align
+              with someone special.
+            </p>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+              <Link
+                href="/dashboard"
+                className="inline-flex items-center justify-center rounded-lg bg-gradient-to-r from-cosmic-purple to-cosmic-purple-light px-6 py-2.5 text-sm font-medium text-white shadow-lg shadow-cosmic-purple/25 transition-all hover:shadow-xl hover:shadow-cosmic-purple/30 hover:brightness-110"
+              >
+                View Your Birth Chart
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Link>
+              <Link
+                href="/compatibility"
+                className="inline-flex items-center justify-center rounded-lg border border-white/10 bg-white/5 px-6 py-2.5 text-sm font-medium text-foreground transition-all hover:bg-white/10 hover:border-white/20"
+              >
+                Check Compatibility
+              </Link>
+            </div>
+          </div>
         </motion.div>
       </section>
     </div>

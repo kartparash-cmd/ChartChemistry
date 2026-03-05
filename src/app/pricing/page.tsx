@@ -11,6 +11,9 @@ import {
   Star,
   Zap,
   ArrowRight,
+  Users,
+  Shield,
+  Quote,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -219,10 +222,25 @@ export default function PricingPage() {
               </button>
             </div>
             <p className="mt-3 text-xs text-muted-foreground">
-              Cancel anytime. 30-day money-back guarantee.
+              Cancel anytime. No commitment.
             </p>
           </motion.div>
         </div>
+      </section>
+
+      {/* Social Proof Counter */}
+      <section className="px-4 pb-8">
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          className="mx-auto max-w-4xl flex items-center justify-center gap-2 text-muted-foreground"
+        >
+          <Users className="h-4 w-4 text-cosmic-purple-light" />
+          <p className="text-sm font-medium">
+            Join 2,000+ stargazers exploring cosmic compatibility
+          </p>
+        </motion.div>
       </section>
 
       {/* Pricing Cards */}
@@ -320,9 +338,73 @@ export default function PricingPage() {
                 {loadingTier === tier.name ? "Redirecting..." : tier.cta}
                 {loadingTier !== tier.name && <ArrowRight className="ml-2 h-4 w-4" />}
               </Button>
+              {tier.monthlyPrice > 0 && (
+                <p className="mt-3 flex items-center justify-center gap-1 text-xs text-muted-foreground">
+                  <Shield className="h-3 w-3" />
+                  Secure payment powered by Stripe
+                </p>
+              )}
             </motion.div>
           ))}
         </motion.div>
+      </section>
+
+      {/* Testimonials */}
+      <section className="px-4 pb-20">
+        <div className="mx-auto max-w-4xl">
+          <h2 className="font-heading text-2xl font-bold text-center mb-8">
+            What Our Users Say
+          </h2>
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+            {[
+              {
+                quote:
+                  "ChartChemistry revealed patterns in my relationship I never noticed. The AI insights are eerily accurate.",
+                name: "Sarah K.",
+                sign: "Scorpio",
+              },
+              {
+                quote:
+                  "I was skeptical, but the synastry report was incredibly detailed. Worth every penny of Premium.",
+                name: "Marcus T.",
+                sign: "Leo",
+              },
+              {
+                quote:
+                  "The daily horoscope alone makes Premium worthwhile. It\u2019s like having a personal astrologer.",
+                name: "Priya R.",
+                sign: "Pisces",
+              },
+            ].map((testimonial) => (
+              <motion.div
+                key={testimonial.name}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                className="glass-card rounded-2xl border border-white/10 p-6 flex flex-col"
+              >
+                <Quote className="h-5 w-5 text-cosmic-purple-light/50 mb-3" />
+                <div className="flex gap-0.5 mb-3">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <Star
+                      key={i}
+                      className="h-4 w-4 fill-gold text-gold"
+                    />
+                  ))}
+                </div>
+                <p className="text-sm text-muted-foreground flex-1 mb-4">
+                  &ldquo;{testimonial.quote}&rdquo;
+                </p>
+                <div>
+                  <p className="text-sm font-medium">{testimonial.name}</p>
+                  <p className="text-xs text-cosmic-purple-light">
+                    {testimonial.sign}
+                  </p>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
       </section>
 
       {/* Comparison Table */}
@@ -331,7 +413,34 @@ export default function PricingPage() {
           <h2 className="font-heading text-2xl font-bold text-center mb-8">
             Feature Comparison
           </h2>
-          <div className="overflow-x-auto rounded-xl border border-white/10 bg-white/[0.02]">
+          {/* Mobile Cards */}
+          <div className="space-y-3 sm:hidden">
+            {comparisonFeatures.map((row) => (
+              <div
+                key={row.feature}
+                className="rounded-xl border border-white/10 bg-white/[0.02] p-4"
+              >
+                <p className="text-sm font-medium mb-3">{row.feature}</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="flex flex-col items-center rounded-lg bg-white/[0.03] p-2">
+                    <span className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">
+                      Free
+                    </span>
+                    <FeatureValue value={row.free} />
+                  </div>
+                  <div className="flex flex-col items-center rounded-lg bg-cosmic-purple/[0.05] p-2">
+                    <span className="text-[10px] uppercase tracking-wider text-cosmic-purple-light mb-1">
+                      Premium
+                    </span>
+                    <FeatureValue value={row.premium} />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Desktop Table */}
+          <div className="hidden sm:block overflow-x-auto rounded-xl border border-white/10 bg-white/[0.02]">
             <table className="w-full">
               <thead>
                 <tr className="border-b border-white/10">

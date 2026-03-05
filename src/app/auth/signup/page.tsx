@@ -231,6 +231,15 @@ function SignUpContent() {
                   )}
                 </button>
               </div>
+              <p
+                className={`text-xs ${
+                  password.length > 0 && password.length < 8
+                    ? "text-amber-400"
+                    : "text-muted-foreground"
+                }`}
+              >
+                At least 8 characters
+              </p>
             </div>
             <Button
               type="submit"

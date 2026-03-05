@@ -106,6 +106,7 @@ model BirthProfile {
   longitude    Float
   timezone     String
   isOwner      Boolean  @default(false)
+  isPublic     Boolean  @default(false)
   chartData    Json?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
@@ -138,7 +139,8 @@ model CompatibilityReport {
   synastryData  Json
   compositeData Json?
 
-  shareToken String? @unique
+  shareToken       String? @unique
+  sharedWithUserId String?
 
   tier      ReportTier @default(FREE)
   createdAt DateTime   @default(now())

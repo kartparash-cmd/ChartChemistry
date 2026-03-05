@@ -17,6 +17,9 @@ import {
   Sparkles,
   CheckCircle2,
   X,
+  Globe,
+  Link as LinkIcon,
+  Check,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -53,6 +56,7 @@ interface BirthProfile {
   longitude: number;
   timezone: string;
   isOwner: boolean;
+  isPublic: boolean;
   chartData?: unknown;
   createdAt: string;
 }
@@ -581,6 +585,56 @@ export default function ProfilesPage() {
     }
   };
 
+  // Toggle public visibility
+  const [togglingPublic, setTogglingPublic] = useState<string | null>(null);
+  const [copiedPublicLink, setCopiedPublicLink] = useState<string | null>(null);
+
+  const handleTogglePublic = async (profile: BirthProfile) => {
+    setTogglingPublic(profile.id);
+    try {
+      const res = await fetch(`/api/profile/${profile.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isPublic: !profile.isPublic }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Failed to update visibility");
+      }
+
+      await fetchProfiles();
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Failed to update visibility"
+      );
+    } finally {
+      setTogglingPublic(null);
+    }
+  };
+
+  const handleCopyPublicLink = async (profileId: string) => {
+    const url = `${window.location.origin}/profile/${profileId}`;
+    try {
+      await navigator.clipboard.writeText(url);
+    } catch {
+      const textArea = document.createElement("textarea");
+      textArea.value = url;
+      textArea.style.position = "fixed";
+      textArea.style.left = "-9999px";
+      document.body.appendChild(textArea);
+      textArea.select();
+      try {
+        document.execCommand("copy");
+      } catch {
+        // Silent fail
+      }
+      document.body.removeChild(textArea);
+    }
+    setCopiedPublicLink(profileId);
+    setTimeout(() => setCopiedPublicLink(null), 2000);
+  };
+
   // Format birth date for display
   const formatDate = (dateStr: string) => {
     return new Date(dateStr + "T00:00:00").toLocaleDateString("en-US", {
@@ -789,6 +843,61 @@ export default function ProfilesPage() {
                       {profile.birthCity}
                       {profile.birthCountry ? `, ${profile.birthCountry}` : ""}
                     </span>
+                  </div>
+
+                  {/* Public toggle */}
+                  <div className="mt-3 pt-3 border-t border-white/5">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 text-sm">
+                        <Globe className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                        <span className="text-muted-foreground">
+                          Public Profile
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        role="switch"
+                        aria-checked={profile.isPublic}
+                        disabled={togglingPublic === profile.id}
+                        onClick={() => handleTogglePublic(profile)}
+                        className={cn(
+                          "relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cosmic-purple focus-visible:ring-offset-2 focus-visible:ring-offset-navy disabled:cursor-not-allowed disabled:opacity-50",
+                          profile.isPublic
+                            ? "bg-cosmic-purple"
+                            : "bg-white/10"
+                        )}
+                      >
+                        <span
+                          className={cn(
+                            "pointer-events-none block h-4 w-4 rounded-full bg-white shadow-lg ring-0 transition-transform",
+                            profile.isPublic
+                              ? "translate-x-4"
+                              : "translate-x-0"
+                          )}
+                        />
+                      </button>
+                    </div>
+                    {profile.isPublic && (
+                      <div className="mt-2 flex items-center gap-2">
+                        <div className="flex-1 truncate rounded-md bg-white/5 px-2.5 py-1.5 text-xs text-muted-foreground font-mono">
+                          {typeof window !== "undefined"
+                            ? `${window.location.origin}/profile/${profile.id}`
+                            : `/profile/${profile.id}`}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleCopyPublicLink(profile.id)}
+                          className="shrink-0 rounded-md bg-white/5 p-1.5 text-muted-foreground hover:text-foreground hover:bg-white/10 transition-colors"
+                          title="Copy link"
+                        >
+                          {copiedPublicLink === profile.id ? (
+                            <Check className="h-3.5 w-3.5 text-emerald-400" />
+                          ) : (
+                            <LinkIcon className="h-3.5 w-3.5" />
+                          )}
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </CardContent>
 

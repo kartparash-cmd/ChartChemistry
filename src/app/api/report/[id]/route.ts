@@ -154,8 +154,11 @@ export async function GET(
       );
     }
 
-    // Verify ownership
-    if (report.userId !== session.user.id) {
+    // Verify ownership or shared access
+    const isOwner = report.userId === session.user.id;
+    const isSharedPartner = report.sharedWithUserId === session.user.id;
+
+    if (!isOwner && !isSharedPartner) {
       return NextResponse.json(
         { error: "You do not have access to this report" },
         { status: 403 }

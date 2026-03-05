@@ -15,6 +15,7 @@ import {
   ArrowLeft,
   Lightbulb,
   RotateCcw,
+  History,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -268,6 +269,8 @@ function ChatPageContent() {
   const [selectedReportId, setSelectedReportId] = useState<string>("");
   const [loadingReports, setLoadingReports] = useState(true);
   const [sessionId, setSessionId] = useState<string | undefined>();
+  const [sessionDate, setSessionDate] = useState<string | null>(null);
+  const [isRestoredSession, setIsRestoredSession] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [suggestionsOpen, setSuggestionsOpen] = useState(true);
   const [isRestoringSession, setIsRestoringSession] = useState(false);
@@ -349,6 +352,10 @@ function ChatPageContent() {
             // Prepend the welcome message for context
             setMessages([buildWelcomeMessage(), ...restored]);
             setSessionId(data.sessionId);
+            if (data.sessionDate) {
+              setSessionDate(data.sessionDate);
+            }
+            setIsRestoredSession(true);
             setSuggestionsOpen(false);
             setIsRestoringSession(false);
             // Update localStorage cache with the DB data
@@ -413,6 +420,8 @@ function ChatPageContent() {
     }
     setMessages([buildWelcomeMessage()]);
     setSessionId(undefined);
+    setSessionDate(null);
+    setIsRestoredSession(false);
     setSuggestionsOpen(true);
   };
 
@@ -722,6 +731,29 @@ function ChatPageContent() {
                 <span>Restoring your conversation...</span>
               </div>
             </div>
+          )}
+
+          {/* Restored session indicator */}
+          {isRestoredSession && !isRestoringSession && (
+            <motion.div
+              initial={{ opacity: 0, y: -5 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex justify-center py-2"
+            >
+              <div className="inline-flex items-center gap-2 rounded-full border border-cosmic-purple/20 bg-cosmic-purple/5 px-4 py-1.5 text-xs text-muted-foreground">
+                <History className="h-3 w-3 text-cosmic-purple-light" />
+                <span>Continuing from your last conversation</span>
+                {sessionDate && (
+                  <span className="text-muted-foreground/50">
+                    &middot;{" "}
+                    {new Date(sessionDate).toLocaleDateString("en-US", {
+                      month: "short",
+                      day: "numeric",
+                    })}
+                  </span>
+                )}
+              </div>
+            </motion.div>
           )}
 
           {messages.map((message) => (

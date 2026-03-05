@@ -47,6 +47,7 @@ import {
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 import { Confetti } from "@/components/confetti";
+import { NotificationPrompt } from "@/components/notification-prompt";
 import { ACHIEVEMENTS } from "@/lib/achievement-defs";
 import { getBannerEvents, formatShortDate } from "@/lib/cosmic-events";
 
@@ -638,6 +639,11 @@ function DashboardContent() {
           </div>
         </div>
       )}
+
+      {/* Notification Opt-in Prompt */}
+      <div className="mx-auto max-w-7xl px-4 pt-4 sm:px-6 lg:px-8">
+        <NotificationPrompt />
+      </div>
 
       {/* Cosmic Events Banner */}
       {(() => {

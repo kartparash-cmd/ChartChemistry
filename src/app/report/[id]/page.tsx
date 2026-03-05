@@ -31,11 +31,14 @@ import {
   Check,
   Compass,
   Calendar,
+  Mail,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
+import { getPercentile } from "@/lib/percentile";
 
 // Types
 interface ReportPerson {
@@ -547,6 +550,29 @@ function PublicPreviewView({
               Overall Compatibility
             </h2>
             <ScoreCircle score={preview.scores.overall} size={180} reducedMotion={reducedMotion} />
+            {/* Percentile Badge (public preview) */}
+            {(() => {
+              const percentileData = getPercentile(preview.scores.overall);
+              if (!percentileData.label) return null;
+              return (
+                <div
+                  className={cn(
+                    "mt-3 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium",
+                    percentileData.isRare
+                      ? "border border-gold/40 bg-gold/10 text-gold"
+                      : "border border-cosmic-purple/30 bg-cosmic-purple/10 text-cosmic-purple-light"
+                  )}
+                >
+                  {percentileData.isRare && (
+                    <Sparkles className="h-3 w-3 animate-pulse" />
+                  )}
+                  <span>{percentileData.label}</span>
+                  {percentileData.isRare && (
+                    <Sparkles className="h-3 w-3 animate-pulse" />
+                  )}
+                </div>
+              );
+            })()}
           </motion.div>
 
           {/* Big Picture Summary */}
@@ -661,6 +687,15 @@ export default function ReportPage() {
   const [weeklyInsight, setWeeklyInsight] = useState<string | null>(null);
   const [weeklyLoading, setWeeklyLoading] = useState(false);
   const [weeklyError, setWeeklyError] = useState<string | null>(null);
+
+  // Share with partner state
+  const [showPartnerShare, setShowPartnerShare] = useState(false);
+  const [partnerEmail, setPartnerEmail] = useState("");
+  const [partnerShareLoading, setPartnerShareLoading] = useState(false);
+  const [partnerShareResult, setPartnerShareResult] = useState<{
+    success: boolean;
+    message: string;
+  } | null>(null);
 
   const reportId = params.id as string;
   const shareToken = searchParams.get("token");
@@ -796,6 +831,41 @@ export default function ReportPage() {
       document.body.removeChild(textArea);
     }
   };
+
+  // Share report with a partner by email
+  const handlePartnerShare = useCallback(async () => {
+    if (!partnerEmail.trim() || partnerShareLoading) return;
+    setPartnerShareLoading(true);
+    setPartnerShareResult(null);
+    try {
+      const res = await fetch(`/api/report/${reportId}/share`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: partnerEmail.trim() }),
+      });
+      const json = await res.json();
+      if (res.ok) {
+        setPartnerShareResult({
+          success: true,
+          message: `Report shared with ${json.sharedWith?.email || partnerEmail}!`,
+        });
+        setPartnerEmail("");
+      } else {
+        setPartnerShareResult({
+          success: false,
+          message: json.error || "Failed to share report.",
+        });
+      }
+    } catch (err) {
+      console.error("Failed to share with partner:", err);
+      setPartnerShareResult({
+        success: false,
+        message: "Failed to share report. Please try again.",
+      });
+    } finally {
+      setPartnerShareLoading(false);
+    }
+  }, [reportId, partnerEmail, partnerShareLoading]);
 
   const handleGetWeeklyInsight = useCallback(async () => {
     if (weeklyLoading) return;
@@ -1069,6 +1139,36 @@ export default function ReportPage() {
                 <span className="text-4xl font-bold">{report.overallScore}</span>
                 <span className="text-sm text-gray-500 uppercase tracking-wider ml-1">/ 100</span>
               </div>
+              {/* Percentile Badge */}
+              {(() => {
+                const percentileData = getPercentile(report.overallScore);
+                if (!percentileData.label) return null;
+                return (
+                  <motion.div
+                    className="mt-3"
+                    initial={shouldAnimate ? { opacity: 0, y: 5 } : false}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={shouldAnimate ? { delay: 1.0 } : { duration: 0 }}
+                  >
+                    <div
+                      className={cn(
+                        "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium",
+                        percentileData.isRare
+                          ? "border border-gold/40 bg-gold/10 text-gold"
+                          : "border border-cosmic-purple/30 bg-cosmic-purple/10 text-cosmic-purple-light"
+                      )}
+                    >
+                      {percentileData.isRare && (
+                        <Sparkles className="h-3 w-3 animate-pulse" />
+                      )}
+                      <span>{percentileData.label}</span>
+                      {percentileData.isRare && (
+                        <Sparkles className="h-3 w-3 animate-pulse" />
+                      )}
+                    </div>
+                  </motion.div>
+                );
+              })()}
             </div>
 
             {/* Radar Chart */}
@@ -1234,7 +1334,82 @@ export default function ReportPage() {
                 <Download className="mr-2 h-4 w-4" />
                 Export HTML
               </Button>
+              <Button
+                variant="outline"
+                className="border-white/10"
+                onClick={() => {
+                  setShowPartnerShare((prev) => !prev);
+                  setPartnerShareResult(null);
+                }}
+              >
+                <UserPlus className="mr-2 h-4 w-4" />
+                Share with Partner
+              </Button>
             </div>
+
+            {/* Share with Partner form */}
+            <AnimatePresence>
+              {showPartnerShare && (
+                <motion.div
+                  initial={shouldAnimate ? { opacity: 0, height: 0 } : false}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={shouldAnimate ? { opacity: 0, height: 0 } : { opacity: 0 }}
+                  transition={shouldAnimate ? { duration: 0.2 } : { duration: 0 }}
+                  className="overflow-hidden print:hidden"
+                >
+                  <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4 mt-1">
+                    <p className="text-sm text-muted-foreground mb-3">
+                      Share this report with your partner so they can view the full
+                      report from their own account.
+                    </p>
+                    <div className="flex gap-2">
+                      <Input
+                        type="email"
+                        placeholder="Partner's email address"
+                        value={partnerEmail}
+                        onChange={(e) => {
+                          setPartnerEmail(e.target.value);
+                          setPartnerShareResult(null);
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            handlePartnerShare();
+                          }
+                        }}
+                        className="h-10 flex-1 border-white/10 bg-white/5"
+                      />
+                      <Button
+                        onClick={handlePartnerShare}
+                        disabled={
+                          partnerShareLoading || !partnerEmail.trim()
+                        }
+                        className="bg-cosmic-purple hover:bg-cosmic-purple-dark text-white h-10"
+                      >
+                        {partnerShareLoading ? (
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
+                          <Mail className="mr-2 h-4 w-4" />
+                        )}
+                        {partnerShareLoading ? "Sharing..." : "Share"}
+                      </Button>
+                    </div>
+                    {partnerShareResult && (
+                      <p
+                        className={cn(
+                          "mt-2 text-sm",
+                          partnerShareResult.success
+                            ? "text-emerald-400"
+                            : "text-red-400"
+                        )}
+                      >
+                        {partnerShareResult.message}
+                      </p>
+                    )}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             {/* Continue Exploring */}
             <div className="pt-6 print:hidden">

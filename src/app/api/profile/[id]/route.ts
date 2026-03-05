@@ -19,10 +19,42 @@ import { Prisma } from "@/generated/prisma/client";
 // ============================================================
 
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
+
+    // Check for public access request
+    const { searchParams } = new URL(request.url);
+    const isPublicRequest = searchParams.get("public") === "true";
+
+    if (isPublicRequest) {
+      // Public access — no auth required, but profile must have isPublic flag
+      const profile = await prisma.birthProfile.findUnique({
+        where: { id },
+      });
+
+      if (!profile || !profile.isPublic) {
+        return NextResponse.json(
+          { error: "Profile not found or is not public" },
+          { status: 404 }
+        );
+      }
+
+      // Return limited public info (no birth time, coordinates, timezone)
+      return NextResponse.json({
+        profile: {
+          id: profile.id,
+          name: profile.name,
+          birthCity: profile.birthCity,
+          birthCountry: profile.birthCountry,
+          chartData: profile.chartData,
+        },
+      });
+    }
+
+    // Authenticated access — full profile details
     const session = await getServerSession(authOptions);
 
     if (!session?.user?.id) {
@@ -31,8 +63,6 @@ export async function GET(
         { status: 401 }
       );
     }
-
-    const { id } = await params;
 
     const profile = await prisma.birthProfile.findUnique({
       where: { id },
@@ -64,6 +94,7 @@ export async function GET(
         longitude: profile.longitude,
         timezone: profile.timezone,
         isOwner: profile.isOwner,
+        isPublic: profile.isPublic,
         chartData: profile.chartData,
         createdAt: profile.createdAt.toISOString(),
       },
@@ -156,6 +187,7 @@ export async function PUT(
     if (body.longitude !== undefined) updateData.longitude = body.longitude;
     if (body.timezone !== undefined) updateData.timezone = body.timezone;
     if (body.isOwner !== undefined) updateData.isOwner = body.isOwner;
+    if (body.isPublic !== undefined) updateData.isPublic = body.isPublic;
 
     // Recalculate chart if birth data changed
     const birthDataChanged =
@@ -205,6 +237,7 @@ export async function PUT(
         longitude: profile.longitude,
         timezone: profile.timezone,
         isOwner: profile.isOwner,
+        isPublic: profile.isPublic,
         chartData: profile.chartData,
         createdAt: profile.createdAt.toISOString(),
       },

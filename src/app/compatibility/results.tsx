@@ -29,6 +29,7 @@ import { CompatibilityRadarChart } from "@/components/radar-chart";
 import { ScoreBar } from "@/components/score-bar";
 import { Confetti } from "@/components/confetti";
 import { cn } from "@/lib/utils";
+import { getPercentile } from "@/lib/percentile";
 import type { BirthData } from "@/components/birth-data-form";
 
 /* -------------------------------------------------------------------------- */
@@ -465,7 +466,7 @@ export function CompatibilityResults({
 
       {/* Overall Score */}
       <motion.div
-        className="flex justify-center"
+        className="flex flex-col items-center gap-3"
         initial={prefersReducedMotion ? "visible" : "hidden"}
         animate="visible"
         variants={fadeInUp}
@@ -478,6 +479,35 @@ export function CompatibilityResults({
           label="Overall Compatibility"
           size="lg"
         />
+        {/* Percentile Badge */}
+        {(() => {
+          const percentileData = getPercentile(result.overallScore);
+          if (!percentileData.label) return null;
+          return (
+            <motion.div
+              initial={prefersReducedMotion ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.5, delay: 0.5, type: "spring" }}
+            >
+              <div
+                className={cn(
+                  "inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium",
+                  percentileData.isRare
+                    ? "border border-gold/40 bg-gold/10 text-gold"
+                    : "border border-cosmic-purple/30 bg-cosmic-purple/10 text-cosmic-purple-light"
+                )}
+              >
+                {percentileData.isRare && (
+                  <Sparkles className="h-4 w-4 animate-pulse" />
+                )}
+                <span>{percentileData.label}</span>
+                {percentileData.isRare && (
+                  <Sparkles className="h-4 w-4 animate-pulse" />
+                )}
+              </div>
+            </motion.div>
+          );
+        })()}
       </motion.div>
 
       {/* Radar Chart */}

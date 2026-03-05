@@ -6,6 +6,11 @@
  *
  * POST optionally accepts a reportId for chart-aware conversation
  * and a sessionId to continue an existing conversation.
+ *
+ * AI Memory: When a sessionId is provided, loads previous messages
+ * and includes them as conversation history. For long conversations
+ * (20+ messages), generates a summary and uses summary + last 5
+ * messages instead of all messages.
  */
 
 import { NextRequest, NextResponse } from "next/server";
@@ -16,12 +21,85 @@ import { chatWithAstrologer, buildChatContext } from "@/lib/claude";
 import { createRateLimiter, getClientIp } from "@/lib/rate-limit";
 import type { ChatMessage, ChatRequest } from "@/types/astrology";
 import type { Prisma } from "@/generated/prisma/client";
+import Anthropic from "@anthropic-ai/sdk";
 
 // ============================================================
 // Rate limiter: 20 requests per hour per user
 // ============================================================
 
 const chatRateLimiter = createRateLimiter(20, 60 * 60 * 1000, "chat");
+
+// ============================================================
+// Conversation summary helpers
+// ============================================================
+
+/** Metadata entry stored alongside messages in the JSON array. */
+interface ConversationSummaryMeta {
+  role: "system";
+  content: string;
+  timestamp: string;
+  _type: "context_summary";
+}
+
+type StoredEntry = ChatMessage | ConversationSummaryMeta;
+
+function isContextSummary(entry: StoredEntry): entry is ConversationSummaryMeta {
+  return (entry as ConversationSummaryMeta)._type === "context_summary";
+}
+
+/**
+ * Generate a brief summary of the conversation so far using Claude.
+ * This runs in the background after a response is sent to avoid
+ * blocking the user.
+ */
+async function generateConversationSummary(
+  messages: ChatMessage[]
+): Promise<string> {
+  let _claude: Anthropic | null = null;
+  if (!process.env.ANTHROPIC_API_KEY) {
+    return "";
+  }
+  _claude = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+
+  const transcript = messages
+    .map((m) => `${m.role === "user" ? "User" : "Astrologer"}: ${m.content}`)
+    .join("\n\n");
+
+  const response = await _claude.messages.create({
+    model: "claude-sonnet-4-20250514",
+    max_tokens: 512,
+    system:
+      "You are a helpful assistant. Summarize the following astrology chat conversation into a brief paragraph (3-5 sentences). " +
+      "Capture the key topics discussed, any specific astrological aspects or placements mentioned, the user's main concerns or questions, " +
+      "and any advice given. This summary will be used as context for future conversations.",
+    messages: [
+      {
+        role: "user",
+        content: `Please summarize this conversation:\n\n${transcript}`,
+      },
+    ],
+  });
+
+  const textBlock = response.content.find((block) => block.type === "text");
+  return textBlock ? textBlock.text.trim() : "";
+}
+
+/**
+ * Extract the existing summary from stored entries (if any).
+ */
+function extractExistingSummary(
+  entries: StoredEntry[]
+): string | null {
+  const summaryEntry = entries.find(isContextSummary);
+  return summaryEntry ? summaryEntry.content : null;
+}
+
+/**
+ * Extract only ChatMessage entries (excluding metadata).
+ */
+function extractMessages(entries: StoredEntry[]): ChatMessage[] {
+  return entries.filter((e) => !isContextSummary(e)) as ChatMessage[];
+}
 
 // ============================================================
 // GET — Load existing chat session
@@ -60,12 +138,17 @@ export async function GET(request: NextRequest) {
     });
 
     if (!chatSession) {
-      return NextResponse.json({ messages: [], sessionId: null });
+      return NextResponse.json({ messages: [], sessionId: null, sessionDate: null });
     }
 
+    // Extract only actual messages (not metadata) for the frontend
+    const storedEntries = chatSession.messages as unknown as StoredEntry[];
+    const messages = extractMessages(storedEntries);
+
     return NextResponse.json({
-      messages: chatSession.messages as unknown as ChatMessage[],
+      messages,
       sessionId: chatSession.id,
+      sessionDate: chatSession.updatedAt.toISOString(),
     });
   } catch (error) {
     console.error("[GET /api/chat] Error:", error);
@@ -206,8 +289,9 @@ export async function POST(request: Request) {
     }
 
     // --- 4. Load or create chat session ---
-    let conversationHistory: ChatMessage[] = [];
+    let storedEntries: StoredEntry[] = [];
     let chatSessionId = body.sessionId;
+    let existingSummary: string | null = null;
 
     if (chatSessionId) {
       const existingSession = await prisma.chatSession.findUnique({
@@ -228,10 +312,14 @@ export async function POST(request: Request) {
         );
       }
 
-      conversationHistory = (existingSession.messages as unknown as ChatMessage[]) || [];
+      storedEntries = (existingSession.messages as unknown as StoredEntry[]) || [];
+      existingSummary = extractExistingSummary(storedEntries);
     }
 
-    // --- 5. Build messages array ---
+    // Get only the actual chat messages (no metadata)
+    const conversationHistory = extractMessages(storedEntries);
+
+    // --- 5. Build messages array for Claude ---
     const newUserMessage: ChatMessage = {
       role: "user",
       content: userMessage,
@@ -240,14 +328,34 @@ export async function POST(request: Request) {
 
     conversationHistory.push(newUserMessage);
 
-    // Limit conversation history to last 20 messages to control token usage
-    const messagesToSend =
-      conversationHistory.length > 20
-        ? conversationHistory.slice(-20)
-        : conversationHistory;
+    // --- 5b. Build context-aware message list ---
+    // For long conversations (20+ messages), use summary + last 5 messages
+    // Otherwise, use last 10 messages from history
+    let messagesToSend: ChatMessage[];
+    let contextSummaryForPrompt: string | undefined;
+
+    if (conversationHistory.length > 20 && existingSummary) {
+      // Use summary + last 5 messages for token efficiency
+      contextSummaryForPrompt = existingSummary;
+      messagesToSend = conversationHistory.slice(-5);
+    } else if (conversationHistory.length > 10) {
+      // Use last 10 messages
+      messagesToSend = conversationHistory.slice(-10);
+    } else {
+      messagesToSend = conversationHistory;
+    }
+
+    // Build enhanced chart context with conversation summary if available
+    let enhancedChartContext = chartContext;
+    if (contextSummaryForPrompt) {
+      const summaryBlock = `\n\nPREVIOUS CONVERSATION SUMMARY (use this to maintain continuity with earlier discussion):\n${contextSummaryForPrompt}`;
+      enhancedChartContext = enhancedChartContext
+        ? enhancedChartContext + summaryBlock
+        : summaryBlock;
+    }
 
     // --- 6. Call Claude API ---
-    const aiReply = await chatWithAstrologer(messagesToSend, chartContext);
+    const aiReply = await chatWithAstrologer(messagesToSend, enhancedChartContext);
 
     // --- 7. Save conversation ---
     const assistantMessage: ChatMessage = {
@@ -258,12 +366,25 @@ export async function POST(request: Request) {
 
     conversationHistory.push(assistantMessage);
 
+    // Build the entries to store (messages + optional summary metadata)
+    const entriesToStore: StoredEntry[] = [...conversationHistory];
+
+    // Preserve existing summary in stored entries
+    if (existingSummary) {
+      entriesToStore.unshift({
+        role: "system",
+        content: existingSummary,
+        timestamp: new Date().toISOString(),
+        _type: "context_summary",
+      });
+    }
+
     if (chatSessionId) {
       // Update existing session
       await prisma.chatSession.update({
         where: { id: chatSessionId },
         data: {
-          messages: JSON.parse(JSON.stringify(conversationHistory)) as Prisma.InputJsonValue,
+          messages: JSON.parse(JSON.stringify(entriesToStore)) as Prisma.InputJsonValue,
         },
       });
     } else {
@@ -272,16 +393,52 @@ export async function POST(request: Request) {
         data: {
           userId: session.user.id,
           reportId: body.reportId || null,
-          messages: JSON.parse(JSON.stringify(conversationHistory)) as Prisma.InputJsonValue,
+          messages: JSON.parse(JSON.stringify(entriesToStore)) as Prisma.InputJsonValue,
         },
       });
       chatSessionId = newSession.id;
     }
 
-    // --- 8. Return response ---
+    // --- 8. Generate summary if conversation has reached 20+ messages ---
+    // This runs asynchronously after the response is sent
+    const totalMessages = conversationHistory.length;
+    if (
+      totalMessages >= 20 &&
+      totalMessages % 10 === 0 // Re-summarize every 10 messages after 20
+    ) {
+      // Fire-and-forget: generate summary in the background
+      generateConversationSummary(conversationHistory)
+        .then(async (summary) => {
+          if (!summary || !chatSessionId) return;
+
+          // Update the stored entries with the new summary
+          const updatedEntries: StoredEntry[] = [
+            {
+              role: "system",
+              content: summary,
+              timestamp: new Date().toISOString(),
+              _type: "context_summary",
+            },
+            ...conversationHistory,
+          ];
+
+          await prisma.chatSession.update({
+            where: { id: chatSessionId },
+            data: {
+              messages: JSON.parse(JSON.stringify(updatedEntries)) as Prisma.InputJsonValue,
+            },
+          });
+        })
+        .catch((err) => {
+          console.error("[POST /api/chat] Summary generation failed:", err);
+        });
+    }
+
+    // --- 9. Return response ---
     return NextResponse.json({
       reply: aiReply,
       sessionId: chatSessionId,
+      hasHistory: totalMessages > 1,
     });
   } catch (error) {
     console.error("[POST /api/chat] Error:", error);

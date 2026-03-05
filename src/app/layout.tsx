@@ -41,6 +41,7 @@ export const metadata: Metadata = {
     "zodiac compatibility",
   ],
   authors: [{ name: "ChartChemistry" }],
+  manifest: "/manifest.json",
   openGraph: {
     title: "ChartChemistry — AI-Powered Astrological Compatibility",
     description:
@@ -89,6 +90,15 @@ export default function RootLayout({
             strategy="afterInteractive"
           />
         )}
+        <Script id="sw-register" strategy="afterInteractive">
+          {`
+            if ('serviceWorker' in navigator) {
+              navigator.serviceWorker.register('/sw.js').catch(function(err) {
+                console.log('ServiceWorker registration failed:', err);
+              });
+            }
+          `}
+        </Script>
       </head>
       <body
         className={`${inter.variable} ${playfair.variable} font-sans antialiased`}

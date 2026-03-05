@@ -43,6 +43,7 @@ export async function GET() {
         longitude: true,
         timezone: true,
         isOwner: true,
+        isPublic: true,
         chartData: true,
         createdAt: true,
       },

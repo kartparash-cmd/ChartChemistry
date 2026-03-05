@@ -14,6 +14,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/learn/houses",
     "/learn/aspects",
     "/learn/planets",
+    "/cosmic-identity",
     "/privacy",
     "/terms",
     "/support",

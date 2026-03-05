@@ -582,23 +582,70 @@ function ChatPageContent() {
 
   // Premium gate
   if (!isPremium) {
+    const sampleQuestions = [
+      { q: "Why do we argue about finances?", icon: "\uD83D\uDCB0" },
+      { q: "What does Venus in Scorpio mean for us?", icon: "\u2640\uFE0F" },
+      { q: "How will Mercury retrograde affect our relationship?", icon: "\u263F" },
+      { q: "What are our strongest connection points?", icon: "\u2728" },
+    ];
+
     return (
-      <div className="flex min-h-screen items-center justify-center px-4">
+      <div className="flex min-h-screen items-center justify-center px-4 py-12">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="max-w-md text-center"
+          className="max-w-lg w-full"
         >
-          <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-cosmic-purple/10">
-            <Crown className="h-10 w-10 text-cosmic-purple-light" />
+          {/* Header */}
+          <div className="text-center mb-8">
+            <div className="mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-full bg-cosmic-purple/10">
+              <Crown className="h-10 w-10 text-cosmic-purple-light" />
+            </div>
+            <h1 className="font-heading text-3xl sm:text-4xl font-bold mb-2">
+              AI Astrologer Chat
+            </h1>
+            <p className="text-muted-foreground text-sm max-w-sm mx-auto">
+              Ask our AI astrologer anything about your chart, compatibility, or cosmic events
+            </p>
           </div>
-          <h1 className="font-heading text-2xl font-bold mb-2">
-            Premium Feature
-          </h1>
-          <p className="text-muted-foreground mb-6">
-            The AI Astrologer chat is available for Premium subscribers. Upgrade
-            to get unlimited access to personalized astrological guidance.
-          </p>
+
+          {/* Sample questions */}
+          <div className="mb-8 space-y-2.5">
+            <p className="text-xs text-muted-foreground uppercase tracking-wider text-center mb-3">
+              Questions you can ask
+            </p>
+            {sampleQuestions.map((item) => (
+              <div
+                key={item.q}
+                className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3"
+              >
+                <span className="text-lg shrink-0" aria-hidden="true">{item.icon}</span>
+                <p className="text-sm text-muted-foreground">&ldquo;{item.q}&rdquo;</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Blurred sample conversation */}
+          <div className="relative select-none pointer-events-none mb-8" aria-hidden="true">
+            <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 space-y-3 opacity-50 blur-[2px]">
+              <div className="flex justify-end">
+                <div className="rounded-2xl rounded-br-sm bg-cosmic-purple/20 px-4 py-2.5 max-w-[75%]">
+                  <p className="text-xs">Why do we always argue about money?</p>
+                </div>
+              </div>
+              <div className="flex justify-start">
+                <div className="rounded-2xl rounded-bl-sm border border-white/10 bg-white/[0.03] px-4 py-2.5 max-w-[75%]">
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <Sparkles className="h-3 w-3 text-cosmic-purple-light" />
+                    <span className="text-[11px] text-cosmic-purple-light font-medium uppercase tracking-wider">AI Astrologer</span>
+                  </div>
+                  <p className="text-xs">Your Mars in Taurus squares their Venus in Leo -- you value security while they value expression...</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* CTA buttons */}
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Button
               asChild
@@ -615,21 +662,6 @@ function ChatPageContent() {
                 Back to Dashboard
               </Link>
             </Button>
-          </div>
-          <div className="mt-6 w-full max-w-md space-y-3">
-            <p className="text-xs text-muted-foreground text-center mb-3">See what you can ask:</p>
-            <div className="rounded-lg border border-white/10 bg-white/[0.03] p-3 text-left">
-              <p className="text-xs font-medium text-cosmic-purple-light mb-1">You:</p>
-              <p className="text-xs text-muted-foreground">&ldquo;Why do we always argue about money?&rdquo;</p>
-              <p className="text-xs font-medium text-cosmic-purple-light mt-2 mb-1">AI Astrologer:</p>
-              <p className="text-xs text-muted-foreground">&ldquo;Your Mars in Taurus squares their Venus in Leo — you value security while they value expression. Try setting a shared &lsquo;fun fund&rsquo; to honor both needs...&rdquo;</p>
-            </div>
-            <div className="rounded-lg border border-white/10 bg-white/[0.03] p-3 text-left">
-              <p className="text-xs font-medium text-cosmic-purple-light mb-1">You:</p>
-              <p className="text-xs text-muted-foreground">&ldquo;What&rsquo;s our strongest connection?&rdquo;</p>
-              <p className="text-xs font-medium text-cosmic-purple-light mt-2 mb-1">AI Astrologer:</p>
-              <p className="text-xs text-muted-foreground">&ldquo;Your Moon conjunct their Sun creates deep emotional understanding — you intuitively &lsquo;get&rsquo; each other at a soul level...&rdquo;</p>
-            </div>
           </div>
         </motion.div>
       </div>

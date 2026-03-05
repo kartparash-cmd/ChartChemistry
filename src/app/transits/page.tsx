@@ -405,7 +405,7 @@ export default function TransitsPage() {
       <main className="min-h-screen" aria-label="Transit Timeline">
         <section className="border-b border-white/10 bg-gradient-to-b from-cosmic-purple/5 to-transparent" aria-label="Page header">
           <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-            <h1 className="font-heading text-3xl font-bold">
+            <h1 className="font-heading text-3xl sm:text-4xl font-bold">
               <span className="cosmic-text">Transit Timeline</span>
             </h1>
             <p className="mt-1 text-sm text-muted-foreground">
@@ -413,15 +413,120 @@ export default function TransitsPage() {
             </p>
           </div>
         </section>
-        <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 space-y-6">
+          {/* Upgrade CTA */}
           <Card className="glass-card border-white/10 bg-white/[0.03] p-8 text-center">
             <Lock className="h-8 w-8 text-cosmic-purple-light mx-auto mb-3" />
             <h2 className="text-xl font-semibold cosmic-text mb-2">Premium Feature</h2>
-            <p className="text-muted-foreground mb-4">Upgrade to access detailed transit analysis and personalized insights</p>
+            <p className="text-muted-foreground mb-1">
+              Track planetary transits affecting your natal chart in real-time
+            </p>
+            <p className="text-xs text-muted-foreground/70 mb-5">
+              See which planets are activating your chart right now and what it means for you
+            </p>
             <Button asChild className="cosmic-gradient text-white hover:opacity-90">
-              <Link href="/pricing">Upgrade to Premium</Link>
+              <Link href="/pricing">
+                <Sparkles className="mr-2 h-4 w-4" />
+                Upgrade to Premium
+              </Link>
             </Button>
           </Card>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Sample transit card (blurred) */}
+            <div className="lg:col-span-2">
+              <div className="relative select-none pointer-events-none" aria-hidden="true">
+                <div className="rounded-xl border border-red-400/20 bg-white/[0.03] p-5 opacity-50 blur-[2px]">
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-400/10">
+                        <Star className="h-5 w-5 text-red-400" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold">Mars trine Sun</p>
+                        <p className="text-xs text-muted-foreground">Transiting Mars in Aries trine natal Sun in Leo</p>
+                      </div>
+                    </div>
+                    <Badge variant="outline" className="border-red-400/30 text-red-400 text-xs">
+                      High Impact
+                    </Badge>
+                  </div>
+                  <div className="space-y-2 mb-3">
+                    <div className="h-3 w-full rounded bg-white/10" />
+                    <div className="h-3 w-5/6 rounded bg-white/10" />
+                    <div className="h-3 w-3/4 rounded bg-white/10" />
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Badge variant="outline" className="border-red-400/20 bg-red-400/[0.06] text-xs">
+                      <span className="inline-block h-1.5 w-1.5 rounded-full bg-red-400 animate-pulse mr-1.5" />
+                      Peak now
+                    </Badge>
+                    <span className="text-xs text-muted-foreground">Orb: 0.4deg</span>
+                  </div>
+                </div>
+
+                {/* Second sample card */}
+                <div className="mt-4 rounded-xl border border-cosmic-purple/20 bg-white/[0.03] p-5 opacity-40 blur-[3px]">
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-cosmic-purple/10">
+                        <Orbit className="h-5 w-5 text-cosmic-purple-light" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold">Jupiter sextile Venus</p>
+                        <p className="text-xs text-muted-foreground">Transiting Jupiter in Cancer sextile natal Venus</p>
+                      </div>
+                    </div>
+                    <Badge variant="outline" className="border-cosmic-purple/30 text-cosmic-purple-light text-xs">
+                      Medium
+                    </Badge>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="h-3 w-full rounded bg-white/10" />
+                    <div className="h-3 w-4/5 rounded bg-white/10" />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Mini transit legend */}
+            <div className="lg:col-span-1">
+              <Card className="border-white/10 bg-white/[0.03] backdrop-blur-sm">
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center gap-2 text-sm">
+                    <Info className="h-4 w-4 text-cosmic-purple-light" />
+                    Significance Levels
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3 text-sm text-muted-foreground">
+                  <div className="space-y-2.5">
+                    <div className="flex items-center gap-2">
+                      <span className="inline-block h-2.5 w-2.5 rounded-full bg-red-400 shrink-0" />
+                      <span className="text-xs">
+                        <strong className="text-red-400">High Impact</strong> -- Outer planets aspecting personal planets. Powerful, transformative influences.
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="inline-block h-2.5 w-2.5 rounded-full bg-cosmic-purple-light shrink-0" />
+                      <span className="text-xs">
+                        <strong className="text-cosmic-purple-light">Medium</strong> -- Mixed outer/personal planet contacts. Noticeable shifts in mood and events.
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="inline-block h-2.5 w-2.5 rounded-full bg-muted-foreground shrink-0" />
+                      <span className="text-xs">
+                        <strong className="text-muted-foreground">Subtle</strong> -- Personal planet-to-personal planet transits. Brief, day-to-day influences.
+                      </span>
+                    </div>
+                  </div>
+                  <Separator className="bg-white/10" />
+                  <p className="text-xs text-muted-foreground/70">
+                    Premium members see full interpretations, orb data, and timing indicators for every active transit.
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
         </div>
       </main>
     );
@@ -445,7 +550,7 @@ export default function TransitsPage() {
             className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
           >
             <div>
-              <h1 className="font-heading text-3xl font-bold">
+              <h1 className="font-heading text-3xl sm:text-4xl font-bold">
                 <span className="cosmic-text">Transit Timeline</span>
               </h1>
               <p className="mt-1 text-sm text-muted-foreground">

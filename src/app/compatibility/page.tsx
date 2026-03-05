@@ -3,7 +3,7 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { useSession } from "next-auth/react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
-import { ArrowRight, AlertTriangle, RefreshCw, LayoutDashboard, Crown, X } from "lucide-react";
+import { ArrowRight, AlertTriangle, RefreshCw, LayoutDashboard, Crown, X, Infinity } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { StarField } from "@/components/star-field";
@@ -62,6 +62,38 @@ export default function CompatibilityPage() {
   const [savedProfiles, setSavedProfiles] = useState<any[]>([]);
   const [formKeyA, setFormKeyA] = useState(0);
   const [formKeyB, setFormKeyB] = useState(0);
+  const [initialChecksLoaded, setInitialChecksLoaded] = useState(false);
+
+  // Fetch remaining checks count on mount for free / unauthenticated users
+  useEffect(() => {
+    const isPremium =
+      session?.user?.plan === "PREMIUM" || session?.user?.plan === "ANNUAL";
+    if (isPremium) {
+      setInitialChecksLoaded(true);
+      return;
+    }
+
+    // Hit the compatibility endpoint with a HEAD-style light request
+    // We use a dedicated query-param the API can recognise, but since
+    // no such endpoint exists yet we fall back to a simple GET that
+    // returns remaining checks metadata.  The existing POST already
+    // returns `remainingChecks` in its response so we keep it in sync
+    // after each check.  For the initial load we try a lightweight
+    // status fetch; if it 404s we just leave the counter hidden until
+    // the first real check completes.
+    fetch("/api/compatibility?checksOnly=1")
+      .then((res) => {
+        if (res.ok) return res.json();
+        return null;
+      })
+      .then((data) => {
+        if (data && data.remainingChecks !== undefined) {
+          setRemainingChecks(data.remainingChecks);
+        }
+      })
+      .catch(() => {})
+      .finally(() => setInitialChecksLoaded(true));
+  }, [session]);
 
   // Reduced-motion-aware transition presets
   const fade = prefersReducedMotion
@@ -381,11 +413,64 @@ export default function CompatibilityPage() {
                       : "Complete the second person's birth details to continue."}
                   </p>
                 ) : null}
-                {!session && (
-                  <p className="mt-2 text-center text-xs text-muted-foreground/70">
-                    Free: 3 compatibility checks per day
-                  </p>
-                )}
+
+                {/* Checks remaining counter */}
+                {(() => {
+                  const isPremium =
+                    session?.user?.plan === "PREMIUM" ||
+                    session?.user?.plan === "ANNUAL";
+
+                  if (isPremium) {
+                    return (
+                      <p className="mt-3 flex items-center justify-center gap-1.5 text-xs font-medium text-emerald-400">
+                        <Infinity className="h-3.5 w-3.5" />
+                        Unlimited checks
+                      </p>
+                    );
+                  }
+
+                  if (remainingChecks !== null && initialChecksLoaded) {
+                    const isWarning = remainingChecks === 1;
+                    const isDepleted = remainingChecks <= 0;
+                    return (
+                      <p
+                        className={cn(
+                          "mt-3 text-center text-xs font-medium",
+                          isDepleted
+                            ? "text-red-400"
+                            : isWarning
+                            ? "text-amber-400"
+                            : "text-muted-foreground/70"
+                        )}
+                      >
+                        {isDepleted ? (
+                          <>
+                            No free checks remaining today.{" "}
+                            <Link
+                              href="/pricing"
+                              className="underline underline-offset-2 text-cosmic-purple-light hover:text-cosmic-purple"
+                            >
+                              Upgrade for unlimited
+                            </Link>
+                          </>
+                        ) : (
+                          `${remainingChecks} free check${remainingChecks === 1 ? "" : "s"} remaining today`
+                        )}
+                      </p>
+                    );
+                  }
+
+                  // Fallback for unauthenticated users before checks load
+                  if (!session) {
+                    return (
+                      <p className="mt-2 text-center text-xs text-muted-foreground/70">
+                        Free: 3 compatibility checks per day
+                      </p>
+                    );
+                  }
+
+                  return null;
+                })()}
               </div>
             </motion.div>
           )}

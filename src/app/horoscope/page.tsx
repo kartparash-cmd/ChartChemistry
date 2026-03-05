@@ -190,14 +190,74 @@ export default function HoroscopePage() {
             </p>
           </div>
         </section>
-        <div className="mx-auto max-w-3xl px-4 py-8">
+        <div className="mx-auto max-w-3xl px-4 py-8 space-y-6">
+          {/* Upgrade CTA */}
           <div className="text-center py-8 rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur-sm">
             <Lock className="h-8 w-8 text-cosmic-purple-light mx-auto mb-3" />
             <h2 className="text-xl font-semibold cosmic-text mb-2">Unlock Daily Horoscopes</h2>
-            <p className="text-muted-foreground mb-4">Get personalized daily readings based on your natal chart</p>
+            <p className="text-muted-foreground mb-1">
+              AI-generated daily horoscope based on your actual chart placements
+            </p>
+            <p className="text-xs text-muted-foreground/70 mb-5">
+              Not generic sun sign readings -- personalized to your full natal chart every day
+            </p>
             <Button asChild className="cosmic-gradient text-white" aria-label="Upgrade to Premium for daily horoscopes">
-              <Link href="/pricing">Upgrade to Premium</Link>
+              <Link href="/pricing">
+                <Sparkles className="mr-2 h-4 w-4" />
+                Upgrade to Premium
+              </Link>
             </Button>
+          </div>
+
+          {/* Blurred preview of horoscope content */}
+          <div className="relative select-none pointer-events-none" aria-hidden="true">
+            {/* Mood + Summary preview */}
+            <div className="rounded-2xl border border-white/10 bg-gradient-to-br from-cosmic-purple/[0.06] to-transparent p-6 opacity-50 blur-[2px] mb-4">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="text-3xl">✨</span>
+                <div>
+                  <p className="text-xs text-muted-foreground uppercase tracking-wider">
+                    Today&apos;s Energy
+                  </p>
+                  <p className="text-lg font-semibold text-gold capitalize">
+                    Expansive
+                  </p>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <div className="h-4 w-full rounded bg-white/10" />
+                <div className="h-4 w-5/6 rounded bg-white/10" />
+              </div>
+            </div>
+
+            {/* Cosmic Tip + Lucky Time preview */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="rounded-xl border border-gold/20 bg-gold/[0.04] p-5 opacity-50 blur-[2px]">
+                <div className="flex items-center gap-2 mb-2">
+                  <Lightbulb className="h-4 w-4 text-gold" />
+                  <h3 className="text-sm font-semibold text-gold">
+                    Cosmic Tip
+                  </h3>
+                </div>
+                <div className="space-y-2">
+                  <div className="h-3 w-full rounded bg-white/10" />
+                  <div className="h-3 w-3/4 rounded bg-white/10" />
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-cosmic-purple/20 bg-cosmic-purple/[0.04] p-5 opacity-50 blur-[2px]">
+                <div className="flex items-center gap-2 mb-2">
+                  <Clock className="h-4 w-4 text-cosmic-purple-light" />
+                  <h3 className="text-sm font-semibold text-cosmic-purple-light">
+                    Best Time Window
+                  </h3>
+                </div>
+                <div className="space-y-2">
+                  <div className="h-3 w-full rounded bg-white/10" />
+                  <div className="h-3 w-2/3 rounded bg-white/10" />
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>

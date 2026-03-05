@@ -239,7 +239,7 @@ export default function PublicProfilePage() {
                 <div className="mb-3 text-5xl">
                   {getSignSymbol(profile.sunSign)}
                 </div>
-                <h1 className="font-heading text-2xl font-bold mb-1">
+                <h1 className="font-heading text-3xl sm:text-4xl font-bold mb-1">
                   {profile.name}
                 </h1>
                 <p className={`text-sm font-medium ${elementTextClass}`}>
@@ -259,7 +259,7 @@ export default function PublicProfilePage() {
               <div className="grid grid-cols-3 gap-3 mb-6">
                 <div className="rounded-xl bg-white/5 p-3 text-center">
                   <Sun className="mx-auto mb-1 h-5 w-5 text-amber-400" />
-                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-0.5">
+                  <p className="text-[11px] uppercase tracking-wider text-muted-foreground mb-0.5">
                     Sun
                   </p>
                   <p className="text-sm font-semibold">
@@ -268,7 +268,7 @@ export default function PublicProfilePage() {
                 </div>
                 <div className="rounded-xl bg-white/5 p-3 text-center">
                   <Moon className="mx-auto mb-1 h-5 w-5 text-slate-300" />
-                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-0.5">
+                  <p className="text-[11px] uppercase tracking-wider text-muted-foreground mb-0.5">
                     Moon
                   </p>
                   <p className="text-sm font-semibold">
@@ -277,7 +277,7 @@ export default function PublicProfilePage() {
                 </div>
                 <div className="rounded-xl bg-white/5 p-3 text-center">
                   <Compass className="mx-auto mb-1 h-5 w-5 text-cosmic-purple-light" />
-                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-0.5">
+                  <p className="text-[11px] uppercase tracking-wider text-muted-foreground mb-0.5">
                     Rising
                   </p>
                   <p className="text-sm font-semibold">
@@ -316,7 +316,7 @@ export default function PublicProfilePage() {
               </div>
 
               {/* Footer watermark */}
-              <p className="mt-6 text-center text-[10px] text-muted-foreground/50">
+              <p className="mt-6 text-center text-[11px] text-muted-foreground/50">
                 ChartChemistry
               </p>
             </div>

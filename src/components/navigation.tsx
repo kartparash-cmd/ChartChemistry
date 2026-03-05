@@ -20,6 +20,7 @@ import {
   MessageCircle,
   UserPlus,
   Fingerprint,
+  Lock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -51,9 +52,13 @@ const authedNavLinks = [
   { href: "/pricing", label: "Pricing" },
 ];
 
+// Nav links that require a premium plan
+const premiumHrefs = new Set(["/horoscope", "/chat", "/relationship"]);
+
 export function Navigation() {
   const pathname = usePathname();
   const { data: session, status } = useSession();
+  const isFreePlan = !session?.user?.plan || session.user.plan === "FREE";
   const [mobileOpen, setMobileOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
@@ -103,19 +108,23 @@ export function Navigation() {
                 link.href === "/"
                   ? pathname === "/"
                   : pathname === link.href || pathname.startsWith(link.href + "/");
+              const showLock = session && isFreePlan && premiumHrefs.has(link.href);
               return (
                 <Link
                   key={link.href}
                   href={link.href}
                   aria-current={isActive ? "page" : undefined}
                   className={cn(
-                    "relative px-4 py-2 text-sm font-medium rounded-lg transition-colors",
+                    "relative px-4 py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-1",
                     isActive
                       ? "text-cosmic-purple-light"
                       : "text-muted-foreground hover:text-foreground"
                   )}
                 >
                   <span className="relative z-10">{link.label}</span>
+                  {showLock && (
+                    <Lock className="relative z-10 h-3 w-3 text-muted-foreground/50" />
+                  )}
                   {isActive && (
                     <motion.div
                       layoutId="nav-indicator"
@@ -302,6 +311,7 @@ export function Navigation() {
                       link.href === "/"
                         ? pathname === "/"
                         : pathname === link.href || pathname.startsWith(link.href + "/");
+                    const showLock = session && isFreePlan && premiumHrefs.has(link.href);
                     return (
                       <Link
                         key={link.href}
@@ -309,13 +319,16 @@ export function Navigation() {
                         onClick={() => setMobileOpen(false)}
                         aria-current={isActive ? "page" : undefined}
                         className={cn(
-                          "rounded-lg px-4 py-3 text-sm font-medium transition-colors",
+                          "rounded-lg px-4 py-3 text-sm font-medium transition-colors flex items-center justify-between",
                           isActive
                             ? "bg-muted text-cosmic-purple-light"
                             : "text-muted-foreground hover:bg-muted hover:text-foreground"
                         )}
                       >
-                        {link.label}
+                        <span>{link.label}</span>
+                        {showLock && (
+                          <Lock className="h-3 w-3 text-muted-foreground/50" />
+                        )}
                       </Link>
                     );
                   })}
@@ -439,6 +452,7 @@ export function Navigation() {
               const isActive =
                 pathname === item.href || pathname.startsWith(item.href + "/");
               const Icon = item.icon;
+              const showLock = isFreePlan && premiumHrefs.has(item.href);
               return (
                 <Link
                   key={item.href}
@@ -451,7 +465,12 @@ export function Navigation() {
                       : "text-muted-foreground"
                   )}
                 >
-                  <Icon className="h-5 w-5" />
+                  <span className="relative">
+                    <Icon className="h-5 w-5" />
+                    {showLock && (
+                      <Lock className="absolute -top-1 -right-2 h-2.5 w-2.5 text-muted-foreground/60" />
+                    )}
+                  </span>
                   <span className="text-xs leading-none">{item.label}</span>
                 </Link>
               );

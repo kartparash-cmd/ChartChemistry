@@ -818,7 +818,7 @@ export default function ProfilesPage() {
                     {profile.isOwner && (
                       <Badge
                         variant="outline"
-                        className="shrink-0 border-cosmic-purple/30 bg-cosmic-purple/10 text-cosmic-purple-light text-[10px]"
+                        className="shrink-0 border-cosmic-purple/30 bg-cosmic-purple/10 text-cosmic-purple-light text-xs"
                       >
                         You
                       </Badge>

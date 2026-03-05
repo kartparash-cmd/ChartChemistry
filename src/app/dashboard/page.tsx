@@ -288,7 +288,7 @@ function ReportCard({ report, shouldAnimate }: { report: CompatibilityReport; sh
             <p className={cn("text-2xl font-bold", scoreColor)}>
               {report.overallScore}
             </p>
-            <p className="text-[10px] text-muted-foreground uppercase tracking-wider">
+            <p className="text-xs text-muted-foreground uppercase tracking-wider">
               score
             </p>
           </div>
@@ -300,7 +300,7 @@ function ReportCard({ report, shouldAnimate }: { report: CompatibilityReport; sh
         {report.tier !== "FREE" && (
           <Badge
             variant="outline"
-            className="mt-3 text-[10px] border-cosmic-purple/30 text-cosmic-purple-light"
+            className="mt-3 text-xs border-cosmic-purple/30 text-cosmic-purple-light"
           >
             {report.tier}
           </Badge>
@@ -587,7 +587,7 @@ function DashboardContent() {
             className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
           >
             <div>
-              <h1 className="font-heading text-3xl font-bold">
+              <h1 className="font-heading text-3xl sm:text-4xl font-bold">
                 {greetingPrefix},{" "}
                 <span className="cosmic-text">
                   {session.user.name || "Stargazer"}
@@ -672,7 +672,7 @@ function DashboardContent() {
                         {event.name}
                       </strong>
                       {event.type === "mercury-retrograde" && (
-                        <Badge variant="outline" className={cn("text-[10px]", styles.border, styles.text)}>
+                        <Badge variant="outline" className={cn("text-xs", styles.border, styles.text)}>
                           Until {formatShortDate(event.endDate)}
                         </Badge>
                       )}
@@ -849,47 +849,107 @@ function DashboardContent() {
                         </div>
                       </div>
                     ) : (
-                      /* No profile CTA */
+                      /* No profile — onboarding welcome */
                       <motion.div
                         initial={shouldAnimate ? { opacity: 0, scale: 0.98 } : false}
                         animate={{ opacity: 1, scale: 1 }}
-                        className="rounded-xl border border-dashed border-white/20 bg-white/[0.02] p-12 text-center"
+                        className="rounded-xl border border-dashed border-white/20 bg-white/[0.02] p-8 sm:p-12"
                       >
-                        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-cosmic-purple/10">
-                          <Sparkles className="h-8 w-8 text-cosmic-purple-light" />
+                        {/* Hero area */}
+                        <div className="text-center mb-8">
+                          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-cosmic-purple/10">
+                            <Sparkles className="h-8 w-8 text-cosmic-purple-light" />
+                          </div>
+                          <h3 className="font-heading text-2xl font-bold mb-2">
+                            Discover Your Cosmic Identity
+                          </h3>
+                          <p className="text-sm text-muted-foreground max-w-lg mx-auto">
+                            Your birth chart is a unique map of the sky at the
+                            moment you were born. Set up your profile to unlock
+                            personalized insights, daily guidance, and
+                            compatibility analysis.
+                          </p>
                         </div>
-                        <h3 className="font-heading text-xl font-semibold mb-2">
-                          Set Up Your Birth Profile
-                        </h3>
-                        <p className="text-sm text-muted-foreground max-w-md mx-auto mb-6">
-                          Add your birth details to see your natal chart, daily
-                          horoscope, and more.
-                        </p>
-                        <Button
-                          asChild
-                          className="bg-cosmic-purple hover:bg-cosmic-purple-dark text-white"
-                        >
-                          <Link href="/dashboard/profiles">
-                            <Plus className="mr-2 h-4 w-4" />
-                            Create Your Birth Profile
-                          </Link>
-                        </Button>
 
-                        {/* Onboarding Checklist */}
-                        <div className="mt-6 space-y-3">
-                          <p className="text-sm font-medium text-muted-foreground">Getting Started:</p>
-                          <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-cosmic-purple/20 text-xs font-bold text-cosmic-purple-light">1</span>
-                            Create your birth profile
+                        {/* Step indicator */}
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8 max-w-2xl mx-auto">
+                          {/* Step 1 — active */}
+                          <div className="relative rounded-xl border border-cosmic-purple/30 bg-cosmic-purple/[0.06] p-5 text-center">
+                            <div className="mx-auto mb-3 flex h-9 w-9 items-center justify-center rounded-full bg-cosmic-purple/20 ring-2 ring-cosmic-purple/40">
+                              <span className="text-sm font-bold text-cosmic-purple-light">1</span>
+                            </div>
+                            <h4 className="text-sm font-semibold mb-1">Add Birth Details</h4>
+                            <p className="text-xs text-muted-foreground leading-relaxed">
+                              Your natal chart with 10+ planetary positions
+                            </p>
+                            <div className="hidden sm:block absolute top-1/2 -right-2.5 -translate-y-1/2">
+                              <ArrowRight className="h-4 w-4 text-white/20" />
+                            </div>
                           </div>
-                          <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-white/10 text-xs font-bold">2</span>
-                            Run your first compatibility check
+
+                          {/* Step 2 — upcoming */}
+                          <div className="relative rounded-xl border border-white/10 bg-white/[0.02] p-5 text-center opacity-70">
+                            <div className="mx-auto mb-3 flex h-9 w-9 items-center justify-center rounded-full bg-white/10">
+                              <span className="text-sm font-bold text-muted-foreground">2</span>
+                            </div>
+                            <h4 className="text-sm font-semibold mb-1">Get Your Chart</h4>
+                            <p className="text-xs text-muted-foreground leading-relaxed">
+                              AI-powered daily horoscope tailored to you
+                            </p>
+                            <div className="hidden sm:block absolute top-1/2 -right-2.5 -translate-y-1/2">
+                              <ArrowRight className="h-4 w-4 text-white/20" />
+                            </div>
                           </div>
-                          <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-white/10 text-xs font-bold">3</span>
-                            Explore your daily horoscope
+
+                          {/* Step 3 — upcoming */}
+                          <div className="rounded-xl border border-white/10 bg-white/[0.02] p-5 text-center opacity-70">
+                            <div className="mx-auto mb-3 flex h-9 w-9 items-center justify-center rounded-full bg-white/10">
+                              <span className="text-sm font-bold text-muted-foreground">3</span>
+                            </div>
+                            <h4 className="text-sm font-semibold mb-1">Check Compatibility</h4>
+                            <p className="text-xs text-muted-foreground leading-relaxed">
+                              Compatibility analysis with anyone
+                            </p>
                           </div>
+                        </div>
+
+                        {/* Sample chart preview teaser */}
+                        <div className="mx-auto max-w-sm mb-8 rounded-xl border border-white/10 bg-white/[0.02] p-4 backdrop-blur-sm">
+                          <div className="flex items-center gap-4">
+                            <div className="grid grid-cols-3 gap-1.5 shrink-0">
+                              {["\u2648", "\u2649", "\u264A", "\u264B", "\u264C", "\u264D", "\u264E", "\u264F", "\u2650"].map((glyph, i) => (
+                                <span key={i} className="flex h-7 w-7 items-center justify-center rounded-md bg-white/[0.04] text-sm text-muted-foreground/60">
+                                  {glyph}
+                                </span>
+                              ))}
+                            </div>
+                            <div className="min-w-0">
+                              <p className="text-xs font-medium text-muted-foreground mb-0.5">
+                                Your Cosmic Blueprint
+                              </p>
+                              <p className="text-[11px] text-muted-foreground/70 leading-relaxed">
+                                Sun, Moon, Rising, Mercury, Venus, Mars and more
+                                &mdash; mapped across 12 houses
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Primary CTA */}
+                        <div className="text-center">
+                          <Button
+                            asChild
+                            size="lg"
+                            className="bg-cosmic-purple hover:bg-cosmic-purple-dark text-white px-8"
+                          >
+                            <Link href="/dashboard/profiles">
+                              <Plus className="mr-2 h-4 w-4" />
+                              Create Your Birth Profile
+                            </Link>
+                          </Button>
+                          <p className="mt-3 text-xs text-muted-foreground">
+                            Takes less than 2 minutes
+                          </p>
                         </div>
                       </motion.div>
                     )}
@@ -937,26 +997,68 @@ function DashboardContent() {
                         </div>
                       </div>
                     ) : (
-                      <div className="rounded-xl border border-dashed border-white/20 bg-white/[0.02] p-12 text-center">
-                        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-cosmic-purple/10">
-                          <Users className="h-8 w-8 text-cosmic-purple-light" />
+                      <div className="rounded-xl border border-dashed border-white/20 bg-white/[0.02] p-8 sm:p-12">
+                        <div className="text-center mb-8">
+                          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-cosmic-purple/10">
+                            <Users className="h-8 w-8 text-cosmic-purple-light" />
+                          </div>
+                          <h3 className="font-heading text-xl font-semibold mb-2">
+                            No Connections Yet
+                          </h3>
+                          <p className="text-sm text-muted-foreground max-w-md mx-auto">
+                            Run your first compatibility check to see your connections here
+                          </p>
                         </div>
-                        <h3 className="font-heading text-xl font-semibold mb-2">
-                          No Connections Yet
-                        </h3>
-                        <p className="text-sm text-muted-foreground max-w-md mx-auto mb-6">
-                          Start by comparing your chart with someone special.
-                          Get AI-powered insights into your compatibility.
-                        </p>
-                        <Button
-                          asChild
-                          className="bg-cosmic-purple hover:bg-cosmic-purple-dark text-white"
-                        >
-                          <Link href="/compatibility">
-                            <Plus className="mr-2 h-4 w-4" />
-                            Compare With Someone New
-                          </Link>
-                        </Button>
+
+                        {/* Preview of what a connection card looks like */}
+                        <div className="mx-auto max-w-sm mb-8 opacity-40 pointer-events-none select-none" aria-hidden="true">
+                          <div className="rounded-xl border border-white/10 bg-white/[0.03] p-5 backdrop-blur-sm">
+                            <div className="flex items-start justify-between mb-3">
+                              <div className="min-w-0 flex-1">
+                                <h4 className="font-medium text-sm">You & Someone Special</h4>
+                                <p className="text-xs text-muted-foreground mt-1">
+                                  <Calendar className="inline mr-1 h-3 w-3" />
+                                  Your first match
+                                </p>
+                              </div>
+                              <div className="text-right flex-shrink-0 ml-3">
+                                <p className="text-2xl font-bold text-emerald-400">
+                                  85
+                                </p>
+                                <p className="text-[10px] text-muted-foreground uppercase tracking-wider">
+                                  score
+                                </p>
+                              </div>
+                            </div>
+                            <Progress
+                              value={85}
+                              className="h-1.5 bg-white/5"
+                            />
+                          </div>
+                        </div>
+
+                        {/* CTAs */}
+                        <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+                          <Button
+                            asChild
+                            className="bg-cosmic-purple hover:bg-cosmic-purple-dark text-white"
+                          >
+                            <Link href="/compatibility">
+                              <Heart className="mr-2 h-4 w-4" />
+                              Check Compatibility
+                            </Link>
+                          </Button>
+                          <Button
+                            asChild
+                            variant="outline"
+                            className="border-white/10"
+                          >
+                            <Link href="/about">
+                              <Lightbulb className="mr-2 h-4 w-4" />
+                              Learn How It Works
+                            </Link>
+                          </Button>
+                        </div>
                       </div>
                     )}
                   </motion.div>
@@ -1104,7 +1206,7 @@ function DashboardContent() {
                     <Badge
                       variant="outline"
                       className={cn(
-                        "text-[10px]",
+                        "text-xs",
                         streak >= 100
                           ? "border-gold/40 bg-gold/10 text-gold"
                           : streak >= 30
@@ -1141,7 +1243,7 @@ function DashboardContent() {
                         </div>
                         <div className="min-w-0">
                           <p className="text-xs font-medium truncate">{def.name}</p>
-                          <p className="text-[10px] text-muted-foreground truncate">
+                          <p className="text-xs text-muted-foreground truncate">
                             {def.description}
                           </p>
                         </div>
@@ -1236,7 +1338,7 @@ function DashboardContent() {
                     <p className="text-xs text-emerald-400 font-medium">
                       Reward claimed! Enjoy your free Premium month.
                     </p>
-                    <p className="text-[10px] text-muted-foreground mt-1">
+                    <p className="text-xs text-muted-foreground mt-1">
                       {referralData.referralCount} friend{referralData.referralCount !== 1 ? "s" : ""} invited
                     </p>
                   </div>
@@ -1245,7 +1347,7 @@ function DashboardContent() {
                     <p className="text-xs text-emerald-400 font-medium mb-2">
                       You&apos;ve earned 1 month of free Premium!
                     </p>
-                    <Badge variant="outline" className="border-emerald-500/30 text-emerald-400 text-[10px]">
+                    <Badge variant="outline" className="border-emerald-500/30 text-emerald-400 text-xs">
                       <Award className="mr-1 h-3 w-3" />
                       Reward Unlocked
                     </Badge>
@@ -1258,7 +1360,7 @@ function DashboardContent() {
 
                     {/* Progress */}
                     <div className="mb-3">
-                      <div className="flex items-center justify-between text-[10px] text-muted-foreground mb-1.5">
+                      <div className="flex items-center justify-between text-xs text-muted-foreground mb-1.5">
                         <span>{referralData.referralCount}/{referralData.threshold} friends invited</span>
                         <span>{referralData.referralsNeeded} more to go</span>
                       </div>
@@ -1272,7 +1374,7 @@ function DashboardContent() {
 
                 {/* Referral link + copy button */}
                 <div className="mt-3 space-y-2">
-                  <p className="text-[10px] text-muted-foreground">Your referral link:</p>
+                  <p className="text-xs text-muted-foreground">Your referral link:</p>
                   <div className="flex items-center gap-1.5">
                     <div className="flex-1 truncate rounded-md border border-white/10 bg-white/5 px-2.5 py-1.5 text-[11px] text-muted-foreground font-mono">
                       {typeof window !== "undefined"
@@ -1339,7 +1441,7 @@ function DashboardContent() {
                         <p className="text-[11px] font-medium leading-tight">
                           {tile.label}
                         </p>
-                        <p className="mt-1 text-[9px] text-cosmic-purple-light opacity-0 group-hover:opacity-100 transition-opacity">
+                        <p className="mt-1 text-[11px] text-cosmic-purple-light opacity-0 group-hover:opacity-100 transition-opacity">
                           Unlock with Premium
                         </p>
                       </Link>

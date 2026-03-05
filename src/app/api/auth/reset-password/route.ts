@@ -1,9 +1,24 @@
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
+import { createRateLimiter, getClientIp } from "@/lib/rate-limit";
+
+// 5 requests per hour per IP
+const resetLimiter = createRateLimiter(5, 60 * 60 * 1000, "reset-password");
 
 export async function POST(request: Request) {
   try {
+    // --- Rate limiting ---
+    const ip = getClientIp(request);
+    const rl = resetLimiter.check(ip);
+
+    if (!rl.allowed) {
+      return NextResponse.json(
+        { error: "Too many requests. Please try again later." },
+        { status: 429 }
+      );
+    }
+
     const { token, password } = await request.json();
 
     if (!token || typeof token !== "string") {
@@ -20,31 +35,41 @@ export async function POST(request: Request) {
       );
     }
 
-    // Find the token that hasn't expired
-    const resetToken = await prisma.passwordResetToken.findUnique({
-      where: { token },
+    // Hash new password with bcryptjs (12 rounds)
+    const hashedPassword = await bcrypt.hash(password, 12);
+
+    // Use a transaction to prevent race conditions:
+    // Find token, update password, and delete token atomically.
+    const result = await prisma.$transaction(async (tx) => {
+      // Find the token that hasn't expired
+      const resetToken = await tx.passwordResetToken.findUnique({
+        where: { token },
+      });
+
+      if (!resetToken || resetToken.expires < new Date()) {
+        return null;
+      }
+
+      // Update user's password
+      await tx.user.update({
+        where: { email: resetToken.email },
+        data: { password: hashedPassword },
+      });
+
+      // Delete the used token
+      await tx.passwordResetToken.delete({
+        where: { id: resetToken.id },
+      });
+
+      return { success: true };
     });
 
-    if (!resetToken || resetToken.expires < new Date()) {
+    if (!result) {
       return NextResponse.json(
         { error: "Invalid or expired reset token. Please request a new one." },
         { status: 400 }
       );
     }
-
-    // Hash new password with bcryptjs (12 rounds)
-    const hashedPassword = await bcrypt.hash(password, 12);
-
-    // Update user's password
-    await prisma.user.update({
-      where: { email: resetToken.email },
-      data: { password: hashedPassword },
-    });
-
-    // Delete the used token
-    await prisma.passwordResetToken.delete({
-      where: { id: resetToken.id },
-    });
 
     return NextResponse.json(
       { message: "Password has been reset successfully." },

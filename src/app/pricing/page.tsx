@@ -14,6 +14,7 @@ import {
   Users,
   Shield,
   Quote,
+  ChevronDown,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -83,6 +84,39 @@ const comparisonFeatures = [
   { feature: "Daily horoscope", free: false, premium: true },
   { feature: "Transit alerts", free: false, premium: true },
   { feature: "Wellness insights", free: false, premium: true },
+];
+
+const faqItems = [
+  {
+    question: "Can I cancel anytime?",
+    answer:
+      "Yes, you can cancel your subscription anytime from your dashboard. No cancellation fees.",
+  },
+  {
+    question: "What payment methods do you accept?",
+    answer:
+      "We accept all major credit cards through Stripe, our secure payment processor.",
+  },
+  {
+    question: "What's the difference between free and premium?",
+    answer:
+      "Free gives you 3 compatibility checks/day with a brief AI summary. Premium unlocks full 7-section reports, daily horoscopes, transit tracking, AI chat, wellness insights, and more.",
+  },
+  {
+    question: "Is my birth data secure?",
+    answer:
+      "Absolutely. Your data is encrypted and stored securely. We never share personal information with third parties.",
+  },
+  {
+    question: "Can I switch between monthly and annual?",
+    answer:
+      "Yes, you can switch plans anytime from your account settings.",
+  },
+  {
+    question: "Do you offer refunds?",
+    answer:
+      "If you're not satisfied, contact our support team within 7 days of purchase.",
+  },
 ];
 
 function FeatureValue({ value }: { value: boolean | string }) {
@@ -230,7 +264,7 @@ function PricingContent() {
                 )}
               >
                 Annual
-                <Badge className="bg-gold/20 text-gold text-[10px] font-semibold px-1.5 py-0">
+                <Badge className="bg-gold/20 text-gold text-[11px] font-semibold px-1.5 py-0">
                   Save 33%
                 </Badge>
               </button>
@@ -368,56 +402,6 @@ function PricingContent() {
         </motion.div>
       </section>
 
-      {/* Testimonials */}
-      <section className="px-4 pb-20">
-        <div className="mx-auto max-w-4xl">
-          <h2 className="font-heading text-2xl font-bold text-center mb-8">
-            What Users Are Saying
-          </h2>
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-            {[
-              {
-                quote:
-                  "The full synastry report is worth every cent of Premium. Seven sections of detailed analysis — I finally understood why my Scorpio-Taurus pairing has such intense push and pull. No other app goes this deep.",
-                name: "Sarah K.",
-                sign: "Scorpio",
-              },
-              {
-                quote:
-                  "The AI Astrologer chat is like having a personal astrologer on call 24/7. I asked about my Venus opposition and got a nuanced, thoughtful answer instantly. Upgrading to Premium was a no-brainer.",
-                name: "Marcus T.",
-                sign: "Leo",
-              },
-              {
-                quote:
-                  "I track my daily horoscope every morning and the accuracy is genuinely startling. It flagged an emotionally intense week before it happened. Premium pays for itself in clarity alone.",
-                name: "Priya R.",
-                sign: "Pisces",
-              },
-            ].map((testimonial) => (
-              <motion.div
-                key={testimonial.name}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                className="glass-card rounded-2xl border border-white/10 p-6 flex flex-col"
-              >
-                <Quote className="h-5 w-5 text-cosmic-purple-light/50 mb-3" />
-                <p className="text-sm text-muted-foreground flex-1 mb-4">
-                  &ldquo;{testimonial.quote}&rdquo;
-                </p>
-                <div>
-                  <p className="text-sm font-medium">{testimonial.name}</p>
-                  <p className="text-xs text-cosmic-purple-light">
-                    {testimonial.sign}
-                  </p>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* Comparison Table */}
       <section className="px-4 pb-20">
         <div className="mx-auto max-w-4xl">
@@ -434,13 +418,13 @@ function PricingContent() {
                 <p className="text-sm font-medium mb-3">{row.feature}</p>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="flex flex-col items-center rounded-lg bg-white/[0.03] p-2">
-                    <span className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">
+                    <span className="text-[11px] uppercase tracking-wider text-muted-foreground mb-1">
                       Free
                     </span>
                     <FeatureValue value={row.free} />
                   </div>
                   <div className="flex flex-col items-center rounded-lg bg-cosmic-purple/[0.05] p-2">
-                    <span className="text-[10px] uppercase tracking-wider text-cosmic-purple-light mb-1">
+                    <span className="text-[11px] uppercase tracking-wider text-cosmic-purple-light mb-1">
                       Premium
                     </span>
                     <FeatureValue value={row.premium} />
@@ -493,6 +477,95 @@ function PricingContent() {
                 ))}
               </tbody>
             </table>
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ */}
+      <section className="px-4 pb-20">
+        <div className="mx-auto max-w-3xl">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center mb-8"
+          >
+            <h2 className="font-heading text-2xl font-bold mb-2">
+              Frequently Asked Questions
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              Everything you need to know about ChartChemistry
+            </p>
+          </motion.div>
+          <div className="space-y-3">
+            {faqItems.map((item, i) => (
+              <motion.details
+                key={i}
+                initial={{ opacity: 0, y: 10 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.05 }}
+                className="group rounded-xl border border-white/10 bg-white/[0.02] transition-colors hover:border-white/20 open:border-cosmic-purple/30 open:bg-cosmic-purple/[0.03]"
+              >
+                <summary className="flex cursor-pointer items-center justify-between px-5 py-4 text-sm font-medium select-none list-none [&::-webkit-details-marker]:hidden">
+                  <span>{item.question}</span>
+                  <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200 group-open:rotate-180" />
+                </summary>
+                <div className="px-5 pb-4 text-sm text-muted-foreground leading-relaxed">
+                  {item.answer}
+                </div>
+              </motion.details>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Testimonials */}
+      <section className="px-4 pb-20">
+        <div className="mx-auto max-w-4xl">
+          <h2 className="font-heading text-2xl font-bold text-center mb-8">
+            What Users Are Saying
+          </h2>
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+            {[
+              {
+                quote:
+                  "The full synastry report is worth every cent of Premium. Seven sections of detailed analysis — I finally understood why my Scorpio-Taurus pairing has such intense push and pull. No other app goes this deep.",
+                name: "Sarah K.",
+                sign: "Scorpio",
+              },
+              {
+                quote:
+                  "The AI Astrologer chat is like having a personal astrologer on call 24/7. I asked about my Venus opposition and got a nuanced, thoughtful answer instantly. Upgrading to Premium was a no-brainer.",
+                name: "Marcus T.",
+                sign: "Leo",
+              },
+              {
+                quote:
+                  "I track my daily horoscope every morning and the accuracy is genuinely startling. It flagged an emotionally intense week before it happened. Premium pays for itself in clarity alone.",
+                name: "Priya R.",
+                sign: "Pisces",
+              },
+            ].map((testimonial) => (
+              <motion.div
+                key={testimonial.name}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                className="glass-card rounded-2xl border border-white/10 p-6 flex flex-col"
+              >
+                <Quote className="h-5 w-5 text-cosmic-purple-light/50 mb-3" />
+                <p className="text-sm text-muted-foreground flex-1 mb-4">
+                  &ldquo;{testimonial.quote}&rdquo;
+                </p>
+                <div>
+                  <p className="text-sm font-medium">{testimonial.name}</p>
+                  <p className="text-xs text-cosmic-purple-light">
+                    {testimonial.sign}
+                  </p>
+                </div>
+              </motion.div>
+            ))}
           </div>
         </div>
       </section>

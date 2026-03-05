@@ -74,7 +74,7 @@ export default function SupportPage() {
   if (!session) {
     return (
       <div className="mx-auto max-w-2xl px-4 pt-24 pb-16 text-center">
-        <h1 className="text-2xl font-bold">Support</h1>
+        <h1 className="text-3xl sm:text-4xl font-bold">Support</h1>
         <p className="text-muted-foreground mt-2">Please sign in to access support.</p>
         <Button asChild className="mt-4 bg-cosmic-purple hover:bg-cosmic-purple-dark text-white">
           <Link href="/auth/signin">Sign In</Link>
@@ -87,7 +87,7 @@ export default function SupportPage() {
     <div className="mx-auto max-w-2xl px-4 pt-24 pb-8 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold">Support</h2>
+          <h1 className="text-3xl sm:text-4xl font-bold">Support</h1>
           <p className="text-muted-foreground text-sm mt-1">Get help with your account</p>
         </div>
         <Button

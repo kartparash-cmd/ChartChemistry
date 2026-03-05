@@ -318,6 +318,15 @@ export default function WellnessPage() {
 
   // Premium gate — return upgrade CTA early for free users
   if (session?.user?.plan === "FREE") {
+    const previewCategories = [
+      { key: "career", ...CATEGORY_CONFIG.career },
+      { key: "relationships", ...CATEGORY_CONFIG.relationships },
+      { key: "health", ...CATEGORY_CONFIG.health },
+      { key: "creativity", ...CATEGORY_CONFIG.creativity },
+      { key: "finances", ...CATEGORY_CONFIG.finances },
+      { key: "spirituality", ...CATEGORY_CONFIG.spirituality },
+    ];
+
     return (
       <main className="min-h-screen" aria-label="Wellness and Timing">
         <section className="relative overflow-hidden border-b border-white/10 bg-gradient-to-b from-cosmic-purple/5 to-transparent" aria-label="Page header">
@@ -331,15 +340,75 @@ export default function WellnessPage() {
             </p>
           </div>
         </section>
-        <div className="mx-auto max-w-4xl px-4 py-8">
+        <div className="mx-auto max-w-4xl px-4 py-8 space-y-6">
+          {/* Upgrade CTA */}
           <Card className="glass-card border-white/10 bg-white/[0.03] p-8 text-center">
             <Lock className="h-8 w-8 text-cosmic-purple-light mx-auto mb-3" />
             <h2 className="text-xl font-semibold cosmic-text mb-2">Premium Feature</h2>
-            <p className="text-muted-foreground mb-4">Upgrade to access personalized wellness and cosmic timing suggestions</p>
+            <p className="text-muted-foreground mb-1">
+              Get personalized daily wellness insights across 6 life areas
+            </p>
+            <p className="text-xs text-muted-foreground/70 mb-5">
+              Powered by real-time transits to your natal chart, updated every day
+            </p>
             <Button asChild className="cosmic-gradient text-white hover:opacity-90">
-              <Link href="/pricing">Upgrade to Premium</Link>
+              <Link href="/pricing">
+                <Sparkles className="mr-2 h-4 w-4" />
+                Upgrade to Premium
+              </Link>
             </Button>
           </Card>
+
+          {/* Blurred preview cards */}
+          <div className="relative">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 select-none pointer-events-none" aria-hidden="true">
+              {previewCategories.map((cat) => (
+                <div
+                  key={cat.key}
+                  className={cn(
+                    "rounded-xl border bg-transparent p-6 opacity-50 blur-[2px]",
+                    cat.borderColor
+                  )}
+                >
+                  <div className="flex items-center gap-3 mb-3">
+                    <div
+                      className={cn(
+                        "flex h-10 w-10 items-center justify-center rounded-lg",
+                        cat.bgColor,
+                        cat.color
+                      )}
+                    >
+                      {cat.icon}
+                    </div>
+                    <div>
+                      <Badge
+                        variant="outline"
+                        className={cn(
+                          "mb-1 text-xs uppercase tracking-wider",
+                          cat.borderColor,
+                          cat.color
+                        )}
+                      >
+                        {cat.label}
+                      </Badge>
+                      <p className="text-sm font-semibold text-foreground/60">
+                        Today&apos;s {cat.label.toLowerCase()} insight
+                      </p>
+                    </div>
+                  </div>
+                  <div className="space-y-2 mb-3">
+                    <div className="h-3 w-full rounded bg-white/10" />
+                    <div className="h-3 w-4/5 rounded bg-white/10" />
+                  </div>
+                  <Separator className="mb-3 bg-white/5" />
+                  <div className="flex items-center justify-between">
+                    <div className="h-3 w-24 rounded bg-white/10" />
+                    <div className="h-3 w-16 rounded bg-white/10" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </main>
     );

@@ -23,6 +23,7 @@ export default function SignUpPage() {
 function SignUpContent() {
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
+  const referralCode = searchParams.get("ref") || "";
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -50,7 +51,7 @@ function SignUpContent() {
       const res = await fetch("/api/auth/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password }),
+        body: JSON.stringify({ name, email, password, ...(referralCode ? { referralCode } : {}) }),
       });
 
       const data = await res.json();
@@ -120,6 +121,12 @@ function SignUpContent() {
               Create your account to explore cosmic compatibility
             </p>
           </div>
+
+          {referralCode && (
+            <div className="mb-4 rounded-lg border border-emerald-500/20 bg-emerald-500/10 p-3 text-sm text-emerald-400 text-center">
+              You were invited by a friend! Create your account to get started.
+            </div>
+          )}
 
           {errorMessage && (
             <div role="alert" aria-live="polite" className="mb-4 rounded-lg border border-red-500/20 bg-red-500/10 p-3 text-sm text-red-400">

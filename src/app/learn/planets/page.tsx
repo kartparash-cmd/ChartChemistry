@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { PlanetPlacementBadge } from "@/components/your-placement-badge";
 
 export const metadata: Metadata = {
   title: "The Planets in Astrology",
@@ -264,6 +265,7 @@ export default function PlanetsPage() {
                       </div>
                     </CardHeader>
                     <CardContent className="space-y-4">
+                      <PlanetPlacementBadge planetName={planet.name} />
                       <p className={`text-sm font-medium ${colors.text}`}>
                         {planet.represents}
                       </p>

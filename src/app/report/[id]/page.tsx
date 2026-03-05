@@ -30,6 +30,7 @@ import {
   Link as LinkIcon,
   Check,
   Compass,
+  Calendar,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -657,6 +658,9 @@ export default function ReportPage() {
   const [regenerating, setRegenerating] = useState(false);
   const [regenerateError, setRegenerateError] = useState<string | null>(null);
   const [generatingShareLink, setGeneratingShareLink] = useState(false);
+  const [weeklyInsight, setWeeklyInsight] = useState<string | null>(null);
+  const [weeklyLoading, setWeeklyLoading] = useState(false);
+  const [weeklyError, setWeeklyError] = useState<string | null>(null);
 
   const reportId = params.id as string;
   const shareToken = searchParams.get("token");
@@ -792,6 +796,31 @@ export default function ReportPage() {
       document.body.removeChild(textArea);
     }
   };
+
+  const handleGetWeeklyInsight = useCallback(async () => {
+    if (weeklyLoading) return;
+    setWeeklyLoading(true);
+    setWeeklyError(null);
+    try {
+      const res = await fetch(
+        `/api/relationship/weekly?reportId=${reportId}`
+      );
+      if (res.ok) {
+        const json = await res.json();
+        setWeeklyInsight(json.weeklyInsight);
+      } else {
+        const errJson = await res.json().catch(() => null);
+        setWeeklyError(
+          errJson?.message || errJson?.error || "Failed to generate weekly insight. Please try again."
+        );
+      }
+    } catch (err) {
+      console.error("Failed to fetch weekly insight:", err);
+      setWeeklyError("Failed to generate weekly insight. Please try again.");
+    } finally {
+      setWeeklyLoading(false);
+    }
+  }, [weeklyLoading, reportId]);
 
   // ============================================================
   // Loading state
@@ -1101,6 +1130,69 @@ export default function ReportPage() {
                 reducedMotion={!shouldAnimate}
               />
             ))}
+
+            {/* This Week's Insight — Premium only */}
+            {isPremium && (
+              <motion.div
+                initial={shouldAnimate ? { opacity: 0, y: 10 } : false}
+                animate={{ opacity: 1, y: 0 }}
+                transition={shouldAnimate ? { delay: 0.2 } : { duration: 0 }}
+                className="rounded-xl border border-cosmic-purple/20 bg-gradient-to-br from-cosmic-purple/5 to-transparent p-6 backdrop-blur-sm print:hidden"
+              >
+                <div className="flex items-center gap-3 mb-4">
+                  <Calendar className="h-5 w-5 text-cosmic-purple-light" />
+                  <h3 className="font-heading text-base font-semibold">
+                    This Week in Your Relationship
+                  </h3>
+                </div>
+                <Separator className="mb-4 bg-white/5" />
+
+                {weeklyInsight ? (
+                  <p className="text-sm leading-relaxed text-muted-foreground whitespace-pre-line">
+                    {weeklyInsight}
+                  </p>
+                ) : weeklyError ? (
+                  <div className="space-y-3">
+                    <p className="text-sm text-red-400">{weeklyError}</p>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={handleGetWeeklyInsight}
+                      className="border-cosmic-purple/30 hover:border-cosmic-purple hover:bg-cosmic-purple/10 text-cosmic-purple-light"
+                    >
+                      <RefreshCw className="mr-2 h-3.5 w-3.5" />
+                      Try Again
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <p className="text-sm text-muted-foreground">
+                      See how this week&apos;s planetary transits affect your
+                      compatibility. Get personalised insights on what to focus
+                      on and a cosmic activity suggestion.
+                    </p>
+                    <Button
+                      size="sm"
+                      onClick={handleGetWeeklyInsight}
+                      disabled={weeklyLoading}
+                      className="bg-cosmic-purple hover:bg-cosmic-purple-dark text-white"
+                    >
+                      {weeklyLoading ? (
+                        <>
+                          <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
+                          Generating...
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="mr-2 h-3.5 w-3.5" />
+                          Get This Week&apos;s Insight
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                )}
+              </motion.div>
+            )}
 
             {/* Action Buttons */}
             <div className="flex flex-wrap gap-3 pt-4 print:hidden">

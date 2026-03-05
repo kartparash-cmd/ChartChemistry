@@ -37,7 +37,8 @@ export async function POST(request: Request) {
       );
     }
 
-    const { name, email, password } = await request.json();
+    const body = await request.json();
+    const { name, email, password, referralCode: bodyRefCode } = body;
 
     if (!email || !password) {
       return NextResponse.json(
@@ -68,13 +69,41 @@ export async function POST(request: Request) {
 
     const hashedPassword = await bcrypt.hash(password, 12);
 
+    // Generate a unique referral code for this new user
+    const referralCode = "cc_" + crypto.randomBytes(4).toString("hex");
+
+    // Check if a referral code was provided (via body field or query param)
+    const url = new URL(request.url);
+    const refCode = bodyRefCode || url.searchParams.get("ref");
+    let referredByUserId: string | null = null;
+
+    if (refCode) {
+      const referrer = await prisma.user.findUnique({
+        where: { referralCode: refCode },
+        select: { id: true },
+      });
+      if (referrer) {
+        referredByUserId = referrer.id;
+      }
+    }
+
     const user = await prisma.user.create({
       data: {
         name: name || null,
         email: normalizedEmail,
         password: hashedPassword,
+        referralCode,
+        referredBy: referredByUserId,
       },
     });
+
+    // Increment the referrer's referral count if applicable
+    if (referredByUserId) {
+      await prisma.user.update({
+        where: { id: referredByUserId },
+        data: { referralCount: { increment: 1 } },
+      });
+    }
 
     // Generate verification token and send email
     const verificationToken = crypto.randomUUID();

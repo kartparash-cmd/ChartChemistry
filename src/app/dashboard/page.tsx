@@ -32,6 +32,9 @@ import {
   Flame,
   Star,
   Trophy,
+  Gift,
+  Copy,
+  Check,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -45,6 +48,7 @@ import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 import { Confetti } from "@/components/confetti";
 import { ACHIEVEMENTS } from "@/lib/achievement-defs";
+import { getBannerEvents, formatShortDate } from "@/lib/cosmic-events";
 
 // Map achievement icon names to Lucide components
 const ACHIEVEMENT_ICONS: Record<string, React.ReactNode> = {
@@ -161,27 +165,15 @@ function getSignGreeting(sign: string): string {
   return greetings[sign] || `${sign} season energy is with you today`;
 }
 
-function isMercuryRetrograde(): boolean {
-  const now = new Date();
-  const year = now.getFullYear();
-  if (year !== 2026) return false;
-
-  // Approximate 2026 Mercury retrograde windows
-  const retrogradeWindows: Array<[number, number, number, number]> = [
-    // [startMonth (0-indexed), startDay, endMonth, endDay]
-    [2, 15, 3, 7],   // Mar 15 - Apr 7
-    [6, 18, 7, 11],  // Jul 18 - Aug 11
-    [10, 9, 10, 29], // Nov 9 - Nov 29
-  ];
-
-  for (const [startMonth, startDay, endMonth, endDay] of retrogradeWindows) {
-    const start = new Date(year, startMonth, startDay);
-    const end = new Date(year, endMonth, endDay, 23, 59, 59);
-    if (now >= start && now <= end) return true;
-  }
-
-  return false;
-}
+/** Styling config for each cosmic event type. */
+const COSMIC_EVENT_STYLES: Record<string, { border: string; bg: string; text: string }> = {
+  "mercury-retrograde": { border: "border-amber-400/30", bg: "bg-gradient-to-r from-amber-500/10 to-amber-400/5", text: "text-amber-400" },
+  "full-moon": { border: "border-cosmic-purple-light/30", bg: "bg-gradient-to-r from-cosmic-purple/10 to-indigo-500/5", text: "text-cosmic-purple-light" },
+  "new-moon": { border: "border-slate-400/30", bg: "bg-gradient-to-r from-slate-500/10 to-slate-400/5", text: "text-slate-300" },
+  "solar-eclipse": { border: "border-gold/40", bg: "bg-gradient-to-r from-gold/15 to-orange-500/5", text: "text-gold" },
+  "lunar-eclipse": { border: "border-red-400/30", bg: "bg-gradient-to-r from-red-500/10 to-purple-500/5", text: "text-red-400" },
+  "zodiac-season": { border: "border-cosmic-purple/20", bg: "bg-gradient-to-r from-cosmic-purple/5 to-transparent", text: "text-cosmic-purple-light" },
+};
 
 const STREAK_MILESTONES = [7, 30, 100];
 
@@ -350,6 +342,15 @@ function DashboardContent() {
   const [greetingPrefix, setGreetingPrefix] = useState("Welcome back");
   const [portalLoading, setPortalLoading] = useState(false);
   const [achievements, setAchievements] = useState<EarnedAchievement[]>([]);
+  const [referralData, setReferralData] = useState<{
+    referralCode: string;
+    referralCount: number;
+    referralsNeeded: number;
+    threshold: number;
+    eligible: boolean;
+    rewardClaimed: boolean;
+  } | null>(null);
+  const [referralCopied, setReferralCopied] = useState(false);
 
   // Determine greeting: first-visit detection + time-of-day
   useEffect(() => {
@@ -496,6 +497,45 @@ function DashboardContent() {
     fetchData();
   }, [status, session]);
 
+  // Fetch referral data
+  useEffect(() => {
+    if (status !== "authenticated") return;
+
+    const fetchReferral = async () => {
+      try {
+        const res = await fetch("/api/referral");
+        if (res.ok) {
+          const json = await res.json();
+          setReferralData(json);
+        }
+      } catch {
+        // Silently fail — referral card just won't show
+      }
+    };
+
+    fetchReferral();
+  }, [status]);
+
+  const handleCopyReferralLink = async () => {
+    if (!referralData?.referralCode) return;
+    const link = `${window.location.origin}/auth/signup?ref=${referralData.referralCode}`;
+    try {
+      await navigator.clipboard.writeText(link);
+      setReferralCopied(true);
+      setTimeout(() => setReferralCopied(false), 2000);
+    } catch {
+      // Fallback for older browsers
+      const textarea = document.createElement("textarea");
+      textarea.value = link;
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand("copy");
+      document.body.removeChild(textarea);
+      setReferralCopied(true);
+      setTimeout(() => setReferralCopied(false), 2000);
+    }
+  };
+
   if (status === "loading" || loading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
@@ -599,21 +639,48 @@ function DashboardContent() {
         </div>
       )}
 
-      {/* Mercury Retrograde Banner */}
-      {isMercuryRetrograde() && (
-        <div className="mx-auto max-w-7xl px-4 pt-4 sm:px-6 lg:px-8">
-          <motion.div
-            initial={shouldAnimate ? { opacity: 0, y: -5 } : false}
-            animate={{ opacity: 1, y: 0 }}
-            className="flex items-center gap-3 rounded-lg border border-amber-400/20 bg-amber-400/10 p-3 text-sm text-amber-400"
-          >
-            <span className="text-lg shrink-0">{"\u263F"}</span>
-            <span>
-              <strong>Mercury Retrograde</strong> &mdash; communications may feel challenging. Double-check messages and travel plans.
-            </span>
-          </motion.div>
-        </div>
-      )}
+      {/* Cosmic Events Banner */}
+      {(() => {
+        const cosmicEvents = getBannerEvents();
+        if (cosmicEvents.length === 0) return null;
+        return (
+          <div className="mx-auto max-w-7xl px-4 pt-4 sm:px-6 lg:px-8 space-y-3">
+            {cosmicEvents.map((event, i) => {
+              const styles = COSMIC_EVENT_STYLES[event.type] || COSMIC_EVENT_STYLES["zodiac-season"];
+              return (
+                <motion.div
+                  key={`${event.type}-${event.name}`}
+                  initial={shouldAnimate ? { opacity: 0, y: -5 } : false}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.1 }}
+                  className={cn(
+                    "flex items-start gap-3 rounded-xl border p-4 text-sm backdrop-blur-sm",
+                    styles.border,
+                    styles.bg,
+                  )}
+                >
+                  <span className="text-xl shrink-0 mt-0.5">{event.icon}</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <strong className={cn("font-semibold", styles.text)}>
+                        {event.name}
+                      </strong>
+                      {event.type === "mercury-retrograde" && (
+                        <Badge variant="outline" className={cn("text-[10px]", styles.border, styles.text)}>
+                          Until {formatShortDate(event.endDate)}
+                        </Badge>
+                      )}
+                    </div>
+                    <p className="mt-1 text-xs text-muted-foreground leading-relaxed">
+                      {event.description}
+                    </p>
+                  </div>
+                </motion.div>
+              );
+            })}
+          </div>
+        );
+      })()}
 
       {/* Upgrade Celebration Banner */}
       {upgraded && (
@@ -1146,6 +1213,85 @@ function DashboardContent() {
                 </p>
               )}
             </motion.div>
+
+            {/* Invite Friends Referral Card */}
+            {referralData && (
+              <motion.div
+                whileHover={shouldAnimate ? { scale: 1.02 } : {}}
+                className="rounded-xl border border-emerald-500/20 bg-gradient-to-br from-emerald-500/[0.06] to-transparent p-4"
+              >
+                <div className="flex items-center gap-2 mb-3">
+                  <Gift className="h-4 w-4 text-emerald-400" />
+                  <h4 className="font-heading text-sm font-semibold">Invite Friends</h4>
+                </div>
+
+                {referralData.rewardClaimed ? (
+                  <div className="text-center py-2">
+                    <p className="text-xs text-emerald-400 font-medium">
+                      Reward claimed! Enjoy your free Premium month.
+                    </p>
+                    <p className="text-[10px] text-muted-foreground mt-1">
+                      {referralData.referralCount} friend{referralData.referralCount !== 1 ? "s" : ""} invited
+                    </p>
+                  </div>
+                ) : referralData.eligible ? (
+                  <div className="text-center py-2">
+                    <p className="text-xs text-emerald-400 font-medium mb-2">
+                      You&apos;ve earned 1 month of free Premium!
+                    </p>
+                    <Badge variant="outline" className="border-emerald-500/30 text-emerald-400 text-[10px]">
+                      <Award className="mr-1 h-3 w-3" />
+                      Reward Unlocked
+                    </Badge>
+                  </div>
+                ) : (
+                  <>
+                    <p className="text-xs text-muted-foreground mb-3">
+                      Invite {referralData.threshold} friends and earn 1 month of free Premium!
+                    </p>
+
+                    {/* Progress */}
+                    <div className="mb-3">
+                      <div className="flex items-center justify-between text-[10px] text-muted-foreground mb-1.5">
+                        <span>{referralData.referralCount}/{referralData.threshold} friends invited</span>
+                        <span>{referralData.referralsNeeded} more to go</span>
+                      </div>
+                      <Progress
+                        value={(referralData.referralCount / referralData.threshold) * 100}
+                        className="h-1.5 bg-white/5"
+                      />
+                    </div>
+                  </>
+                )}
+
+                {/* Referral link + copy button */}
+                <div className="mt-3 space-y-2">
+                  <p className="text-[10px] text-muted-foreground">Your referral link:</p>
+                  <div className="flex items-center gap-1.5">
+                    <div className="flex-1 truncate rounded-md border border-white/10 bg-white/5 px-2.5 py-1.5 text-[11px] text-muted-foreground font-mono">
+                      {typeof window !== "undefined"
+                        ? `${window.location.origin}/auth/signup?ref=${referralData.referralCode}`
+                        : `https://chartchemistry.com/auth/signup?ref=${referralData.referralCode}`}
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className={cn(
+                        "shrink-0 h-8 w-8 p-0 border-white/10",
+                        referralCopied && "border-emerald-500/30 text-emerald-400"
+                      )}
+                      onClick={handleCopyReferralLink}
+                    >
+                      {referralCopied ? (
+                        <Check className="h-3 w-3" />
+                      ) : (
+                        <Copy className="h-3 w-3" />
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              </motion.div>
+            )}
 
             {data?.stats.plan === "FREE" && (
               <>

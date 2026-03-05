@@ -18,6 +18,7 @@ import {
   LayoutDashboard,
   Crown,
   ArrowLeft,
+  ArrowRight,
 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -778,6 +779,48 @@ export default function RelationshipPage() {
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* Related Features */}
+        <motion.div
+          initial={prefersReducedMotion ? false : { opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={prefersReducedMotion ? { duration: 0 } : { delay: 0.3 }}
+          className="mt-12 pt-8 border-t border-white/5"
+        >
+          <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider text-center mb-4">
+            Related
+          </h3>
+          <nav className="grid grid-cols-1 sm:grid-cols-2 gap-4" aria-label="Related features">
+            <Link href="/compatibility" className="group">
+              <div className="glass-card flex items-center gap-4 rounded-2xl p-5 transition-all hover:border-gold/30 hover:bg-gold/[0.04]">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gold/10 text-gold transition-colors group-hover:bg-gold/20">
+                  <Heart className="h-5 w-5" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold">Check Compatibility</p>
+                  <p className="mt-0.5 text-xs text-muted-foreground">
+                    Get detailed compatibility scores and reports
+                  </p>
+                </div>
+                <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground opacity-0 transition-all group-hover:opacity-100 group-hover:translate-x-1" />
+              </div>
+            </Link>
+            <Link href="/chat" className="group">
+              <div className="glass-card flex items-center gap-4 rounded-2xl p-5 transition-all hover:border-cosmic-purple/30 hover:bg-cosmic-purple/[0.04]">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-cosmic-purple/10 text-cosmic-purple-light transition-colors group-hover:bg-cosmic-purple/20">
+                  <MessageCircle className="h-5 w-5" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold">Ask AI About This</p>
+                  <p className="mt-0.5 text-xs text-muted-foreground">
+                    Chat with our AI astrologer for deeper insights
+                  </p>
+                </div>
+                <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground opacity-0 transition-all group-hover:opacity-100 group-hover:translate-x-1" />
+              </div>
+            </Link>
+          </nav>
+        </motion.div>
       </div>
     </div>
   );

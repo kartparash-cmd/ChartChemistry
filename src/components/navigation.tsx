@@ -19,6 +19,7 @@ import {
   Sun,
   MessageCircle,
   UserPlus,
+  Fingerprint,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -73,8 +74,8 @@ export function Navigation() {
 
   const bottomNavItems = [
     { href: "/dashboard", label: "Home", icon: LayoutDashboard },
-    { href: "/compatibility", label: "Compatibility", icon: Heart },
     { href: "/horoscope", label: "Horoscope", icon: Sun },
+    { href: "/compatibility", label: "Match", icon: Heart },
     { href: "/chat", label: "Chat", icon: MessageCircle },
   ] as const;
 
@@ -203,6 +204,15 @@ export function Navigation() {
                         >
                           <LayoutDashboard className="h-4 w-4" />
                           Dashboard
+                        </Link>
+                        <Link
+                          href="/cosmic-identity"
+                          role="menuitem"
+                          onClick={() => setDropdownOpen(false)}
+                          className="flex items-center gap-2 rounded-lg px-3 py-3 text-sm transition-colors hover:bg-muted"
+                        >
+                          <Fingerprint className="h-4 w-4" />
+                          Cosmic ID
                         </Link>
                         <Link
                           href="/dashboard?tab=settings"
@@ -354,6 +364,14 @@ export function Navigation() {
                         Dashboard
                       </Link>
                       <Link
+                        href="/cosmic-identity"
+                        onClick={() => setMobileOpen(false)}
+                        className="flex items-center gap-2 rounded-lg px-4 py-3 text-sm transition-colors hover:bg-muted text-muted-foreground hover:text-foreground"
+                      >
+                        <Fingerprint className="h-4 w-4" />
+                        Cosmic ID
+                      </Link>
+                      <Link
                         href="/support"
                         onClick={() => setMobileOpen(false)}
                         className="flex items-center gap-2 rounded-lg px-4 py-3 text-sm transition-colors hover:bg-muted text-muted-foreground hover:text-foreground"
@@ -413,9 +431,10 @@ export function Navigation() {
       {session && (
         <nav
           aria-label="Mobile navigation"
-          className="fixed bottom-0 left-0 right-0 z-50 h-16 border-t border-border bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60 md:hidden"
+          className="fixed bottom-0 left-0 right-0 z-40 border-t border-white/10 bg-black/80 backdrop-blur-xl md:hidden"
+          style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
         >
-          <div className="flex h-full items-center justify-around">
+          <div className="flex h-16 items-center justify-around">
             {bottomNavItems.map((item) => {
               const isActive =
                 pathname === item.href || pathname.startsWith(item.href + "/");

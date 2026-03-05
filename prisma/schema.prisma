@@ -19,6 +19,10 @@ model User {
   stripeCustomerId String?
   streakCount      Int       @default(0)
   lastCheckinDate  DateTime?
+  referralCode     String?   @unique
+  referredBy       String?
+  referralCount    Int       @default(0)
+  referralRewardClaimed Boolean @default(false)
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 

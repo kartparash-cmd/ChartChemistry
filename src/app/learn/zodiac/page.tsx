@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { SunSignBadge } from "@/components/your-placement-badge";
 
 export const metadata: Metadata = {
   title: "The Zodiac Signs",
@@ -268,6 +269,7 @@ export default function ZodiacPage() {
                       </div>
                     </div>
                   </div>
+                  <SunSignBadge signName={sign.name} />
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="flex flex-wrap gap-2">

@@ -52,8 +52,10 @@ export async function POST(request: Request) {
       );
     }
 
+    const normalizedEmail = email.toLowerCase().trim();
+
     const existingUser = await prisma.user.findUnique({
-      where: { email },
+      where: { email: normalizedEmail },
     });
 
     if (existingUser) {
@@ -68,7 +70,7 @@ export async function POST(request: Request) {
     const user = await prisma.user.create({
       data: {
         name: name || null,
-        email,
+        email: normalizedEmail,
         password: hashedPassword,
       },
     });
@@ -77,13 +79,13 @@ export async function POST(request: Request) {
     const verificationToken = crypto.randomUUID();
     await prisma.verificationToken.create({
       data: {
-        identifier: email,
+        identifier: normalizedEmail,
         token: verificationToken,
         expires: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours
       },
     });
 
-    const emailResult = await sendVerificationEmail(email, verificationToken);
+    const emailResult = await sendVerificationEmail(normalizedEmail, verificationToken);
     if (!emailResult.success) {
       console.warn("Verification email was not sent for user:", user.id);
     }

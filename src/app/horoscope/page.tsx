@@ -18,6 +18,7 @@ import {
   X,
   Heart,
   Activity,
+  Lock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -138,8 +139,12 @@ export default function HoroscopePage() {
 
   useEffect(() => {
     if (status !== "authenticated") return;
+    if (session?.user?.plan === "FREE") {
+      setLoading(false);
+      return;
+    }
     fetchHoroscope();
-  }, [status]);
+  }, [status, session?.user?.plan]);
 
   const fetchHoroscope = async () => {
     setLoading(true);
@@ -170,6 +175,34 @@ export default function HoroscopePage() {
   }
 
   if (!session) return null;
+
+  // Premium gate — return upgrade CTA early for free users
+  if (session?.user?.plan === "FREE") {
+    return (
+      <div className="min-h-screen">
+        <section className="relative overflow-hidden border-b border-white/10 bg-gradient-to-b from-cosmic-purple/5 to-transparent">
+          <div className="mx-auto max-w-3xl px-4 py-10 text-center">
+            <h1 className="font-heading text-3xl font-bold sm:text-4xl">
+              Your Daily <span className="cosmic-text">Horoscope</span>
+            </h1>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Personalized to your full natal chart — not just your sun sign
+            </p>
+          </div>
+        </section>
+        <div className="mx-auto max-w-3xl px-4 py-8">
+          <div className="text-center py-8 rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur-sm">
+            <Lock className="h-8 w-8 text-cosmic-purple-light mx-auto mb-3" />
+            <h2 className="text-xl font-semibold cosmic-text mb-2">Unlock Daily Horoscopes</h2>
+            <p className="text-muted-foreground mb-4">Get personalized daily readings based on your natal chart</p>
+            <Button asChild className="cosmic-gradient text-white" aria-label="Upgrade to Premium for daily horoscopes">
+              <Link href="/pricing">Upgrade to Premium</Link>
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const today = new Date().toLocaleDateString("en-US", {
     weekday: "long",
@@ -240,17 +273,6 @@ export default function HoroscopePage() {
 
       {/* Content */}
       <div className="mx-auto max-w-3xl px-4 py-8">
-        {/* Premium Upgrade CTA for free users */}
-        {session?.user?.plan === "FREE" && (
-          <div className="text-center py-8 mb-6 rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur-sm">
-            <h2 className="text-xl font-semibold cosmic-text mb-2">Unlock Daily Horoscopes</h2>
-            <p className="text-muted-foreground mb-4">Get personalized daily readings based on your natal chart</p>
-            <Button asChild className="cosmic-gradient text-white" aria-label="Upgrade to Premium for daily horoscopes">
-              <Link href="/pricing">Upgrade to Premium</Link>
-            </Button>
-          </div>
-        )}
-
         {loading ? (
           <motion.div
             initial={fadeIn.initial}

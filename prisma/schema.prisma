@@ -134,6 +134,8 @@ model CompatibilityReport {
   synastryData  Json
   compositeData Json?
 
+  shareToken String? @unique
+
   tier      ReportTier @default(FREE)
   createdAt DateTime   @default(now())
 

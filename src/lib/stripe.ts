@@ -47,7 +47,7 @@ export const PLANS = {
       "Daily personalized horoscope",
       "Wellness insights",
       "Transit tracking & alerts",
-      "Save unlimited profiles",
+      "Save up to 20 profiles",
       "Red flags & growth insights",
       "Priority support",
     ],

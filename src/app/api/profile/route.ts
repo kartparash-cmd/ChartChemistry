@@ -283,6 +283,13 @@ export async function DELETE(request: Request) {
       );
     }
 
+    if (profile.isOwner) {
+      return NextResponse.json(
+        { error: "Cannot delete your primary profile. Update it instead." },
+        { status: 400 }
+      );
+    }
+
     // Delete the profile (cascade will handle related reports)
     await prisma.birthProfile.delete({
       where: { id: profileId },

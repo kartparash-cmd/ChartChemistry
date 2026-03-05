@@ -11,7 +11,11 @@ const sidebarLinks = [
   { href: "/admin/tickets", label: "Tickets", icon: Ticket },
 ];
 
-export function AdminSidebar() {
+interface AdminSidebarProps {
+  onNavigate?: () => void;
+}
+
+export function AdminSidebar({ onNavigate }: AdminSidebarProps) {
   const pathname = usePathname();
 
   return (
@@ -29,6 +33,7 @@ export function AdminSidebar() {
             <Link
               key={link.href}
               href={link.href}
+              onClick={onNavigate}
               className={cn(
                 "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
                 isActive
@@ -45,6 +50,7 @@ export function AdminSidebar() {
       <div className="p-2 mt-4 border-t border-border">
         <Link
           href="/dashboard"
+          onClick={onNavigate}
           className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
         >
           <ArrowLeft className="h-4 w-4" />

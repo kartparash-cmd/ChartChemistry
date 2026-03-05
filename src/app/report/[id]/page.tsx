@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
@@ -25,6 +25,10 @@ import {
   TrendingUp,
   Sun,
   RefreshCw,
+  Sparkles,
+  UserPlus,
+  Link as LinkIcon,
+  Check,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -54,6 +58,17 @@ interface Report {
   redFlags: string[];
   growthAreas: string[];
   tier: "FREE" | "PREMIUM" | "BOUTIQUE";
+  shareToken?: string | null;
+  createdAt: string;
+}
+
+interface PublicPreview {
+  id: string;
+  isPublicPreview: true;
+  scores: { overall: number };
+  summaryNarrative: string;
+  person1: { name: string; sunSign: string | null };
+  person2: { name: string; sunSign: string | null };
   createdAt: string;
 }
 
@@ -464,30 +479,209 @@ function formatReportAge(createdAt: string): { label: string; isStale: boolean }
   }
 }
 
+// ============================================================
+// Public Preview Component
+// ============================================================
+
+function PublicPreviewView({
+  preview,
+  reducedMotion,
+}: {
+  preview: PublicPreview;
+  reducedMotion: boolean;
+}) {
+  const shouldAnimate = !reducedMotion;
+
+  return (
+    <div className="min-h-screen">
+      {/* Header */}
+      <section className="border-b border-white/10 bg-gradient-to-b from-cosmic-purple/5 to-transparent">
+        <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 text-center">
+          <motion.div
+            initial={shouldAnimate ? { opacity: 0, y: 10 } : false}
+            animate={{ opacity: 1, y: 0 }}
+            transition={shouldAnimate ? undefined : { duration: 0 }}
+          >
+            <div className="flex items-center justify-center gap-2 mb-4">
+              <Sparkles className="h-5 w-5 text-cosmic-purple-light" />
+              <span className="text-sm text-cosmic-purple-light font-medium uppercase tracking-wider">
+                Shared Compatibility Report
+              </span>
+              <Sparkles className="h-5 w-5 text-cosmic-purple-light" />
+            </div>
+            <h1 className="font-heading text-2xl sm:text-3xl font-bold">
+              {preview.person1.name}{" "}
+              <span className="text-cosmic-purple-light">&</span>{" "}
+              {preview.person2.name}
+            </h1>
+            {(preview.person1.sunSign || preview.person2.sunSign) && (
+              <p className="text-sm text-muted-foreground mt-2">
+                {preview.person1.sunSign && (
+                  <span>{preview.person1.sunSign}</span>
+                )}
+                {preview.person1.sunSign && preview.person2.sunSign && (
+                  <span className="mx-2 text-cosmic-purple-light">+</span>
+                )}
+                {preview.person2.sunSign && (
+                  <span>{preview.person2.sunSign}</span>
+                )}
+              </p>
+            )}
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Main Content */}
+      <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6">
+        <div className="flex flex-col items-center gap-8">
+          {/* Overall Score */}
+          <motion.div
+            initial={shouldAnimate ? { opacity: 0, scale: 0.9 } : false}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={shouldAnimate ? { delay: 0.2 } : { duration: 0 }}
+            className="rounded-xl border border-white/10 bg-white/[0.03] p-8 text-center backdrop-blur-sm w-full max-w-sm"
+          >
+            <h2 className="font-heading text-sm font-semibold mb-4 text-muted-foreground uppercase tracking-wider">
+              Overall Compatibility
+            </h2>
+            <ScoreCircle score={preview.scores.overall} size={180} reducedMotion={reducedMotion} />
+          </motion.div>
+
+          {/* Big Picture Summary */}
+          <motion.div
+            initial={shouldAnimate ? { opacity: 0, y: 10 } : false}
+            animate={{ opacity: 1, y: 0 }}
+            transition={shouldAnimate ? { delay: 0.4 } : { duration: 0 }}
+            className="rounded-xl border border-white/10 bg-white/[0.03] p-6 backdrop-blur-sm w-full"
+          >
+            <div className="flex items-center gap-3 mb-4">
+              <Eye className="h-5 w-5 text-cosmic-purple-light" />
+              <h2 className="font-heading text-base font-semibold">
+                The Big Picture
+              </h2>
+            </div>
+            <Separator className="mb-4 bg-white/5" />
+            <p className="text-sm leading-relaxed text-muted-foreground whitespace-pre-line">
+              {preview.summaryNarrative}
+            </p>
+          </motion.div>
+
+          {/* Locked Premium Sections Teaser */}
+          <motion.div
+            initial={shouldAnimate ? { opacity: 0, y: 10 } : false}
+            animate={{ opacity: 1, y: 0 }}
+            transition={shouldAnimate ? { delay: 0.6 } : { duration: 0 }}
+            className="w-full space-y-3"
+          >
+            {[
+              { icon: <Heart className="h-4 w-4" />, label: "Emotional Connection" },
+              { icon: <Flame className="h-4 w-4" />, label: "Romance & Chemistry" },
+              { icon: <MessageSquare className="h-4 w-4" />, label: "Communication" },
+              { icon: <Shield className="h-4 w-4" />, label: "Long-Term Potential" },
+            ].map((section) => (
+              <div
+                key={section.label}
+                className="flex items-center justify-between rounded-xl border border-white/10 bg-white/[0.02] p-4 opacity-60"
+              >
+                <div className="flex items-center gap-3">
+                  <span className="text-muted-foreground">{section.icon}</span>
+                  <span className="text-sm font-medium">{section.label}</span>
+                </div>
+                <Badge
+                  variant="outline"
+                  className="border-cosmic-purple/30 text-cosmic-purple-light text-[10px]"
+                >
+                  <Lock className="mr-1 h-2.5 w-2.5" />
+                  Full Report
+                </Badge>
+              </div>
+            ))}
+          </motion.div>
+
+          {/* CTA */}
+          <motion.div
+            initial={shouldAnimate ? { opacity: 0, y: 10 } : false}
+            animate={{ opacity: 1, y: 0 }}
+            transition={shouldAnimate ? { delay: 0.8 } : { duration: 0 }}
+            className="w-full rounded-xl border border-cosmic-purple/30 bg-gradient-to-br from-cosmic-purple/10 to-cosmic-purple/5 p-8 text-center backdrop-blur-sm"
+          >
+            <Sparkles className="h-8 w-8 text-cosmic-purple-light mx-auto mb-3" />
+            <h3 className="font-heading text-xl font-bold mb-2">
+              Want to check YOUR compatibility?
+            </h3>
+            <p className="text-sm text-muted-foreground mb-6 max-w-md mx-auto">
+              Create a free account to generate your own full compatibility report
+              with detailed insights across all dimensions.
+            </p>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+              <Button
+                asChild
+                size="lg"
+                className="bg-cosmic-purple hover:bg-cosmic-purple-dark text-white"
+              >
+                <Link href="/auth/signup">
+                  <UserPlus className="mr-2 h-4 w-4" />
+                  Create Free Account
+                </Link>
+              </Button>
+              <Button asChild variant="outline" size="lg" className="border-white/10">
+                <Link href="/auth/signin">
+                  Already have an account? Sign in
+                </Link>
+              </Button>
+            </div>
+          </motion.div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+// Main Page Component
+// ============================================================
+
 export default function ReportPage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { data: session, status } = useSession();
   const prefersReducedMotion = useReducedMotion();
   const shouldAnimate = !prefersReducedMotion;
   const [report, setReport] = useState<Report | null>(null);
+  const [publicPreview, setPublicPreview] = useState<PublicPreview | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [shareToast, setShareToast] = useState(false);
   const [regenerating, setRegenerating] = useState(false);
   const [regenerateError, setRegenerateError] = useState<string | null>(null);
+  const [generatingShareLink, setGeneratingShareLink] = useState(false);
 
   const reportId = params.id as string;
+  const shareToken = searchParams.get("token");
 
   useEffect(() => {
     const fetchReport = async () => {
       try {
-        const res = await fetch(`/api/report/${reportId}`);
+        // Build the API URL, including share token if present
+        const apiUrl = shareToken
+          ? `/api/report/${reportId}?token=${encodeURIComponent(shareToken)}`
+          : `/api/report/${reportId}`;
+
+        const res = await fetch(apiUrl);
         if (res.ok) {
           const json = await res.json();
-          setReport(json);
+          if (json.isPublicPreview) {
+            setPublicPreview(json);
+          } else {
+            setReport(json);
+          }
         } else {
-          setError("Unable to load this report. It may not exist or you may not have access.");
+          if (shareToken) {
+            setError("This share link is invalid or has expired.");
+          } else {
+            setError("Unable to load this report. It may not exist or you may not have access.");
+          }
         }
       } catch (err) {
         console.error("Failed to load report:", err);
@@ -498,7 +692,7 @@ export default function ReportPage() {
     };
 
     fetchReport();
-  }, [reportId]);
+  }, [reportId, shareToken]);
 
   const handleRegenerate = useCallback(async () => {
     if (!report || regenerating) return;
@@ -540,18 +734,86 @@ export default function ReportPage() {
     }
   }, [report, regenerating, reportId, router]);
 
+  // Generate a share link and copy it
+  const handleShare = useCallback(async () => {
+    if (!report) return;
+
+    // If we already have a shareToken (from the API response or a previous call),
+    // build the URL directly and copy it.
+    if (report.shareToken) {
+      const shareUrl = `${window.location.origin}/report/${reportId}?token=${report.shareToken}`;
+      await copyToClipboard(shareUrl);
+      return;
+    }
+
+    // Otherwise, call the POST endpoint to generate a share token
+    setGeneratingShareLink(true);
+    try {
+      const res = await fetch(`/api/report/${reportId}`, {
+        method: "POST",
+      });
+      if (res.ok) {
+        const json = await res.json();
+        // Update report state with the new token
+        setReport((prev) => prev ? { ...prev, shareToken: json.shareToken } : prev);
+        const shareUrl = `${window.location.origin}/report/${reportId}?token=${json.shareToken}`;
+        await copyToClipboard(shareUrl);
+      } else {
+        console.error("Failed to generate share link");
+      }
+    } catch (err) {
+      console.error("Failed to generate share link:", err);
+    } finally {
+      setGeneratingShareLink(false);
+    }
+  }, [report, reportId]);
+
+  const copyToClipboard = async (url: string) => {
+    try {
+      await navigator.clipboard.writeText(url);
+      setShareToast(true);
+      setTimeout(() => setShareToast(false), 2000);
+    } catch {
+      // Fallback for browsers that block clipboard API
+      const textArea = document.createElement("textarea");
+      textArea.value = url;
+      textArea.style.position = "fixed";
+      textArea.style.left = "-9999px";
+      document.body.appendChild(textArea);
+      textArea.select();
+      try {
+        document.execCommand("copy");
+        setShareToast(true);
+        setTimeout(() => setShareToast(false), 2000);
+      } catch {
+        // Silent fail
+      }
+      document.body.removeChild(textArea);
+    }
+  };
+
+  // ============================================================
+  // Loading state
+  // ============================================================
+
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="text-center">
           <Loader2 className="mx-auto h-8 w-8 animate-spin text-cosmic-purple-light" />
           <p className="mt-3 text-sm text-muted-foreground">
-            Loading your compatibility report...
+            {shareToken
+              ? "Loading shared compatibility report..."
+              : "Loading your compatibility report..."}
           </p>
         </div>
       </div>
     );
   }
+
+  // ============================================================
+  // Error state
+  // ============================================================
 
   if (error) {
     return (
@@ -565,13 +827,36 @@ export default function ReportPage() {
           <Button onClick={() => window.location.reload()} variant="outline">
             Try Again
           </Button>
-          <Button asChild className="bg-cosmic-purple hover:bg-cosmic-purple-dark text-white">
-            <Link href="/dashboard">Go to Dashboard</Link>
-          </Button>
+          {shareToken ? (
+            <Button asChild className="bg-cosmic-purple hover:bg-cosmic-purple-dark text-white">
+              <Link href="/auth/signup">Create Free Account</Link>
+            </Button>
+          ) : (
+            <Button asChild className="bg-cosmic-purple hover:bg-cosmic-purple-dark text-white">
+              <Link href="/dashboard">Go to Dashboard</Link>
+            </Button>
+          )}
         </div>
       </div>
     );
   }
+
+  // ============================================================
+  // Public preview (shared via token)
+  // ============================================================
+
+  if (publicPreview) {
+    return (
+      <PublicPreviewView
+        preview={publicPreview}
+        reducedMotion={!!prefersReducedMotion}
+      />
+    );
+  }
+
+  // ============================================================
+  // No report state
+  // ============================================================
 
   if (!report) {
     return (
@@ -590,6 +875,10 @@ export default function ReportPage() {
       </div>
     );
   }
+
+  // ============================================================
+  // Full report (authenticated owner)
+  // ============================================================
 
   const isPremium =
     report.tier === "PREMIUM" ||
@@ -627,31 +916,6 @@ export default function ReportPage() {
 
   // Parse narrative sections from fullNarrative
   const narrativeSections = parseNarrativeSections(report);
-
-  const handleShare = async () => {
-    const url = `${window.location.origin}/report/${reportId}`;
-    try {
-      await navigator.clipboard.writeText(url);
-      setShareToast(true);
-      setTimeout(() => setShareToast(false), 2000);
-    } catch {
-      // Fallback for browsers that block clipboard API
-      const textArea = document.createElement("textarea");
-      textArea.value = url;
-      textArea.style.position = "fixed";
-      textArea.style.left = "-9999px";
-      document.body.appendChild(textArea);
-      textArea.select();
-      try {
-        document.execCommand("copy");
-        setShareToast(true);
-        setTimeout(() => setShareToast(false), 2000);
-      } catch {
-        // Silent fail
-      }
-      document.body.removeChild(textArea);
-    }
-  };
 
   const handlePrint = () => {
     window.print();
@@ -852,9 +1116,14 @@ export default function ReportPage() {
                 variant="outline"
                 className="border-white/10"
                 onClick={handleShare}
+                disabled={generatingShareLink}
               >
-                <Share2 className="mr-2 h-4 w-4" />
-                Share
+                {generatingShareLink ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Share2 className="mr-2 h-4 w-4" />
+                )}
+                {generatingShareLink ? "Generating..." : "Share"}
               </Button>
               <Button
                 variant="outline"
@@ -946,7 +1215,10 @@ export default function ReportPage() {
             aria-live="polite"
             className="fixed bottom-24 md:bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-xl border border-white/10 bg-navy-light/95 backdrop-blur-xl px-6 py-3 shadow-xl"
           >
-            <p className="text-sm font-medium">Link copied to clipboard</p>
+            <div className="flex items-center gap-2">
+              <Check className="h-4 w-4 text-emerald-400" />
+              <p className="text-sm font-medium">Share link copied to clipboard</p>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -1079,4 +1351,3 @@ function extractSection(narrative: string, section: string): string {
   // If fewer paragraphs than sections, return the available one
   return paragraphs[idx % paragraphs.length] || narrative;
 }
-

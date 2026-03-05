@@ -14,7 +14,6 @@ import {
   TrendingUp,
   Check,
   ArrowRight,
-  Star,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { StarField } from "@/components/star-field";
@@ -104,19 +103,19 @@ const DIMENSIONS = [
 
 const SOCIAL_PROOF = [
   {
-    value: "2,000+",
-    label: "Charts Generated",
-    description: "Cosmic explorers have mapped their natal charts and discovered their planetary placements.",
+    value: "10+",
+    label: "Planetary Bodies",
+    description: "Analyzed in every chart using Swiss Ephemeris data",
+  },
+  {
+    value: "7",
+    label: "Report Sections",
+    description: "Deep-dive compatibility analysis powered by AI",
   },
   {
     value: "6",
-    label: "Dimensions Analyzed",
-    description: "Every report examines emotional, physical, communication, stability, conflict, and growth layers.",
-  },
-  {
-    value: "92%",
-    label: "Say \"Eerily Accurate\"",
-    description: "Users report that our AI-powered synastry insights resonated deeply with their lived experiences.",
+    label: "Dimensions Scored",
+    description: "Emotional, chemistry, communication, stability, harmony, growth",
   },
 ];
 
@@ -243,7 +242,7 @@ export default function Home() {
             transition={{ duration: 0.6 }}
           >
             <Users className="h-4 w-4" />
-            Trusted by 2,000+ cosmic explorers
+            Powered by real astronomical data
           </motion.p>
         </motion.div>
 
@@ -356,10 +355,10 @@ export default function Home() {
             transition={{ duration: 0.5 }}
           >
             <h2 className="text-3xl font-bold sm:text-4xl">
-              Join Thousands Discovering Cosmic Connections
+              What Powers Your Report
             </h2>
             <p className="mt-3 text-muted-foreground">
-              Real charts. Real insights. See why people keep coming back.
+              Real astronomical data. AI-driven analysis. Here is what goes into every reading.
             </p>
           </motion.div>
 
@@ -401,7 +400,7 @@ export default function Home() {
           >
             <h2 className="text-3xl font-bold sm:text-4xl">What Users Say</h2>
             <p className="mt-3 text-muted-foreground">
-              Real feedback from our cosmic community.
+              Feedback from our cosmic community.
             </p>
           </motion.div>
 
@@ -419,15 +418,6 @@ export default function Home() {
                 transition={{ duration: 0.5 }}
                 className="glass-card group flex flex-col gap-4 rounded-2xl p-6 transition-all hover:border-cosmic-purple/30"
               >
-                <div className="flex gap-0.5">
-                  {Array.from({ length: 5 }).map((_, i) => (
-                    <Star
-                      key={i}
-                      className="h-4 w-4 fill-amber-400 text-amber-400"
-                    />
-                  ))}
-                </div>
-
                 <p className="flex-1 text-sm leading-relaxed text-muted-foreground italic">
                   &ldquo;{testimonial.quote}&rdquo;
                 </p>

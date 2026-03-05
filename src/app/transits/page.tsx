@@ -387,8 +387,12 @@ export default function TransitsPage() {
 
   useEffect(() => {
     if (status !== "authenticated") return;
+    if (session?.user?.plan === "FREE") {
+      setLoading(false);
+      return;
+    }
     fetchTransits();
-  }, [status, fetchTransits]);
+  }, [status, session?.user?.plan, fetchTransits]);
 
   if (status === "loading" || loading) {
     return (
@@ -418,6 +422,34 @@ export default function TransitsPage() {
   }
 
   if (!session) return null;
+
+  // Premium gate — return upgrade CTA early for free users
+  if (session?.user?.plan === "FREE") {
+    return (
+      <main className="min-h-screen" aria-label="Transit Timeline">
+        <section className="border-b border-white/10 bg-gradient-to-b from-cosmic-purple/5 to-transparent" aria-label="Page header">
+          <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+            <h1 className="font-heading text-3xl font-bold">
+              <span className="cosmic-text">Transit Timeline</span>
+            </h1>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Current planetary influences on your natal chart
+            </p>
+          </div>
+        </section>
+        <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+          <Card className="glass-card border-white/10 bg-white/[0.03] p-8 text-center">
+            <Lock className="h-8 w-8 text-cosmic-purple-light mx-auto mb-3" />
+            <h2 className="text-xl font-semibold cosmic-text mb-2">Premium Feature</h2>
+            <p className="text-muted-foreground mb-4">Upgrade to access detailed transit analysis and personalized insights</p>
+            <Button asChild className="cosmic-gradient text-white hover:opacity-90">
+              <Link href="/pricing">Upgrade to Premium</Link>
+            </Button>
+          </Card>
+        </div>
+      </main>
+    );
+  }
 
   // Group transits by significance
   const highTransits = data?.transits.filter((t) => t.significance === "high") || [];
@@ -472,18 +504,6 @@ export default function TransitsPage() {
           <ErrorState message={error} onRetry={fetchTransits} />
         ) : (
           <>
-          {/* Premium Upgrade CTA */}
-          {session?.user?.plan === "FREE" && (
-            <Card className="glass-card border-white/10 bg-white/[0.03] p-8 text-center mb-8">
-              <Lock className="h-8 w-8 text-cosmic-purple-light mx-auto mb-3" />
-              <h2 className="text-xl font-semibold cosmic-text mb-2">Premium Feature</h2>
-              <p className="text-muted-foreground mb-4">Upgrade to access detailed transit analysis and personalized insights</p>
-              <Button asChild className="cosmic-gradient text-white hover:opacity-90">
-                <Link href="/pricing">Upgrade to Premium</Link>
-              </Button>
-            </Card>
-          )}
-
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Main timeline */}
             <div className="lg:col-span-2 space-y-8">

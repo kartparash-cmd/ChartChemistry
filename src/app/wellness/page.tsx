@@ -283,8 +283,9 @@ export default function WellnessPage() {
 
   useEffect(() => {
     if (status !== "authenticated") return;
+    if (session?.user?.plan === "FREE") return;
     fetchWellness();
-  }, [status]);
+  }, [status, session?.user?.plan]);
 
   const fetchWellness = async () => {
     setLoading(true);
@@ -314,6 +315,35 @@ export default function WellnessPage() {
   }
 
   if (!session) return null;
+
+  // Premium gate — return upgrade CTA early for free users
+  if (session?.user?.plan === "FREE") {
+    return (
+      <main className="min-h-screen" aria-label="Wellness and Timing">
+        <section className="relative overflow-hidden border-b border-white/10 bg-gradient-to-b from-cosmic-purple/5 to-transparent" aria-label="Page header">
+          <div className="mx-auto max-w-4xl px-4 py-10 text-center">
+            <h1 className="font-heading text-3xl font-bold sm:text-4xl">
+              Wellness &amp; <span className="cosmic-text">Timing</span>
+            </h1>
+            <p className="mt-2 text-sm text-muted-foreground max-w-lg mx-auto">
+              Personalized suggestions based on today&apos;s planetary transits
+              to your natal chart.
+            </p>
+          </div>
+        </section>
+        <div className="mx-auto max-w-4xl px-4 py-8">
+          <Card className="glass-card border-white/10 bg-white/[0.03] p-8 text-center">
+            <Lock className="h-8 w-8 text-cosmic-purple-light mx-auto mb-3" />
+            <h2 className="text-xl font-semibold cosmic-text mb-2">Premium Feature</h2>
+            <p className="text-muted-foreground mb-4">Upgrade to access personalized wellness and cosmic timing suggestions</p>
+            <Button asChild className="cosmic-gradient text-white hover:opacity-90">
+              <Link href="/pricing">Upgrade to Premium</Link>
+            </Button>
+          </Card>
+        </div>
+      </main>
+    );
+  }
 
   const today = new Date().toLocaleDateString("en-US", {
     weekday: "long",
@@ -469,18 +499,6 @@ export default function WellnessPage() {
           })()
         ) : data ? (
           <div className="space-y-8">
-            {/* Premium Upgrade CTA */}
-            {session?.user?.plan === "FREE" && (
-              <Card className="glass-card border-white/10 bg-white/[0.03] p-8 text-center">
-                <Lock className="h-8 w-8 text-cosmic-purple-light mx-auto mb-3" />
-                <h2 className="text-xl font-semibold cosmic-text mb-2">Premium Feature</h2>
-                <p className="text-muted-foreground mb-4">Upgrade to access personalized wellness and cosmic timing suggestions</p>
-                <Button asChild className="cosmic-gradient text-white hover:opacity-90">
-                  <Link href="/pricing">Upgrade to Premium</Link>
-                </Button>
-              </Card>
-            )}
-
             {/* Summary Bar */}
             <motion.div
               initial={prefersReducedMotion ? false : { opacity: 0, y: 10 }}

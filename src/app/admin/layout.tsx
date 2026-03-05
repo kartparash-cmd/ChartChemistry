@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { AdminSidebar } from "@/components/admin/admin-sidebar";
+import { AdminLayoutShell } from "@/components/admin/admin-layout-shell";
 
 export const metadata = {
   title: "Admin Dashboard",
@@ -23,10 +23,5 @@ export default async function AdminLayout({
     redirect("/dashboard");
   }
 
-  return (
-    <div className="flex min-h-[calc(100vh-4rem)]">
-      <AdminSidebar />
-      <div className="flex-1 p-6 lg:p-8">{children}</div>
-    </div>
-  );
+  return <AdminLayoutShell>{children}</AdminLayoutShell>;
 }

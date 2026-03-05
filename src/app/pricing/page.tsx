@@ -238,7 +238,7 @@ export default function PricingPage() {
         >
           <Users className="h-4 w-4 text-cosmic-purple-light" />
           <p className="text-sm font-medium">
-            Join 2,000+ stargazers exploring cosmic compatibility
+            Join stargazers exploring cosmic compatibility
           </p>
         </motion.div>
       </section>
@@ -358,7 +358,7 @@ export default function PricingPage() {
       <section className="px-4 pb-20">
         <div className="mx-auto max-w-4xl">
           <h2 className="font-heading text-2xl font-bold text-center mb-8">
-            What Our Users Say
+            What Users Are Saying
           </h2>
           <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
             {[
@@ -389,14 +389,6 @@ export default function PricingPage() {
                 className="glass-card rounded-2xl border border-white/10 p-6 flex flex-col"
               >
                 <Quote className="h-5 w-5 text-cosmic-purple-light/50 mb-3" />
-                <div className="flex gap-0.5 mb-3">
-                  {Array.from({ length: 5 }).map((_, i) => (
-                    <Star
-                      key={i}
-                      className="h-4 w-4 fill-gold text-gold"
-                    />
-                  ))}
-                </div>
                 <p className="text-sm text-muted-foreground flex-1 mb-4">
                   &ldquo;{testimonial.quote}&rdquo;
                 </p>

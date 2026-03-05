@@ -181,10 +181,8 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error("[POST /api/relationship/insights] Error:", error);
 
-    const message =
-      error instanceof Error ? error.message : "Internal server error";
-
-    if (message.includes("Astro service")) {
+    const errorMessage = error instanceof Error ? error.message : "";
+    if (errorMessage.includes("Astro service")) {
       return NextResponse.json(
         {
           error: "Calculation service unavailable",
@@ -196,7 +194,7 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json(
-      { error: "Internal server error", message },
+      { error: "Internal server error" },
       { status: 500 }
     );
   }

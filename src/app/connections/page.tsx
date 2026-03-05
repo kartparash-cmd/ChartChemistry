@@ -182,7 +182,7 @@ function ReportCard({ report }: { report: CompatibilityReport }) {
             <p className={cn("text-2xl font-bold", scoreColor)}>
               {report.overallScore}
             </p>
-            <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
+            <p className="text-xs uppercase tracking-wider text-muted-foreground">
               score
             </p>
           </div>
@@ -191,7 +191,7 @@ function ReportCard({ report }: { report: CompatibilityReport }) {
         {report.tier !== "FREE" && (
           <Badge
             variant="outline"
-            className="mt-3 border-cosmic-purple/30 text-[10px] text-cosmic-purple-light"
+            className="mt-3 border-cosmic-purple/30 text-xs text-cosmic-purple-light"
           >
             {report.tier}
           </Badge>

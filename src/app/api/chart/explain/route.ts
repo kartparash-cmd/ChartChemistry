@@ -10,7 +10,14 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { explainChartElement } from "@/lib/claude";
+import { createRateLimiter, getClientIp } from "@/lib/rate-limit";
 import type { NatalChart } from "@/types/astrology";
+
+// ============================================================
+// Rate limiter: 10 requests per hour per user
+// ============================================================
+
+const explainRateLimiter = createRateLimiter(10, 60 * 60 * 1000, "chart-explain");
 
 export async function POST(request: Request) {
   try {
@@ -28,6 +35,27 @@ export async function POST(request: Request) {
       return NextResponse.json(
         { error: "Premium plan required" },
         { status: 403 }
+      );
+    }
+
+    // --- Rate limiting: 10 requests per hour per user ---
+    const rateLimitKey = session.user.id || getClientIp(request);
+    const rateLimitResult = explainRateLimiter.check(rateLimitKey);
+
+    if (!rateLimitResult.allowed) {
+      return NextResponse.json(
+        {
+          error: "Rate limit exceeded",
+          message: "You have reached the maximum of 10 chart explanations per hour. Please try again later.",
+        },
+        {
+          status: 429,
+          headers: {
+            "Retry-After": String(
+              Math.ceil((rateLimitResult.resetAt - Date.now()) / 1000)
+            ),
+          },
+        }
       );
     }
 

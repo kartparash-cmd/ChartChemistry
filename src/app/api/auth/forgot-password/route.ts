@@ -2,9 +2,28 @@ import { NextResponse } from "next/server";
 import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
 import { sendPasswordResetEmail } from "@/lib/email";
+import { createRateLimiter, getClientIp } from "@/lib/rate-limit";
+
+// ============================================================
+// Rate limiter: 5 requests per hour per IP
+// ============================================================
+
+const forgotPasswordLimiter = createRateLimiter(5, 60 * 60 * 1000, "forgot-password");
 
 export async function POST(request: Request) {
   try {
+    // --- Rate limiting: 5 requests per hour per IP ---
+    const ip = getClientIp(request);
+    const rateLimitResult = forgotPasswordLimiter.check(ip);
+
+    if (!rateLimitResult.allowed) {
+      // Return a generic message to prevent enumeration, but with 429 status
+      return NextResponse.json(
+        { message: "Too many requests. Please try again later." },
+        { status: 429 }
+      );
+    }
+
     const { email } = await request.json();
 
     if (!email || typeof email !== "string") {

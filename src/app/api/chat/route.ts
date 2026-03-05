@@ -13,8 +13,15 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { chatWithAstrologer, buildChatContext } from "@/lib/claude";
+import { createRateLimiter, getClientIp } from "@/lib/rate-limit";
 import type { ChatMessage, ChatRequest } from "@/types/astrology";
 import type { Prisma } from "@/generated/prisma/client";
+
+// ============================================================
+// Rate limiter: 20 requests per hour per user
+// ============================================================
+
+const chatRateLimiter = createRateLimiter(20, 60 * 60 * 1000, "chat");
 
 // ============================================================
 // Route handler
@@ -43,6 +50,27 @@ export async function POST(request: Request) {
             "Chat with our AI astrologer is available to Premium and Annual subscribers.",
         },
         { status: 403 }
+      );
+    }
+
+    // --- Rate limiting: 20 requests per hour per user ---
+    const rateLimitKey = session.user.id || getClientIp(request);
+    const rateLimitResult = chatRateLimiter.check(rateLimitKey);
+
+    if (!rateLimitResult.allowed) {
+      return NextResponse.json(
+        {
+          error: "Rate limit exceeded",
+          message: "You have reached the maximum of 20 chat messages per hour. Please try again later.",
+        },
+        {
+          status: 429,
+          headers: {
+            "Retry-After": String(
+              Math.ceil((rateLimitResult.resetAt - Date.now()) / 1000)
+            ),
+          },
+        }
       );
     }
 
@@ -204,12 +232,8 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     console.error("[POST /api/chat] Error:", error);
-
-    const message =
-      error instanceof Error ? error.message : "Internal server error";
-
     return NextResponse.json(
-      { error: "Internal server error", message },
+      { error: "Internal server error" },
       { status: 500 }
     );
   }

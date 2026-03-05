@@ -175,6 +175,65 @@ export function getRemainingChecks(ip: string): number {
 }
 
 /* -------------------------------------------------------------------------- */
+/*  Generic in-memory rate limiter                                            */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Create a reusable in-memory rate limiter for any endpoint.
+ *
+ * @param maxRequests  Maximum requests allowed per window
+ * @param windowMs     Window duration in milliseconds
+ * @param prefix       Optional prefix for distinguishing limiter stores
+ *
+ * Returns a `check(key)` function that returns `{ allowed, remaining, resetAt }`.
+ */
+export function createRateLimiter(
+  maxRequests: number,
+  windowMs: number,
+  _prefix?: string
+) {
+  const limiterStore = new Map<string, RateLimitEntry>();
+
+  // Periodic cleanup
+  const timer = setInterval(() => {
+    const now = Date.now();
+    for (const [key, entry] of limiterStore) {
+      if (now >= entry.resetAt) {
+        limiterStore.delete(key);
+      }
+    }
+  }, CLEANUP_INTERVAL_MS);
+
+  if (timer && typeof timer === "object" && "unref" in timer) {
+    timer.unref();
+  }
+
+  return {
+    check(key: string): RateLimitResult {
+      const now = Date.now();
+      const entry = limiterStore.get(key);
+
+      if (!entry || now >= entry.resetAt) {
+        const resetAt = now + windowMs;
+        limiterStore.set(key, { count: 1, resetAt });
+        return { allowed: true, remaining: maxRequests - 1, resetAt };
+      }
+
+      if (entry.count < maxRequests) {
+        entry.count++;
+        return {
+          allowed: true,
+          remaining: maxRequests - entry.count,
+          resetAt: entry.resetAt,
+        };
+      }
+
+      return { allowed: false, remaining: 0, resetAt: entry.resetAt };
+    },
+  };
+}
+
+/* -------------------------------------------------------------------------- */
 /*  IP extraction                                                             */
 /* -------------------------------------------------------------------------- */
 

@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import {
   Check,
@@ -96,8 +96,18 @@ function FeatureValue({ value }: { value: boolean | string }) {
 }
 
 export default function PricingPage() {
+  return (
+    <Suspense>
+      <PricingContent />
+    </Suspense>
+  );
+}
+
+function PricingContent() {
   const { data: session } = useSession();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const callbackUrl = searchParams.get("callbackUrl");
   const [billing, setBilling] = useState<BillingPeriod>("annual");
   const [toastVisible, setToastVisible] = useState(false);
   const [loadingTier, setLoadingTier] = useState<string | null>(null);
@@ -125,7 +135,10 @@ export default function PricingPage() {
       const res = await fetch("/api/stripe/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plan }),
+        body: JSON.stringify({
+          plan,
+          ...(callbackUrl ? { callbackUrl } : {}),
+        }),
       });
 
       const data = await res.json();

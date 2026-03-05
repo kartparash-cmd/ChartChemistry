@@ -150,7 +150,7 @@ export function TransitCard({ transit, index }: TransitCardProps) {
                 <span className="text-2xl leading-none" title={transit.transitingPlanet}>
                   {planetGlyph}
                 </span>
-                <span className="text-[10px] text-muted-foreground mt-1 whitespace-nowrap">
+                <span className="text-xs text-muted-foreground mt-1 whitespace-nowrap">
                   {transit.transitingPlanet}
                 </span>
               </div>
@@ -160,7 +160,7 @@ export function TransitCard({ transit, index }: TransitCardProps) {
                 <span className="text-lg text-muted-foreground" title={transit.aspect}>
                   {aspectSymbol}
                 </span>
-                <span className="text-[9px] text-muted-foreground/60 mt-0.5 capitalize">
+                <span className="text-xs text-muted-foreground/60 mt-0.5 capitalize">
                   {transit.aspect}
                 </span>
               </div>
@@ -170,7 +170,7 @@ export function TransitCard({ transit, index }: TransitCardProps) {
                 <span className="text-2xl leading-none" title={`Natal ${transit.natalPlanet}`}>
                   {natalGlyph}
                 </span>
-                <span className="text-[10px] text-muted-foreground mt-1 whitespace-nowrap">
+                <span className="text-xs text-muted-foreground mt-1 whitespace-nowrap">
                   {transit.natalPlanet}
                 </span>
               </div>
@@ -179,7 +179,7 @@ export function TransitCard({ transit, index }: TransitCardProps) {
             {/* Significance badge */}
             <Badge
               variant="outline"
-              className={cn("text-[10px] shrink-0", config.badgeClass)}
+              className={cn("text-xs shrink-0", config.badgeClass)}
             >
               <span
                 className={cn("inline-block h-1.5 w-1.5 rounded-full mr-1", config.dotClass)}
@@ -195,7 +195,7 @@ export function TransitCard({ transit, index }: TransitCardProps) {
               {transit.orb.toFixed(1)}&deg;
             </span>
             {transit.orb <= 1 && (
-              <span className="text-[10px] text-gold">
+              <span className="text-xs text-gold">
                 (exact)
               </span>
             )}

@@ -30,6 +30,8 @@ import {
   MessageCircle,
   Lock,
   Flame,
+  Star,
+  Trophy,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -42,6 +44,21 @@ import {
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 import { Confetti } from "@/components/confetti";
+import { ACHIEVEMENTS } from "@/lib/achievement-defs";
+
+// Map achievement icon names to Lucide components
+const ACHIEVEMENT_ICONS: Record<string, React.ReactNode> = {
+  Star: <Star className="h-4 w-4" />,
+  Heart: <Heart className="h-4 w-4" />,
+  Flame: <Flame className="h-4 w-4" />,
+  Trophy: <Trophy className="h-4 w-4" />,
+  Crown: <Crown className="h-4 w-4" />,
+};
+
+interface EarnedAchievement {
+  achievementType: string;
+  unlockedAt: string;
+}
 
 // Types for dashboard data
 interface BirthProfile {
@@ -164,11 +181,6 @@ function isMercuryRetrograde(): boolean {
   }
 
   return false;
-}
-
-interface StreakData {
-  lastDate: string;
-  count: number;
 }
 
 const STREAK_MILESTONES = [7, 30, 100];
@@ -336,6 +348,8 @@ function DashboardContent() {
   const [streak, setStreak] = useState<number>(0);
   const [showConfetti, setShowConfetti] = useState(false);
   const [greetingPrefix, setGreetingPrefix] = useState("Welcome back");
+  const [portalLoading, setPortalLoading] = useState(false);
+  const [achievements, setAchievements] = useState<EarnedAchievement[]>([]);
 
   // Determine greeting: first-visit detection + time-of-day
   useEffect(() => {
@@ -352,6 +366,26 @@ function DashboardContent() {
     }
   }, []);
 
+  // Open Stripe Customer Portal for subscription management
+  const handleManageSubscription = async () => {
+    setPortalLoading(true);
+    try {
+      const res = await fetch("/api/stripe/portal", {
+        method: "POST",
+      });
+      const result = await res.json();
+      if (res.ok && result.url) {
+        window.location.href = result.url;
+      } else {
+        setError(result.error || "Failed to open subscription portal. Please try again.");
+      }
+    } catch {
+      setError("Could not connect to the server. Please try again.");
+    } finally {
+      setPortalLoading(false);
+    }
+  };
+
   // Trigger confetti on upgrade
   useEffect(() => {
     if (upgraded && shouldAnimate) {
@@ -361,68 +395,42 @@ function DashboardContent() {
     }
   }, [upgraded, shouldAnimate]);
 
-  // Track daily check-in streak and detect milestone celebrations
+  // Record daily check-in via server and sync streak + achievements from DB
   useEffect(() => {
-    try {
-      const today = new Date().toISOString().split("T")[0];
-      const raw = localStorage.getItem("cc_streak");
-      let streakData: StreakData = { lastDate: "", count: 0 };
+    if (status !== "authenticated") return;
 
-      if (raw) {
-        streakData = JSON.parse(raw) as StreakData;
-      }
+    const syncStreak = async () => {
+      try {
+        const res = await fetch("/api/streak", { method: "POST" });
+        if (!res.ok) return;
 
-      let newCount = streakData.count;
-      let updatedToday = false;
+        const result = await res.json();
+        const newCount: number = result.streakCount;
+        setStreak(newCount);
 
-      if (streakData.lastDate === today) {
-        // Already visited today
-        newCount = streakData.count;
-        updatedToday = true;
-      } else {
-        // Check if yesterday
-        const yesterday = new Date();
-        yesterday.setDate(yesterday.getDate() - 1);
-        const yesterdayStr = yesterday.toISOString().split("T")[0];
-
-        if (streakData.lastDate === yesterdayStr) {
-          newCount = streakData.count + 1;
-          localStorage.setItem(
-            "cc_streak",
-            JSON.stringify({ lastDate: today, count: newCount })
-          );
-        } else {
-          // Reset streak
-          newCount = 1;
-          localStorage.setItem(
-            "cc_streak",
-            JSON.stringify({ lastDate: today, count: 1 })
-          );
+        // Populate earned achievements from server response
+        if (result.achievements) {
+          setAchievements(result.achievements);
         }
-      }
 
-      setStreak(newCount);
-
-      // Check for milestone celebration (only when count just changed, i.e. not already visited today)
-      if (!updatedToday && shouldAnimate) {
-        const prevCount = streakData.count;
-        const lastMilestoneRaw = localStorage.getItem("cc_last_milestone");
-        const lastMilestone = lastMilestoneRaw ? parseInt(lastMilestoneRaw, 10) : 0;
-
-        for (const milestone of STREAK_MILESTONES) {
-          if (prevCount < milestone && newCount >= milestone && lastMilestone < milestone) {
-            localStorage.setItem("cc_last_milestone", String(milestone));
-            setShowConfetti(true);
-            setTimeout(() => setShowConfetti(false), 3500);
-            break;
+        // Trigger confetti on milestone reached (only on new days)
+        if (result.isNewDay && shouldAnimate) {
+          const prevCount = newCount - 1; // previous streak before today's increment
+          for (const milestone of STREAK_MILESTONES) {
+            if (prevCount < milestone && newCount >= milestone) {
+              setShowConfetti(true);
+              setTimeout(() => setShowConfetti(false), 3500);
+              break;
+            }
           }
         }
+      } catch {
+        // Network error — streak display will remain at 0
       }
-    } catch {
-      // localStorage unavailable or parse error
-      setStreak(1);
-    }
-  }, [shouldAnimate]);
+    };
+
+    syncStreak();
+  }, [status, shouldAnimate]);
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -925,9 +933,29 @@ function DashboardContent() {
                           </p>
                         </div>
                       </div>
-                      {data?.stats.plan === "FREE" && (
+                      {data?.stats.plan === "FREE" ? (
                         <Button asChild size="sm" className="bg-cosmic-purple hover:bg-cosmic-purple-dark text-white">
-                          <Link href="/pricing">Upgrade</Link>
+                          <Link href="/pricing?callbackUrl=/dashboard">Upgrade</Link>
+                        </Button>
+                      ) : (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="border-white/10"
+                          disabled={portalLoading}
+                          onClick={handleManageSubscription}
+                        >
+                          {portalLoading ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              Loading...
+                            </>
+                          ) : (
+                            <>
+                              <Settings className="mr-2 h-4 w-4" />
+                              Manage Subscription
+                            </>
+                          )}
                         </Button>
                       )}
                     </div>
@@ -1017,6 +1045,38 @@ function DashboardContent() {
                   </div>
                 )}
               </motion.div>
+            )}
+
+            {/* Achievements */}
+            {achievements.length > 0 && (
+              <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4 backdrop-blur-sm">
+                <div className="flex items-center gap-2 mb-3">
+                  <Award className="h-4 w-4 text-gold" />
+                  <h4 className="font-heading text-sm font-semibold">Achievements</h4>
+                </div>
+                <div className="space-y-2">
+                  {achievements.map((a) => {
+                    const def = ACHIEVEMENTS[a.achievementType];
+                    if (!def) return null;
+                    return (
+                      <div
+                        key={a.achievementType}
+                        className="flex items-center gap-3 rounded-lg border border-white/5 bg-white/[0.02] p-2.5"
+                      >
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gold/10 text-gold">
+                          {ACHIEVEMENT_ICONS[def.icon] || <Star className="h-4 w-4" />}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-xs font-medium truncate">{def.name}</p>
+                          <p className="text-[10px] text-muted-foreground truncate">
+                            {def.description}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
             )}
 
             {/* Daily Horoscope Quick Link */}
@@ -1115,7 +1175,7 @@ function DashboardContent() {
                     ].map((tile) => (
                       <Link
                         key={tile.label}
-                        href="/pricing"
+                        href="/pricing?callbackUrl=/dashboard"
                         className="group relative rounded-lg border border-white/10 bg-white/[0.03] p-3 opacity-60 backdrop-blur-sm transition-all hover:opacity-80 hover:border-cosmic-purple/30"
                       >
                         <div className="absolute top-1.5 right-1.5">
@@ -1147,7 +1207,7 @@ function DashboardContent() {
                     chat.
                   </p>
                   <Button asChild size="sm" className="w-full bg-cosmic-purple hover:bg-cosmic-purple-dark text-white">
-                    <Link href="/pricing">
+                    <Link href="/pricing?callbackUrl=/dashboard">
                       <Sparkles className="mr-2 h-3 w-3" />
                       View Plans
                     </Link>

@@ -135,7 +135,7 @@ function ChatBubble({ message }: { message: Message }) {
         {!isUser && (
           <div className="flex items-center gap-1.5 mb-1.5">
             <Sparkles className="h-3 w-3 text-cosmic-purple-light" />
-            <span className="text-[10px] text-cosmic-purple-light font-medium uppercase tracking-wider">
+            <span className="text-xs text-cosmic-purple-light font-medium uppercase tracking-wider">
               AI Astrologer
             </span>
           </div>
@@ -145,7 +145,7 @@ function ChatBubble({ message }: { message: Message }) {
         </p>
         <p
           className={cn(
-            "text-[10px] mt-1.5",
+            "text-xs mt-1.5",
             isUser ? "text-cosmic-purple-light/50" : "text-muted-foreground/50"
           )}
         >
@@ -543,7 +543,7 @@ function ChatPageContent() {
             </div>
           )}
 
-          <p className="text-[10px] text-muted-foreground mt-3">
+          <p className="text-xs text-muted-foreground mt-3">
             Select a relationship for context-aware answers, or ask general
             astrology questions.
           </p>

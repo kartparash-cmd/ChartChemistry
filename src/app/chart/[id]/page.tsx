@@ -629,7 +629,7 @@ export default function ChartPage() {
                         {planetName}
                       </p>
                       <p className="text-sm font-medium mt-1">{planet.sign}</p>
-                      <p className="text-[10px] text-muted-foreground">
+                      <p className="text-xs text-muted-foreground">
                         {formatDegree(planet.degree)}
                         {planet.house && ` | House ${planet.house}`}
                         {planet.retrograde && " R"}
@@ -754,7 +754,7 @@ export default function ChartPage() {
                         {planet.retrograde ? (
                           <Badge
                             variant="outline"
-                            className="text-[10px] border-gold/30 text-gold"
+                            className="text-xs border-gold/30 text-gold"
                           >
                             R
                           </Badge>
@@ -837,7 +837,7 @@ export default function ChartPage() {
                           <Badge
                             variant="outline"
                             className={cn(
-                              "text-[10px]",
+                              "text-xs",
                               isHarmonious
                                 ? "border-emerald-500/30 text-emerald-400"
                                 : "border-red-500/30 text-red-400"

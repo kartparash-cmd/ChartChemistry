@@ -132,7 +132,7 @@ export function TicketThread({
                 {reply.user.name || "User"}
               </span>
               {reply.isAdmin && (
-                <Badge variant="outline" className="text-[10px] bg-amber-500/10 text-amber-500 border-amber-500/20">
+                <Badge variant="outline" className="text-xs bg-amber-500/10 text-amber-500 border-amber-500/20">
                   Admin
                 </Badge>
               )}

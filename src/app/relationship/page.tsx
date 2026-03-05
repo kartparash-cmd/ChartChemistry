@@ -348,7 +348,7 @@ function CommunicationTipsCard({ tips }: { tips: string[] }) {
               <li key={i} className="flex gap-3 text-sm text-foreground/80">
                 <Badge
                   variant="outline"
-                  className="mt-0.5 h-5 w-5 flex-shrink-0 items-center justify-center border-gold/30 p-0 text-[10px] text-gold"
+                  className="mt-0.5 h-5 w-5 flex-shrink-0 items-center justify-center border-gold/30 p-0 text-xs text-gold"
                 >
                   {i + 1}
                 </Badge>

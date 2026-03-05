@@ -123,7 +123,7 @@ function ConfidenceIndicator({ confidence }: { confidence: number }) {
           />
         ))}
       </div>
-      <span className={cn("text-[10px] uppercase tracking-wider", labelColor)}>
+      <span className={cn("text-xs uppercase tracking-wider", labelColor)}>
         {label}
       </span>
     </div>
@@ -181,7 +181,7 @@ function SuggestionCard({
                 <Badge
                   variant="outline"
                   className={cn(
-                    "mb-1.5 text-[10px] uppercase tracking-wider",
+                    "mb-1.5 text-xs uppercase tracking-wider",
                     config.borderColor,
                     config.color
                   )}

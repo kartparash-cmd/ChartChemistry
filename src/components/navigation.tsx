@@ -186,7 +186,7 @@ export function Navigation() {
                           <p className="text-sm font-medium truncate flex items-center">
                             {session.user.name}
                             {session.user.plan && session.user.plan !== "FREE" && (
-                              <span className="ml-2 rounded-full bg-cosmic-purple/20 px-2 py-0.5 text-[10px] font-semibold text-cosmic-purple-light">
+                              <span className="ml-2 rounded-full bg-cosmic-purple/20 px-2 py-0.5 text-xs font-semibold text-cosmic-purple-light">
                                 {session.user.plan}
                               </span>
                             )}
@@ -335,7 +335,7 @@ export function Navigation() {
                           <p className="text-sm font-medium truncate flex items-center">
                             {session.user.name}
                             {session.user.plan && session.user.plan !== "FREE" && (
-                              <span className="ml-2 shrink-0 rounded-full bg-cosmic-purple/20 px-2 py-0.5 text-[10px] font-semibold text-cosmic-purple-light">
+                              <span className="ml-2 shrink-0 rounded-full bg-cosmic-purple/20 px-2 py-0.5 text-xs font-semibold text-cosmic-purple-light">
                                 {session.user.plan}
                               </span>
                             )}
@@ -433,7 +433,7 @@ export function Navigation() {
                   )}
                 >
                   <Icon className="h-5 w-5" />
-                  <span className="text-[10px] leading-none">{item.label}</span>
+                  <span className="text-xs leading-none">{item.label}</span>
                 </Link>
               );
             })}
@@ -450,7 +450,7 @@ export function Navigation() {
               )}
             >
               <Menu className="h-5 w-5" />
-              <span className="text-[10px] leading-none">More</span>
+              <span className="text-xs leading-none">More</span>
             </button>
           </div>
         </nav>

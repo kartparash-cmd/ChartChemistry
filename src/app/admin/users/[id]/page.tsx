@@ -83,7 +83,7 @@ export default async function AdminUserDetailPage({
                     {p.birthCity}, {p.birthCountry}
                   </p>
                 </div>
-                {p.isOwner && <Badge variant="outline" className="text-[10px]">Owner</Badge>}
+                {p.isOwner && <Badge variant="outline" className="text-xs">Owner</Badge>}
               </div>
             ))}
           </div>
@@ -109,7 +109,7 @@ export default async function AdminUserDetailPage({
                     Score: {r.overallScore}% · {r.createdAt.toLocaleDateString()}
                   </p>
                 </div>
-                <Badge variant="outline" className="text-[10px]">{r.tier}</Badge>
+                <Badge variant="outline" className="text-xs">{r.tier}</Badge>
               </div>
             ))}
           </div>
@@ -137,7 +137,7 @@ export default async function AdminUserDetailPage({
                     {t.createdAt.toLocaleDateString()}
                   </p>
                 </div>
-                <Badge variant="outline" className="text-[10px]">{t.status}</Badge>
+                <Badge variant="outline" className="text-xs">{t.status}</Badge>
               </Link>
             ))}
           </div>

@@ -22,7 +22,7 @@ export async function POST(request: Request) {
       );
     }
 
-    let body: { plan: string };
+    let body: { plan: string; callbackUrl?: string };
     try {
       body = await request.json();
     } catch {
@@ -32,7 +32,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const { plan } = body;
+    const { plan, callbackUrl } = body;
 
     if (plan !== "PREMIUM" && plan !== "ANNUAL") {
       return NextResponse.json(
@@ -74,6 +74,14 @@ export async function POST(request: Request) {
     // Create checkout session
     const origin = request.headers.get("origin") || process.env.NEXTAUTH_URL || "http://localhost:3000";
 
+    // Build success URL: use callbackUrl if provided (must be a relative path for security),
+    // otherwise default to /dashboard?upgraded=true
+    let successPath = "/dashboard?upgraded=true";
+    if (callbackUrl && callbackUrl.startsWith("/")) {
+      const separator = callbackUrl.includes("?") ? "&" : "?";
+      successPath = `${callbackUrl}${separator}upgraded=true`;
+    }
+
     const checkoutSession = await stripe.checkout.sessions.create({
       customer: customerId,
       mode: "subscription",
@@ -83,7 +91,7 @@ export async function POST(request: Request) {
           quantity: 1,
         },
       ],
-      success_url: `${origin}/dashboard?upgraded=true`,
+      success_url: `${origin}${successPath}`,
       cancel_url: `${origin}/pricing?cancelled=true`,
       metadata: {
         userId: session.user.id,

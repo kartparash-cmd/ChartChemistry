@@ -72,7 +72,7 @@ export default async function AdminOverviewPage() {
                   className={`w-full rounded-t-md ${bar.color}`}
                   style={{ height: `${Math.max(pct, 4)}%` }}
                 />
-                <span className="text-[10px] text-muted-foreground">{bar.label}</span>
+                <span className="text-xs text-muted-foreground">{bar.label}</span>
               </div>
             );
           })}
@@ -92,7 +92,7 @@ export default async function AdminOverviewPage() {
                 <p className="text-xs text-muted-foreground">{user.email}</p>
               </div>
               <div className="flex items-center gap-3">
-                <Badge variant="outline" className="text-[10px]">{user.plan}</Badge>
+                <Badge variant="outline" className="text-xs">{user.plan}</Badge>
                 <span className="text-xs text-muted-foreground">
                   {new Date(user.createdAt).toLocaleDateString()}
                 </span>

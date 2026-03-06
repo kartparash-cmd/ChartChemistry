@@ -35,6 +35,7 @@ import { cn } from "@/lib/utils";
 
 const publicNavLinks = [
   { href: "/", label: "Home" },
+  { href: "/quick-match", label: "Quick Match" },
   { href: "/compatibility", label: "Compatibility" },
   { href: "/learn", label: "Learn" },
   { href: "/pricing", label: "Pricing" },

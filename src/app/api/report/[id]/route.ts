@@ -214,7 +214,12 @@ export async function GET(
       createdAt: report.createdAt.toISOString(),
     };
 
-    return NextResponse.json(response);
+    const jsonResponse = NextResponse.json(response);
+    jsonResponse.headers.set(
+      "Cache-Control",
+      "private, max-age=3600, stale-while-revalidate=86400"
+    );
+    return jsonResponse;
   } catch (error) {
     console.error("[GET /api/report/[id]] Error:", error);
     return NextResponse.json(

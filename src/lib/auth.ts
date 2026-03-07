@@ -6,6 +6,23 @@ import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { getImpersonation } from "@/lib/impersonation";
 
+// Signin rate limiter: 5 attempts per 15 minutes per email
+const signinLimiter = new Map<string, { count: number; resetAt: number }>();
+const SIGNIN_LIMIT = 5;
+const SIGNIN_WINDOW = 15 * 60 * 1000;
+
+function checkSigninRateLimit(email: string): boolean {
+  const now = Date.now();
+  const entry = signinLimiter.get(email);
+  if (!entry || now > entry.resetAt) {
+    signinLimiter.set(email, { count: 1, resetAt: now + SIGNIN_WINDOW });
+    return true;
+  }
+  if (entry.count >= SIGNIN_LIMIT) return false;
+  entry.count++;
+  return true;
+}
+
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma) as NextAuthOptions["adapter"],
   providers: [
@@ -22,6 +39,10 @@ export const authOptions: NextAuthOptions = {
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
           throw new Error("Email and password are required");
+        }
+
+        if (!checkSigninRateLimit(credentials.email.toLowerCase())) {
+          throw new Error("Too many sign-in attempts. Please try again later.");
         }
 
         const user = await prisma.user.findUnique({

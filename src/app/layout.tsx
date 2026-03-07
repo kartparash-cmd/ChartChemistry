@@ -8,6 +8,9 @@ import { Navigation } from "@/components/navigation";
 import { Footer } from "@/components/footer";
 import { ImpersonationBanner } from "@/components/admin/impersonation-banner";
 import { StarField } from "@/components/star-field";
+import { CookieConsent } from "@/components/cookie-consent";
+import { InstallPrompt } from "@/components/install-prompt";
+import { Toaster } from "sonner";
 import "./globals.css";
 
 const inter = Inter({
@@ -119,6 +122,9 @@ export default function RootLayout({
               <Footer />
             </TooltipProvider>
           </SessionProvider>
+          <Toaster position="top-right" richColors />
+          <CookieConsent />
+          <InstallPrompt />
         </ThemeProvider>
       </body>
     </html>

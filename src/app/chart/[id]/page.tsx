@@ -36,8 +36,8 @@ import {
   SheetDescription,
 } from "@/components/ui/sheet";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { LazyChartWheel as ChartWheel } from "@/components/lazy-chart-wheel";
 import {
-  ChartWheel,
   type PlanetPosition,
   type HouseCusp,
   type Aspect,
@@ -575,6 +575,32 @@ export default function ChartPage() {
               houses={wheelHouses}
               aspects={wheelAspects}
             />
+            {/* Screen reader table for chart data */}
+            <div className="sr-only">
+              <table>
+                <caption>Natal Chart Planetary Positions</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Planet</th>
+                    <th scope="col">Sign</th>
+                    <th scope="col">Degree</th>
+                    <th scope="col">House</th>
+                    <th scope="col">Retrograde</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {chartData?.planets?.map((p) => (
+                    <tr key={p.planet}>
+                      <td>{p.planet}</td>
+                      <td>{p.sign}</td>
+                      <td>{Math.round(p.degree)}°</td>
+                      <td>{p.house ?? "N/A"}</td>
+                      <td>{p.retrograde ? "Yes" : "No"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </motion.div>
 
           {/* Key Placements */}

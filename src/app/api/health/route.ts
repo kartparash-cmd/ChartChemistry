@@ -14,6 +14,7 @@ interface HealthResponse {
     astroService: ServiceStatus;
     email: ServiceStatus;
     redis: ServiceStatus;
+    claude: ServiceStatus;
   };
   timestamp: string;
 }
@@ -87,6 +88,10 @@ export async function GET() {
     status: process.env.UPSTASH_REDIS_REST_URL ? "ok" : "unconfigured",
   };
 
+  const claude: ServiceStatus = {
+    status: process.env.ANTHROPIC_API_KEY ? "ok" : "unconfigured",
+  };
+
   // Determine overall status:
   // - "down"     if the database is unreachable
   // - "degraded" if the database is fine but astro-service is not
@@ -107,6 +112,7 @@ export async function GET() {
       astroService,
       email,
       redis,
+      claude,
     },
     timestamp: new Date().toISOString(),
   };

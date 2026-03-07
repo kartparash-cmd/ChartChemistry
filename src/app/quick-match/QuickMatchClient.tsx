@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
+import { trackEvent } from "@/lib/analytics";
 
 /* ─── Sun Sign Logic ────────────────────────────────────────────────────── */
 
@@ -129,6 +130,7 @@ export default function QuickMatchClient() {
   } | null>(null);
   const [copied, setCopied] = useState(false);
   const [animating, setAnimating] = useState(false);
+  const [hasShared, setHasShared] = useState(false);
 
   const canCheck = dateA && dateB;
 
@@ -139,6 +141,7 @@ export default function QuickMatchClient() {
     setAnimating(true);
     setTimeout(() => {
       setResult({ signA, signB, score });
+      trackEvent("quick_match");
       setAnimating(false);
     }, 1500);
   }
@@ -164,6 +167,7 @@ export default function QuickMatchClient() {
       setCopied(true);
       setTimeout(() => setCopied(false), 2500);
     }
+    setHasShared(true);
   }
 
   const verdict = result ? getVerdict(result.score) : null;
@@ -297,6 +301,12 @@ export default function QuickMatchClient() {
                   Try Another Pair
                 </Button>
               </div>
+
+              {!hasShared && (
+                <p className="text-xs text-white/40 text-center">
+                  Share your results to unlock the detailed breakdown!
+                </p>
+              )}
 
               {/* CTA to full report */}
               <div className="glass-card rounded-2xl p-6 text-center border border-cosmic-purple/30">

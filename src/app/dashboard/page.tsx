@@ -48,8 +48,11 @@ import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 import { Confetti } from "@/components/confetti";
 import { NotificationPrompt } from "@/components/notification-prompt";
+import { NotificationPreferences } from "@/components/notification-preferences";
+import { AccountManagement } from "@/components/account-management";
 import { ACHIEVEMENTS } from "@/lib/achievement-defs";
 import { getBannerEvents, formatShortDate } from "@/lib/cosmic-events";
+import { OnboardingWizard } from "@/components/onboarding-wizard";
 
 // Map achievement icon names to Lucide components
 const ACHIEVEMENT_ICONS: Record<string, React.ReactNode> = {
@@ -575,6 +578,7 @@ function DashboardContent() {
 
   return (
     <div className="min-h-screen">
+      <OnboardingWizard />
       {/* Confetti overlay */}
       <Confetti trigger={showConfetti} />
 
@@ -1147,6 +1151,16 @@ function DashboardContent() {
                       <LogOut className="mr-2 h-4 w-4" />
                       Sign Out
                     </Button>
+                  </div>
+
+                  {/* Notification Preferences */}
+                  <div className="rounded-xl border border-white/10 bg-white/[0.03] p-6 backdrop-blur-sm">
+                    <NotificationPreferences />
+                  </div>
+
+                  {/* Account & Data Management */}
+                  <div className="rounded-xl border border-white/10 bg-white/[0.03] p-6 backdrop-blur-sm">
+                    <AccountManagement />
                   </div>
                 </motion.div>
               </TabsContent>

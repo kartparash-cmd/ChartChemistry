@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { SocialShare } from "@/components/social-share";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
@@ -32,6 +33,8 @@ import {
   Compass,
   Calendar,
   Mail,
+  Crown,
+  ArrowRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -39,6 +42,7 @@ import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { getPercentile } from "@/lib/percentile";
+import { trackEvent } from "@/lib/analytics";
 
 // Types
 interface ReportPerson {
@@ -715,6 +719,7 @@ export default function ReportPage() {
             setPublicPreview(json);
           } else {
             setReport(json);
+            trackEvent("report_view");
           }
         } else {
           if (shareToken) {
@@ -1231,6 +1236,29 @@ export default function ReportPage() {
               />
             ))}
 
+            {/* Upgrade CTA for free-tier reports */}
+            {report.tier === "FREE" && (
+              <div className="rounded-xl border border-cosmic-purple/30 bg-cosmic-purple/5 p-6 text-center space-y-3">
+                <Crown className="h-8 w-8 text-cosmic-purple-light mx-auto" />
+                <h3 className="text-lg font-heading font-semibold">Unlock Your Full Report</h3>
+                <p className="text-sm text-muted-foreground max-w-md mx-auto">
+                  Get 7 detailed sections including emotional patterns, conflict resolution,
+                  and growth areas with AI-powered insights.
+                </p>
+                <ul className="text-xs text-muted-foreground space-y-1">
+                  <li>Full synastry aspect analysis</li>
+                  <li>Composite chart interpretation</li>
+                  <li>Personalized relationship advice</li>
+                </ul>
+                <Button asChild className="cosmic-gradient text-white">
+                  <Link href="/pricing">
+                    Upgrade to Premium
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Link>
+                </Button>
+              </div>
+            )}
+
             {/* This Week's Insight — Premium only */}
             {isPremium && (
               <motion.div
@@ -1345,6 +1373,16 @@ export default function ReportPage() {
                 <UserPlus className="mr-2 h-4 w-4" />
                 Share with Partner
               </Button>
+            </div>
+
+            {/* Social Sharing */}
+            <div className="pt-2 print:hidden">
+              <p className="text-xs text-muted-foreground mb-2">Share this report</p>
+              <SocialShare
+                url={typeof window !== "undefined" ? window.location.href : ""}
+                title={`${report.person1.name} & ${report.person2.name} Compatibility — ${report.overallScore}%`}
+                description="Check out our astrological compatibility report on ChartChemistry!"
+              />
             </div>
 
             {/* Share with Partner form */}

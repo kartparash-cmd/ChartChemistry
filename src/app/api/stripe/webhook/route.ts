@@ -12,7 +12,20 @@ import { NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { stripe, PLANS } from "@/lib/stripe";
 import { prisma } from "@/lib/prisma";
+import { sendPaymentFailedEmail, sendReceiptEmail } from "@/lib/email";
 import type Stripe from "stripe";
+
+// Simple in-memory idempotency set (use DB-backed store in production)
+const processedEvents = new Set<string>();
+const MAX_PROCESSED = 1000;
+
+function markProcessed(eventId: string) {
+  if (processedEvents.size >= MAX_PROCESSED) {
+    const first = processedEvents.values().next().value;
+    if (first) processedEvents.delete(first);
+  }
+  processedEvents.add(eventId);
+}
 
 /**
  * Map a Stripe Price ID back to the internal plan name.
@@ -56,6 +69,11 @@ export async function POST(request: Request) {
     );
   }
 
+  // Idempotency check
+  if (processedEvents.has(event.id)) {
+    return NextResponse.json({ received: true });
+  }
+
   try {
     switch (event.type) {
       case "checkout.session.completed": {
@@ -78,6 +96,16 @@ export async function POST(request: Request) {
         });
 
         console.log(`[Stripe Webhook] User ${userId} upgraded to ${plan}`);
+
+        // Send receipt email
+        const updatedUser = await prisma.user.findUnique({
+          where: { id: userId },
+          select: { email: true },
+        });
+        if (updatedUser?.email) {
+          const amount = plan === "ANNUAL" ? "$79.99/yr" : "$9.99/mo";
+          sendReceiptEmail(updatedUser.email, plan, amount).catch(() => {});
+        }
         break;
       }
 
@@ -158,10 +186,8 @@ export async function POST(request: Request) {
             `invoice ${invoice.id}, attempt ${invoice.attempt_count}`
           );
 
-          // After multiple failed attempts, Stripe will eventually cancel the
-          // subscription (handled by customer.subscription.deleted). For now we
-          // log a warning so operators can follow up proactively.
-          // Future enhancement: send an in-app notification or email to the user.
+          // Send dunning email
+          sendPaymentFailedEmail(user.email, invoice.attempt_count ?? 1).catch(() => {});
         } else {
           console.warn(`[Stripe Webhook] Payment failed for unknown customer ${customerId}, invoice ${invoice.id}`);
         }
@@ -181,5 +207,6 @@ export async function POST(request: Request) {
     );
   }
 
+  markProcessed(event.id);
   return NextResponse.json({ received: true });
 }

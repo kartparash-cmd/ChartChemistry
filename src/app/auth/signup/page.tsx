@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { StarField } from "@/components/star-field";
+import { trackEvent } from "@/lib/analytics";
 
 export default function SignUpPage() {
   return (
@@ -31,6 +32,7 @@ function SignUpContent() {
   const [isLoadingGoogle, setIsLoadingGoogle] = useState(false);
   const [isLoadingSignup, setIsLoadingSignup] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [ageConfirmed, setAgeConfirmed] = useState(false);
 
   const handleGoogleSignIn = async () => {
     setIsLoadingGoogle(true);
@@ -61,6 +63,8 @@ function SignUpContent() {
         setIsLoadingSignup(false);
         return;
       }
+
+      trackEvent("signup_complete");
 
       // If email was sent, redirect to verification page; otherwise auto sign-in
       if (data.message?.includes("check your email")) {
@@ -252,10 +256,22 @@ function SignUpContent() {
                 Must be at least 8 characters
               </p>
             </div>
+            <div className="flex items-start gap-2">
+              <input
+                type="checkbox"
+                id="age-confirm"
+                checked={ageConfirmed}
+                onChange={(e) => setAgeConfirmed(e.target.checked)}
+                className="mt-1 h-4 w-4 rounded border-border accent-cosmic-purple"
+              />
+              <Label htmlFor="age-confirm" className="text-sm text-muted-foreground leading-tight">
+                I confirm that I am at least 13 years of age
+              </Label>
+            </div>
             <Button
               type="submit"
               className="w-full h-11 bg-cosmic-purple hover:bg-cosmic-purple-dark text-white transition-all"
-              disabled={isLoadingSignup || !email || !password}
+              disabled={isLoadingSignup || !ageConfirmed}
             >
               {isLoadingSignup ? (
                 <>

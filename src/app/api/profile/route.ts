@@ -13,6 +13,7 @@ import { prisma } from "@/lib/prisma";
 import { calculateNatalChart } from "@/lib/astro-client";
 import type { CreateProfileRequest, NatalChartInput } from "@/types/astrology";
 import { Prisma } from "@/generated/prisma/client";
+import { sanitizeName, sanitizeInput } from "@/lib/sanitize";
 
 // ============================================================
 // GET — list user's birth profiles
@@ -205,10 +206,10 @@ export async function POST(request: Request) {
     const profile = await prisma.birthProfile.create({
       data: {
         userId: session.user.id,
-        name: body.name.trim(),
+        name: sanitizeName(body.name),
         birthDate: new Date(body.birthDate + "T00:00:00.000Z"),
         birthTime: body.birthTime || null,
-        birthCity: body.birthCity,
+        birthCity: sanitizeInput(body.birthCity),
         birthCountry: body.birthCountry,
         latitude: body.latitude,
         longitude: body.longitude,

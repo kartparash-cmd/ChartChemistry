@@ -14,6 +14,7 @@ import {
   type CompatibilityResult,
 } from "./results";
 import { cn } from "@/lib/utils";
+import { trackEvent } from "@/lib/analytics";
 
 /* -------------------------------------------------------------------------- */
 /*  Sun sign helper (approximate, for display purposes)                       */
@@ -223,6 +224,7 @@ export default function CompatibilityPage() {
         narrative: data.narrative ?? "",
       };
       setResult(mappedResult);
+      trackEvent("compatibility_check");
       setPageState("results");
     } catch (err) {
       const message =

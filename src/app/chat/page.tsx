@@ -26,6 +26,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import { trackEvent } from "@/lib/analytics";
 
 interface Message {
   id: string;
@@ -274,6 +275,7 @@ function ChatPageContent() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [suggestionsOpen, setSuggestionsOpen] = useState(true);
   const [isRestoringSession, setIsRestoringSession] = useState(false);
+  const [lastFailedMessage, setLastFailedMessage] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -492,6 +494,7 @@ function ChatPageContent() {
 
   const sendMessage = async (content: string) => {
     if (!content.trim() || isLoading) return;
+    trackEvent("chat_message");
 
     // Collapse suggestions after the first user message
     setSuggestionsOpen(false);
@@ -506,6 +509,7 @@ function ChatPageContent() {
     setMessages((prev) => [...prev, userMessage]);
     setInput("");
     setIsLoading(true);
+    setLastFailedMessage(null);
 
     try {
       const res = await fetch("/api/chat", {
@@ -530,22 +534,25 @@ function ChatPageContent() {
           timestamp: new Date(),
         };
         setMessages((prev) => [...prev, aiMessage]);
+        setLastFailedMessage(null);
       } else {
+        setLastFailedMessage(content.trim());
         const errorMessage: Message = {
           id: `error-${Date.now()}`,
           role: "assistant",
           content:
-            "Sorry, I couldn't process your request. Please try again.",
+            "Sorry, I couldn't process your request.",
           timestamp: new Date(),
         };
         setMessages((prev) => [...prev, errorMessage]);
       }
     } catch {
+      setLastFailedMessage(content.trim());
       const aiMessage: Message = {
         id: `ai-${Date.now()}`,
         role: "assistant",
         content:
-          "I am having trouble connecting right now. Please try again in a moment.",
+          "Connection lost. Your message could not be delivered.",
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, aiMessage]);
@@ -824,6 +831,27 @@ function ChatPageContent() {
                   Tap &ldquo;Relationship Context&rdquo; to pick a report for personalised answers.
                 </p>
               </motion.div>
+            </div>
+          )}
+
+          {/* Retry button when a message fails */}
+          {lastFailedMessage && !isLoading && (
+            <div className="flex justify-center">
+              <Button
+                variant="outline"
+                size="sm"
+                className="border-red-500/30 text-red-400 hover:bg-red-500/10"
+                onClick={() => {
+                  const msg = lastFailedMessage;
+                  setLastFailedMessage(null);
+                  // Remove the last error message before retrying
+                  setMessages((prev) => prev.slice(0, -1));
+                  sendMessage(msg);
+                }}
+              >
+                <RotateCcw className="mr-2 h-3.5 w-3.5" />
+                Connection lost. Retry?
+              </Button>
             </div>
           )}
 

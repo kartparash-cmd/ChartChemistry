@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { sendVerificationEmail } from "@/lib/email";
 import { sendWelcomeEmail } from "@/lib/emails";
 import { getClientIp } from "@/lib/rate-limit";
+import { sanitizeName, sanitizeEmail } from "@/lib/sanitize";
 
 // ============================================================
 // Signup-specific rate limiter (in-memory, per-IP)
@@ -38,7 +39,7 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { name, email, password, referralCode: bodyRefCode } = body;
+    const { name, email, password, referralCode: bodyRefCode, ageConfirmed } = body;
 
     if (!email || !password) {
       return NextResponse.json(
@@ -54,7 +55,14 @@ export async function POST(request: Request) {
       );
     }
 
-    const normalizedEmail = email.toLowerCase().trim();
+    if (!ageConfirmed) {
+      return NextResponse.json(
+        { error: "You must confirm that you are at least 13 years of age" },
+        { status: 400 }
+      );
+    }
+
+    const normalizedEmail = sanitizeEmail(email);
 
     const existingUser = await prisma.user.findUnique({
       where: { email: normalizedEmail },
@@ -89,7 +97,7 @@ export async function POST(request: Request) {
 
     const user = await prisma.user.create({
       data: {
-        name: name || null,
+        name: name ? sanitizeName(name) : null,
         email: normalizedEmail,
         password: hashedPassword,
         referralCode,

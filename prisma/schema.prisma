@@ -113,6 +113,8 @@ model BirthProfile {
 
   reportsAsPerson1 CompatibilityReport[] @relation("Person1")
   reportsAsPerson2 CompatibilityReport[] @relation("Person2")
+
+  @@index([userId])
 }
 
 model CompatibilityReport {
@@ -146,6 +148,7 @@ model CompatibilityReport {
   createdAt DateTime   @default(now())
 
   @@unique([person1Id, person2Id])
+  @@index([userId])
 }
 
 enum ReportTier {
@@ -162,6 +165,8 @@ model ChatSession {
   messages  Json
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([userId])
 }
 
 enum TicketStatus {
@@ -182,6 +187,8 @@ model SupportTicket {
   updatedAt   DateTime     @updatedAt
 
   replies TicketReply[]
+
+  @@index([userId])
 }
 
 model TicketReply {

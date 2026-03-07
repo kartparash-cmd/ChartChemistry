@@ -1,23 +1,16 @@
 // ChartChemistry Service Worker
 // Handles push notifications, notification clicks, and basic offline caching.
 
-const CACHE_NAME = "chartchemistry-v1";
-const APP_SHELL_URLS = [
-  "/",
-  "/dashboard",
-  "/manifest.json",
-];
+const CACHE_NAME = "cc-v2";
+const PRECACHE_URLS = ["/", "/compatibility", "/pricing", "/learn"];
 
 // ============================================================
 // Install — pre-cache app shell assets
 // ============================================================
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(APP_SHELL_URLS);
-    })
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(PRECACHE_URLS))
   );
-  // Activate immediately without waiting for existing clients to close
   self.skipWaiting();
 });
 
@@ -39,58 +32,27 @@ self.addEventListener("activate", (event) => {
 });
 
 // ============================================================
-// Fetch — cache-first for static assets, network-first for API/pages
+// Fetch — stale-while-revalidate for pages and assets
 // ============================================================
 self.addEventListener("fetch", (event) => {
-  const url = new URL(event.request.url);
-
-  // Skip non-GET requests
   if (event.request.method !== "GET") return;
 
-  // Skip API routes and auth — always go to network
-  if (url.pathname.startsWith("/api/") || url.pathname.startsWith("/auth/")) {
-    return;
-  }
+  // Network-first for API calls
+  if (event.request.url.includes("/api/")) return;
 
-  // Cache-first for static assets (images, fonts, JS/CSS bundles)
-  const isStaticAsset =
-    url.pathname.startsWith("/_next/static/") ||
-    url.pathname.match(/\.(png|jpg|jpeg|svg|gif|webp|ico|woff2?|ttf|otf|css|js)$/);
-
-  if (isStaticAsset) {
-    event.respondWith(
-      caches.match(event.request).then((cached) => {
-        if (cached) return cached;
-        return fetch(event.request).then((response) => {
-          // Only cache successful responses
-          if (response.ok) {
-            const clone = response.clone();
-            caches.open(CACHE_NAME).then((cache) => {
-              cache.put(event.request, clone);
-            });
-          }
-          return response;
-        });
-      })
-    );
-    return;
-  }
-
-  // Network-first for HTML pages (fall back to cache for offline support)
+  // Stale-while-revalidate for pages and assets
   event.respondWith(
-    fetch(event.request)
-      .then((response) => {
+    caches.match(event.request).then((cached) => {
+      const fetched = fetch(event.request).then((response) => {
         if (response.ok) {
           const clone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, clone);
-          });
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
         }
         return response;
-      })
-      .catch(() => {
-        return caches.match(event.request);
-      })
+      }).catch(() => cached);
+
+      return cached || fetched;
+    })
   );
 });
 

@@ -24,7 +24,7 @@ function getResend(): Resend | null {
 }
 
 const FROM_EMAIL =
-  process.env.EMAIL_FROM || "ChartChemistry <noreply@chartchemistry.com>";
+  process.env.EMAIL_FROM || "ChartChemistry <noreply@send.chartchemistry.com>";
 const APP_URL = process.env.NEXTAUTH_URL || "http://localhost:3000";
 
 // ---------------------------------------------------------------------------

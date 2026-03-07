@@ -121,10 +121,8 @@ ASTRO_SERVICE_URL     # http://localhost:8000 in dev
 
 ## Known Gaps (MVP State)
 
-- Prisma migration pending for UserAchievement model and User streak fields
+- Prisma migration pending — run `npx prisma migrate dev` to apply schema changes to production DB
 - Stripe Customer Portal needs configuration in Stripe Dashboard
-- No middleware.ts — route protection is inline per-route
-- No test framework configured for Next.js (astro-service has pytest)
 
 ## Deployment
 

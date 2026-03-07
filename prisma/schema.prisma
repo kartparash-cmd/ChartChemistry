@@ -23,6 +23,10 @@ model User {
   referredBy       String?
   referralCount    Int       @default(0)
   referralRewardClaimed Boolean @default(false)
+  emailDigest      Boolean   @default(true)
+  emailMarketing   Boolean   @default(false)
+  pushEnabled      Boolean   @default(false)
+  pushSubscription Json?
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 

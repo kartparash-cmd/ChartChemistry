@@ -10,10 +10,8 @@
  *
  * Environment variable: CRON_SECRET
  *
- * NOTE: The User model does not yet have an `emailDigest` opt-in
- * boolean. For now we target all premium users by default. When the
- * field is added to the Prisma schema, update the `where` clause
- * below to include `emailDigest: true`.
+ * Only targets premium users who have opted in via `emailDigest: true`
+ * on their User record.
  */
 
 import { NextResponse } from "next/server";
@@ -58,12 +56,12 @@ export async function GET(request: Request) {
   //    - Plan is PREMIUM or ANNUAL
   //    - Has at least one birth profile with chart data
   //
-  //    TODO: When `emailDigest` field is added to the User model,
-  //    add `emailDigest: true` to the where clause.
+  //    Only users who opted in to email digests are included.
   // ---------------------------------------------------------------
   const users = await prisma.user.findMany({
     where: {
       plan: { in: ["PREMIUM", "ANNUAL"] },
+      emailDigest: true,
       birthProfiles: {
         some: {
           chartData: { not: Prisma.JsonNull },

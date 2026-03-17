@@ -111,7 +111,7 @@ export default function PrivacyPolicyPage() {
               personalized astrological readings.
             </li>
             <li>
-              Provide the AI Astrologer chat feature for premium subscribers.
+              Provide the Marie chat feature for premium subscribers.
             </li>
             <li>
               Process payments and manage your subscription through Stripe.
@@ -220,7 +220,7 @@ export default function PrivacyPolicyPage() {
                 Anthropic (Claude AI):
               </strong>{" "}
               Powers our AI-generated compatibility readings, horoscopes, and
-              the AI Astrologer chat. Your birth data and chart information
+              the Marie chat. Your birth data and chart information
               are sent to Anthropic&apos;s API to generate personalized
               readings. Anthropic does not use API data to train their models.
               See{" "}
@@ -268,7 +268,7 @@ export default function PrivacyPolicyPage() {
             </li>
             <li>
               <strong className="text-foreground">Chat sessions:</strong> AI
-              Astrologer chat histories are retained for the duration of your
+              Marie chat histories are retained for the duration of your
               subscription. They are deleted when you cancel your subscription
               or delete your account.
             </li>

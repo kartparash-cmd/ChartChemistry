@@ -61,7 +61,7 @@ const tiers: PricingTier[] = [
     features: [
       "Unlimited compatibility checks",
       "Full synastry report (all 7 sections)",
-      "AI Astrologer chat",
+      "Marie (personal astrologer)",
       "Save up to 20 profiles",
       "Red flags & growth insights",
       "Daily personalized horoscope",
@@ -78,7 +78,7 @@ const comparisonFeatures = [
   { feature: "Sun/Moon/Rising comparison", free: true, premium: true },
   { feature: "AI summary", free: "Short", premium: "Full" },
   { feature: "Synastry report sections", free: "1 of 7", premium: "All 7" },
-  { feature: "AI Astrologer chat", free: false, premium: true },
+  { feature: "Marie (personal astrologer)", free: false, premium: true },
   { feature: "Save profiles", free: "3", premium: "20" },
   { feature: "Red flags & growth insights", free: false, premium: true },
   { feature: "Daily horoscope", free: false, premium: true },
@@ -536,7 +536,7 @@ function PricingContent() {
               },
               {
                 quote:
-                  "The AI Astrologer chat is like having a personal astrologer on call 24/7. I asked about my Venus opposition and got a nuanced, thoughtful answer instantly. Upgrading to Premium was a no-brainer.",
+                  "Marie is like having a personal astrologer on call 24/7. I asked about my Venus opposition and got a nuanced, thoughtful answer instantly. Upgrading to Premium was a no-brainer.",
                 name: "Marcus T.",
                 sign: "Leo",
               },

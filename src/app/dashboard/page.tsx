@@ -713,7 +713,7 @@ function DashboardContent() {
               </li>
               <li className="flex items-center gap-2">
                 <MessageCircle className="h-3 w-3 text-emerald-400 shrink-0" />
-                AI Astrologer chat for personalized guidance
+                Marie (personal astrologer) for personalized guidance
               </li>
               <li className="flex items-center gap-2">
                 <Sun className="h-3 w-3 text-emerald-400 shrink-0" />
@@ -1426,7 +1426,7 @@ function DashboardContent() {
                     {[
                       {
                         icon: <MessageCircle className="h-4 w-4" />,
-                        label: "AI Astrologer Chat",
+                        label: "Marie",
                       },
                       {
                         icon: <Sun className="h-4 w-4" />,

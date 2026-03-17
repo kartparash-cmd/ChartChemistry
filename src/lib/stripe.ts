@@ -43,7 +43,7 @@ export const PLANS = {
     features: [
       "Unlimited compatibility checks",
       "Full synastry report (all 7 sections)",
-      "AI Astrologer chat",
+      "Marie (personal astrologer)",
       "Daily personalized horoscope",
       "Wellness insights",
       "Transit tracking & alerts",

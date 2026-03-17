@@ -813,7 +813,7 @@ export default function RelationshipPage() {
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold">Ask AI About This</p>
                   <p className="mt-0.5 text-xs text-muted-foreground">
-                    Chat with our AI astrologer for deeper insights
+                    Chat with Marie for deeper insights
                   </p>
                 </div>
                 <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground opacity-0 transition-all group-hover:opacity-100 group-hover:translate-x-1" />

@@ -166,7 +166,7 @@ const PRICING_TIERS = [
     features: [
       "Unlimited compatibility checks",
       "Full synastry report (all 7 sections)",
-      "AI Astrologer chat & daily horoscope",
+      "Marie (personal astrologer) & daily horoscope",
       "Transit alerts & wellness insights",
       "Red flags & growth insights",
       "Cancel anytime",

@@ -100,7 +100,7 @@ export async function sendReceiptEmail(email: string, plan: string, amount: stri
           <p>You now have access to all premium features:</p>
           <ul>
             <li>Unlimited compatibility reports</li>
-            <li>AI Astrologer chat</li>
+            <li>Marie (personal astrologer)</li>
             <li>Full synastry &amp; composite analysis</li>
             <li>Daily horoscopes</li>
           </ul>

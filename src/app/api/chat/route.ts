@@ -1,6 +1,6 @@
 /**
  * GET  /api/chat  — Load the most recent chat session (optionally by reportId)
- * POST /api/chat  — Send a message to the AI astrologer
+ * POST /api/chat  — Send a message to Marie
  *
  * Requires authenticated user with PREMIUM plan.
  *
@@ -183,7 +183,7 @@ export async function POST(request: Request) {
         {
           error: "Premium plan required",
           message:
-            "Chat with our AI astrologer is available to Premium and Annual subscribers.",
+            "Chat with Marie is available to Premium and Annual subscribers.",
         },
         { status: 403 }
       );

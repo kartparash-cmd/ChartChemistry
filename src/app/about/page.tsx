@@ -103,9 +103,9 @@ const OFFERINGS = [
   },
   {
     icon: MessageCircle,
-    title: "AI Astrologer Chat",
+    title: "Marie — Personal Astrologer",
     description:
-      "Ask questions about your chart, your relationships, or upcoming transits. Our AI astrologer provides thoughtful, personalized guidance on demand.",
+      "Ask questions about your chart, your relationships, or upcoming transits. Marie provides thoughtful, personalized guidance on demand.",
   },
 ];
 

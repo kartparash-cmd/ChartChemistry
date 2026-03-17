@@ -754,7 +754,7 @@ export function CompatibilityResults({
               </h3>
               <p className="mb-5 text-sm text-muted-foreground max-w-md mx-auto">
                 You have used your free trial report. Upgrade to Premium for unlimited full
-                compatibility reports, AI Astrologer chat, daily horoscopes, and more.
+                compatibility reports, Marie (personal astrologer), daily horoscopes, and more.
               </p>
               <Button
                 asChild

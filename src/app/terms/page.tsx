@@ -123,7 +123,7 @@ export default function TermsOfServicePage() {
               <li>
                 <span className="text-foreground font-medium">Premium</span> &mdash;
                 $9.99 per month, providing unlimited compatibility checks, full synastry
-                reports, AI Astrologer chat, and unlimited saved profiles
+                reports, Marie (personal astrologer), and unlimited saved profiles
               </li>
               <li>
                 <span className="text-foreground font-medium">Annual</span> &mdash;

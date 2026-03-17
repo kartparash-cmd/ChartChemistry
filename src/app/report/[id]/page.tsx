@@ -1460,7 +1460,7 @@ export default function ReportPage() {
                     href: `/chat?reportId=${reportId}`,
                     icon: <MessageCircle className="h-5 w-5" />,
                     label: "Ask AI About This Report",
-                    description: "Dive deeper with your AI astrologer",
+                    description: "Dive deeper with Marie",
                   },
                   {
                     href: "/compatibility",

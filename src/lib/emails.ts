@@ -154,7 +154,7 @@ export async function sendWelcomeEmail(
     <p style="margin:20px 0 0;font-size:14px;color:${COLORS.muted};text-align:center;">
       Upgrade to <strong style="color:${COLORS.gold};">Premium</strong> for AI-powered
       compatibility reports, daily horoscopes, wellness timing, and unlimited access
-      to our AI astrologer chat.
+      to Marie, your personal astrologer.
     </p>
   `);
 

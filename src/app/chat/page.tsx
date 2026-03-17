@@ -240,7 +240,7 @@ function ChatMessage({ message, userName }: { message: Message; userName?: strin
         <div className="flex-1 min-w-0 space-y-1">
           <div className="flex items-center gap-2">
             <span className="text-sm font-semibold">
-              {isUser ? (userName || "You") : "AI Astrologer"}
+              {isUser ? (userName || "You") : "Marie"}
             </span>
             <span className="text-xs text-muted-foreground">
               {message.timestamp.toLocaleTimeString("en-US", {
@@ -342,7 +342,7 @@ function ChatPageContent() {
     id: "welcome",
     role: "assistant",
     content:
-      "Welcome to your **AI Astrologer** session! I can help you:\n\n- Understand your compatibility reports in depth\n- Explore specific aspects of your relationship dynamics\n- Answer any astrology questions you have\n\nSelect a relationship from the sidebar and ask me anything, or try one of the suggested questions below.",
+      "Hi, I'm **Marie**, your personal astrologer! I can help you:\n\n- Understand your compatibility reports in depth\n- Explore specific aspects of your relationship dynamics\n- Answer any astrology questions you have\n\nSelect a relationship from the sidebar and ask me anything, or try one of the suggested questions below.",
     timestamp: new Date(),
   }), []);
 
@@ -625,10 +625,10 @@ function ChatPageContent() {
               <Crown className="h-10 w-10 text-cosmic-purple dark:text-cosmic-purple-light" />
             </div>
             <h1 className="font-heading text-3xl sm:text-4xl font-bold mb-2">
-              AI Astrologer Chat
+              Marie Chat
             </h1>
             <p className="text-muted-foreground text-sm max-w-sm mx-auto">
-              Ask our AI astrologer anything about your chart, compatibility, or cosmic events
+              Ask our Marie anything about your chart, compatibility, or cosmic events
             </p>
           </div>
 
@@ -784,7 +784,7 @@ function ChatPageContent() {
 
       {/* Chat Area */}
       <div className="flex flex-1 flex-col min-w-0">
-        <h1 className="sr-only">AI Astrologer Chat</h1>
+        <h1 className="sr-only">Marie Chat</h1>
 
         {/* Messages */}
         <div className="flex-1 overflow-y-auto" aria-live="polite" aria-relevant="additions">
@@ -949,8 +949,8 @@ function ChatPageContent() {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Ask the AI Astrologer anything..."
-                aria-label="Type your message to the AI astrologer"
+                placeholder="Ask the Marie anything..."
+                aria-label="Type your message to the Marie"
                 rows={1}
                 className="flex-1 resize-none bg-transparent px-4 py-3.5 text-sm placeholder:text-muted-foreground/50 focus:outline-none"
                 style={{ minHeight: "52px", maxHeight: "160px" }}
@@ -982,7 +982,7 @@ function ChatPageContent() {
               </div>
             </div>
             <p className="text-center text-[10px] text-muted-foreground/50 mt-2">
-              AI Astrologer provides insights for entertainment and self-reflection, not professional advice.
+              Marie provides insights for entertainment and self-reflection, not professional advice.
             </p>
           </form>
         </div>

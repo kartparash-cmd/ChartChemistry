@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "AI Astrologer Chat | ChartChemistry",
+  title: "Marie — Personal Astrologer | ChartChemistry",
   description:
-    "Chat with our AI astrologer for personalized astrological insights.",
+    "Chat with Marie, your personal astrologer, for personalized astrological insights.",
   alternates: {
     canonical: "https://chartchemistry.com/chat",
   },

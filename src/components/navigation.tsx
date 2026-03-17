@@ -113,7 +113,7 @@ export function Navigation() {
                   className={cn(
                     "relative px-4 py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-1",
                     isActive
-                      ? "text-cosmic-purple-light"
+                      ? "text-cosmic-purple dark:text-cosmic-purple-light"
                       : "text-muted-foreground hover:text-foreground"
                   )}
                 >
@@ -314,7 +314,7 @@ export function Navigation() {
                         className={cn(
                           "rounded-lg px-4 py-3 text-sm font-medium transition-colors flex items-center justify-between",
                           isActive
-                            ? "bg-muted text-cosmic-purple-light"
+                            ? "bg-muted text-cosmic-purple dark:text-cosmic-purple-light"
                             : "text-muted-foreground hover:bg-muted hover:text-foreground"
                         )}
                       >
@@ -451,7 +451,7 @@ export function Navigation() {
                   className={cn(
                     "flex flex-1 flex-col items-center justify-center gap-1 transition-colors",
                     isActive
-                      ? "text-cosmic-purple-light"
+                      ? "text-cosmic-purple dark:text-cosmic-purple-light"
                       : "text-muted-foreground"
                   )}
                 >
@@ -473,7 +473,7 @@ export function Navigation() {
               className={cn(
                 "flex flex-1 flex-col items-center justify-center gap-1 transition-colors",
                 mobileOpen
-                  ? "text-cosmic-purple-light"
+                  ? "text-cosmic-purple dark:text-cosmic-purple-light"
                   : "text-muted-foreground"
               )}
             >

@@ -7,7 +7,7 @@ AI-powered astrology compatibility app. Next.js frontend + Python FastAPI micros
 - **Framework:** Next.js 16 (App Router, RSC), React 19, TypeScript (strict)
 - **Auth:** NextAuth v4 (JWT strategy) — Google OAuth + email/password credentials
 - **Database:** PostgreSQL (Supabase) via Prisma 7 with `@prisma/adapter-pg`
-- **AI:** Anthropic Claude (`claude-sonnet-4-20250514`) for report generation and chat
+- **AI:** Multi-model — Claude Sonnet for reports, OpenAI GPT-4.1 Nano for chat/horoscopes/explanations
 - **Payments:** Stripe (PREMIUM $9.99/mo, ANNUAL $79.99/yr)
 - **Styling:** Tailwind CSS v4, shadcn/ui (New York style), Framer Motion
 - **Astro Service:** Python FastAPI with Swiss Ephemeris (`pyswisseph`)
@@ -117,7 +117,8 @@ NEXTAUTH_URL              # http://localhost:3000 in dev
 NEXTAUTH_SECRET
 GOOGLE_CLIENT_ID
 GOOGLE_CLIENT_SECRET
-ANTHROPIC_API_KEY
+ANTHROPIC_API_KEY         # Claude Sonnet (reports, relationship insights)
+OPENAI_API_KEY            # GPT-4.1 Nano (chat, horoscopes, explanations, wellness)
 STRIPE_SECRET_KEY
 STRIPE_PUBLISHABLE_KEY
 STRIPE_WEBHOOK_SECRET

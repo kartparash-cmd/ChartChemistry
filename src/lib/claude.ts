@@ -10,6 +10,7 @@
  */
 
 import Anthropic from "@anthropic-ai/sdk";
+import { getOpenAIClient, OPENAI_MODEL } from "@/lib/openai";
 import type {
   SynastryResult,
   CompositeChart,
@@ -495,6 +496,7 @@ function extractJsonArray(text: string): string[] {
 
 /**
  * Chat with the AI astrologer.
+ * Uses OpenAI GPT-4.1 Nano for cost efficiency (high-volume feature).
  */
 export async function chatWithAstrologer(
   messages: ChatMessage[],
@@ -506,21 +508,21 @@ export async function chatWithAstrologer(
     systemPrompt += `\n\nCHART CONTEXT (reference this data in your responses):\n${chartContext}`;
   }
 
-  // Convert our ChatMessage format to Anthropic's message format
-  const anthropicMessages: Anthropic.MessageParam[] = messages.map((msg) => ({
-    role: msg.role,
-    content: msg.content,
-  }));
+  const openaiMessages: { role: "system" | "user" | "assistant"; content: string }[] = [
+    { role: "system", content: systemPrompt },
+    ...messages.map((msg) => ({
+      role: msg.role as "user" | "assistant",
+      content: msg.content,
+    })),
+  ];
 
-  const response = await getClient().messages.create({
-    model: CLAUDE_MODEL,
+  const response = await getOpenAIClient().chat.completions.create({
+    model: OPENAI_MODEL,
     max_tokens: 1024,
-    system: systemPrompt,
-    messages: anthropicMessages,
+    messages: openaiMessages,
   });
 
-  const textBlock = response.content.find((block) => block.type === "text");
-  return textBlock ? textBlock.text.trim() : "";
+  return response.choices[0]?.message?.content?.trim() || "";
 }
 
 /**
@@ -664,6 +666,7 @@ Return a JSON object with these fields:
 
 /**
  * Generate a personalized daily horoscope.
+ * Uses OpenAI GPT-4.1 Nano for cost efficiency (runs daily for all premium users).
  */
 export async function generateDailyHoroscope(
   natalChartData: NatalChart,
@@ -697,11 +700,11 @@ export async function generateDailyHoroscope(
     chartLines.push(formatPlanet(p));
   }
 
-  const response = await getClient().messages.create({
-    model: CLAUDE_MODEL,
+  const response = await getOpenAIClient().chat.completions.create({
+    model: OPENAI_MODEL,
     max_tokens: 1024,
-    system: HOROSCOPE_PROMPT,
     messages: [
+      { role: "system", content: HOROSCOPE_PROMPT },
       {
         role: "user",
         content: `Write a personalized daily horoscope for ${userName} for ${date}.\n\n${chartLines.join("\n")}`,
@@ -709,8 +712,7 @@ export async function generateDailyHoroscope(
     ],
   });
 
-  const textBlock = response.content.find((block) => block.type === "text");
-  const raw = textBlock ? textBlock.text.trim() : "";
+  const raw = response.choices[0]?.message?.content?.trim() || "";
 
   try {
     const jsonMatch = raw.match(/\{[\s\S]*\}/);
@@ -732,6 +734,7 @@ export async function generateDailyHoroscope(
 
 /**
  * Generate an AI explanation for a specific chart placement or aspect.
+ * Uses OpenAI GPT-4.1 Nano for cost efficiency (tap-to-explain, high volume).
  */
 export async function explainChartElement(
   element: string,
@@ -740,11 +743,14 @@ export async function explainChartElement(
 ): Promise<string> {
   const chartContext = chartData.planets.map(formatPlanet).join("\n");
 
-  const response = await getClient().messages.create({
-    model: CLAUDE_MODEL,
+  const response = await getOpenAIClient().chat.completions.create({
+    model: OPENAI_MODEL,
     max_tokens: 512,
-    system: `You are an expert astrologer explaining a specific placement or aspect in someone's natal chart. Be warm, insightful, and educational. Write 80-150 words. Use accessible language. Reference how this placement interacts with other elements in their chart.`,
     messages: [
+      {
+        role: "system",
+        content: `You are an expert astrologer explaining a specific placement or aspect in someone's natal chart. Be warm, insightful, and educational. Write 80-150 words. Use accessible language. Reference how this placement interacts with other elements in their chart.`,
+      },
       {
         role: "user",
         content: `Explain what "${element}" means in ${userName}'s natal chart.\n\nFull chart:\n${chartContext}`,
@@ -752,8 +758,7 @@ export async function explainChartElement(
     ],
   });
 
-  const textBlock = response.content.find((block) => block.type === "text");
-  return textBlock ? textBlock.text.trim() : "";
+  return response.choices[0]?.message?.content?.trim() || "";
 }
 
 // ============================================================
@@ -835,11 +840,11 @@ export async function generateWellnessSuggestions(
     chartLines.push(formatPlanet(p));
   }
 
-  const response = await getClient().messages.create({
-    model: CLAUDE_MODEL,
+  const response = await getOpenAIClient().chat.completions.create({
+    model: OPENAI_MODEL,
     max_tokens: 2048,
-    system: WELLNESS_PROMPT,
     messages: [
+      { role: "system", content: WELLNESS_PROMPT },
       {
         role: "user",
         content: `Generate wellness and timing suggestions for ${userName} for ${date}.\n\n${chartLines.join("\n")}`,
@@ -847,8 +852,7 @@ export async function generateWellnessSuggestions(
     ],
   });
 
-  const textBlock = response.content.find((block) => block.type === "text");
-  const raw = textBlock ? textBlock.text.trim() : "";
+  const raw = response.choices[0]?.message?.content?.trim() || "";
 
   try {
     const jsonMatch = raw.match(/\[[\s\S]*\]/);

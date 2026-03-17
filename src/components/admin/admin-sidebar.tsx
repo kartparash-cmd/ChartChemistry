@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BarChart3, Users, Ticket, ArrowLeft } from "lucide-react";
+import { BarChart3, Users, Ticket, ArrowLeft, Activity } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const sidebarLinks = [
   { href: "/admin", label: "Overview", icon: BarChart3 },
   { href: "/admin/users", label: "Users", icon: Users },
   { href: "/admin/tickets", label: "Tickets", icon: Ticket },
+  { href: "/admin/activity", label: "Activity Log", icon: Activity },
 ];
 
 interface AdminSidebarProps {
@@ -21,7 +22,8 @@ export function AdminSidebar({ onNavigate }: AdminSidebarProps) {
   return (
     <aside className="w-64 shrink-0 border-r border-border bg-card/50 min-h-[calc(100vh-4rem)]">
       <div className="p-4 border-b border-border">
-        <h2 className="text-lg font-bold cosmic-text">Admin Dashboard</h2>
+        <h2 className="text-lg font-bold cosmic-text">Admin</h2>
+        <p className="text-xs text-muted-foreground mt-0.5">Platform management</p>
       </div>
       <nav className="p-2 space-y-1">
         {sidebarLinks.map((link) => {

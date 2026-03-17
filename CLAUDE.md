@@ -43,7 +43,7 @@ src/
 ├── app/                    # Next.js App Router pages and API routes
 │   ├── api/
 │   │   ├── auth/           # [...nextauth] + signup + verify-email + forgot-password
-│   │   ├── chat/           # AI astrologer chat (premium-gated)
+│   │   ├── chat/           # Marie (personal astrologer) chat (premium-gated)
 │   │   ├── compatibility/  # Free (route.ts) + full premium (full/route.ts)
 │   │   ├── cron/           # daily-digest (Vercel Cron)
 │   │   ├── profile/        # CRUD birth profiles
@@ -52,7 +52,7 @@ src/
 │   │   └── user/           # preferences, export, delete
 │   ├── auth/               # signin + signup + verify-email pages
 │   ├── chart/[id]/         # Natal chart viewer
-│   ├── chat/               # AI chat page
+│   ├── chat/               # Marie chat page (ChatGPT/Claude-style UI)
 │   ├── compatibility/      # Compatibility tool + [signs]/ programmatic SEO pages
 │   ├── dashboard/          # User dashboard (profiles, reports, settings)
 │   ├── pricing/            # Pricing tiers
@@ -66,7 +66,8 @@ src/
 ├── lib/
 │   ├── auth.ts             # NextAuth config (Google + Credentials + signin rate limiting)
 │   ├── prisma.ts           # Prisma singleton (pg adapter for Supabase)
-│   ├── claude.ts           # Anthropic SDK wrapper + prompt engineering
+│   ├── claude.ts           # AI orchestration (Claude for reports, OpenAI for chat/horoscopes)
+│   ├── openai.ts           # OpenAI client wrapper (GPT-4.1 Nano, lazy-init singleton)
 │   ├── astro-client.ts     # HTTP client for Python astro-service (with circuit breaker)
 │   ├── stripe.ts           # Stripe SDK init + plan definitions
 │   ├── rate-limit.ts       # Redis (Upstash) rate limiter with in-memory fallback
@@ -91,7 +92,8 @@ astro-service/              # Python FastAPI microservice
 - **Auth gating:** Centralized via `src/middleware.ts` + defense-in-depth `getServerSession` in API routes
 - **Plan checks:** JWT token carries `plan` field; API routes check `session.user.plan` for premium features
 - **Prisma client:** Singleton in `src/lib/prisma.ts` using `globalThis` for dev hot-reload safety
-- **Claude client:** Lazy-initialized on first use in `src/lib/claude.ts` (build-compatible, 30s timeout)
+- **AI clients:** Claude (reports) + OpenAI (chat/horoscopes) — both lazy-initialized singletons, 30s timeout
+- **AI persona:** Marie — the user-facing astrologer name across chat, emails, and marketing
 - **Path alias:** `@/*` maps to `./src/*`
 - **Dark mode:** Forced via `class="dark"` on `<html>` in layout.tsx
 - **Rate limiting:** Redis (Upstash) when available, in-memory fallback; per-IP for compatibility, per-email for signin

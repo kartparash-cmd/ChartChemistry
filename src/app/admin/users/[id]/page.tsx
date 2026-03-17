@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, User, FileText, Ticket } from "lucide-react";
 import { ImpersonateButton } from "./impersonate-button";
+import { PlanChangeForm } from "./plan-change-form";
 
 export default async function AdminUserDetailPage({
   params,
@@ -67,6 +68,13 @@ export default async function AdminUserDetailPage({
           <p className="font-medium mt-1">{user.reports.length}</p>
         </div>
       </div>
+
+      {/* Plan Change */}
+      <PlanChangeForm
+        userId={user.id}
+        currentPlan={user.plan}
+        userName={user.name || user.email}
+      />
 
       {/* Birth Profiles */}
       <section>

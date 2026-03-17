@@ -8,7 +8,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Menu,
   Sparkles,
-  User,
   Settings,
   LogOut,
   LayoutDashboard,
@@ -45,12 +44,8 @@ const publicNavLinks = [
 const authedNavLinks = [
   { href: "/dashboard", label: "Dashboard" },
   { href: "/compatibility", label: "Compatibility" },
-  { href: "/horoscope", label: "Horoscope" },
-  { href: "/connections", label: "Connections" },
   { href: "/chat", label: "AI Chat" },
-  { href: "/relationship", label: "Insights" },
   { href: "/learn", label: "Learn" },
-  { href: "/pricing", label: "Pricing" },
 ];
 
 // Nav links that require a premium plan
@@ -161,17 +156,14 @@ export function Navigation() {
                   aria-controls="user-menu"
                   className="flex items-center gap-2 rounded-full p-1 pr-3 transition-colors hover:bg-muted"
                 >
-                  {session.user.image ? (
-                    <img
-                      src={session.user.image}
-                      alt={session.user.name || "User"}
-                      className="h-8 w-8 rounded-full ring-2 ring-cosmic-purple/30"
-                    />
-                  ) : (
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-cosmic-purple/20 ring-2 ring-cosmic-purple/30">
-                      <User className="h-4 w-4 text-cosmic-purple-light" />
-                    </div>
-                  )}
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-cosmic-purple/20 ring-2 ring-cosmic-purple/30 text-xs font-bold text-cosmic-purple-light">
+                    {(session.user.name || session.user.email || "U")
+                      .split(" ")
+                      .map((w) => w[0])
+                      .slice(0, 2)
+                      .join("")
+                      .toUpperCase()}
+                  </div>
                   <span className="text-sm font-medium max-w-[120px] truncate">
                     {session.user.name || session.user.email}
                   </span>
@@ -344,17 +336,14 @@ export function Navigation() {
                   {session?.user ? (
                     <>
                       <div className="flex items-center gap-3 px-4 py-2 mb-2">
-                        {session.user.image ? (
-                          <img
-                            src={session.user.image}
-                            alt={session.user.name || "User"}
-                            className="h-10 w-10 rounded-full ring-2 ring-cosmic-purple/30"
-                          />
-                        ) : (
-                          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-cosmic-purple/20">
-                            <User className="h-5 w-5 text-cosmic-purple-light" />
-                          </div>
-                        )}
+                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-cosmic-purple/20 ring-2 ring-cosmic-purple/30 text-sm font-bold text-cosmic-purple-light">
+                          {(session.user.name || session.user.email || "U")
+                            .split(" ")
+                            .map((w) => w[0])
+                            .slice(0, 2)
+                            .join("")
+                            .toUpperCase()}
+                        </div>
                         <div className="min-w-0">
                           <p className="text-sm font-medium truncate flex items-center">
                             {session.user.name}

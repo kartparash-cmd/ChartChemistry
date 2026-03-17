@@ -77,6 +77,16 @@ export async function middleware(request: NextRequest) {
   const isAdmin = isAdminRoute(pathname);
 
   if (!isPage && !isApi && !isAdmin) {
+    // Redirect logged-in users from landing page to dashboard
+    if (pathname === "/") {
+      const token = await getToken({
+        req: request,
+        secret: process.env.NEXTAUTH_SECRET,
+      });
+      if (token) {
+        return NextResponse.redirect(new URL("/dashboard", request.url));
+      }
+    }
     return NextResponse.next();
   }
 

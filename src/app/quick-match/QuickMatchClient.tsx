@@ -286,8 +286,7 @@ export default function QuickMatchClient() {
               <div className="flex flex-col sm:flex-row gap-3">
                 <Button
                   onClick={shareResult}
-                  variant="outline"
-                  className="flex-1 border-white/20 text-white hover:bg-white/10"
+                  className="flex-1 bg-cosmic-purple hover:bg-cosmic-purple-dark text-white"
                 >
                   {copied ? <Copy className="w-4 h-4 mr-2" /> : <Share2 className="w-4 h-4 mr-2" />}
                   {copied ? "Copied!" : "Share Result"}
@@ -295,7 +294,7 @@ export default function QuickMatchClient() {
                 <Button
                   onClick={reset}
                   variant="outline"
-                  className="flex-1 border-white/20 text-white hover:bg-white/10"
+                  className="flex-1 border-cosmic-purple/30 text-foreground hover:bg-cosmic-purple/10"
                 >
                   <RotateCcw className="w-4 h-4 mr-2" />
                   Try Another Pair

@@ -11,8 +11,6 @@ const footerLinks = {
     { href: "/dashboard", label: "Dashboard" },
   ],
   company: [
-    { href: "/about", label: "About" },
-    { href: "/support", label: "Support" },
     { href: "mailto:support@chartchemistry.com", label: "Contact" },
   ],
   legal: [

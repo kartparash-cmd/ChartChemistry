@@ -217,13 +217,12 @@ export default function PrivacyPolicyPage() {
             </li>
             <li>
               <strong className="text-foreground">
-                Anthropic (Claude AI):
+                AI Providers (Anthropic &amp; OpenAI):
               </strong>{" "}
-              Powers our AI-generated compatibility readings, horoscopes, and
-              the Marie chat. Your birth data and chart information
-              are sent to Anthropic&apos;s API to generate personalized
-              readings. Anthropic does not use API data to train their models.
-              See{" "}
+              Power our AI-generated compatibility readings and the Marie
+              chat. Your birth data and chart information are sent to these
+              providers&apos; APIs to generate personalized readings. Neither
+              provider uses API data to train their models. See{" "}
               <a
                 href="https://www.anthropic.com/privacy"
                 target="_blank"
@@ -231,6 +230,15 @@ export default function PrivacyPolicyPage() {
                 className="text-cosmic-purple-light hover:underline"
               >
                 Anthropic&apos;s Privacy Policy
+              </a>{" "}
+              and{" "}
+              <a
+                href="https://openai.com/policies/privacy-policy"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-cosmic-purple-light hover:underline"
+              >
+                OpenAI&apos;s Privacy Policy
               </a>
               .
             </li>

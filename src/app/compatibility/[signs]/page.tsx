@@ -216,7 +216,9 @@ export default async function ZodiacPairPage({
               headline: `${capitalize(sign1)} and ${capitalize(sign2)} Compatibility`,
               description: `Astrological compatibility analysis for ${capitalize(sign1)} and ${capitalize(sign2)}.`,
               author: { "@type": "Organization", name: "ChartChemistry" },
-              publisher: { "@type": "Organization", name: "ChartChemistry" },
+              publisher: { "@type": "Organization", name: "ChartChemistry", url: "https://chartchemistry.com" },
+              datePublished: "2026-03-07",
+              dateModified: new Date().toISOString().split("T")[0],
             },
             {
               "@context": "https://schema.org",
@@ -225,6 +227,36 @@ export default async function ZodiacPairPage({
                 { "@type": "ListItem", position: 1, name: "Home", item: "https://chartchemistry.com" },
                 { "@type": "ListItem", position: 2, name: "Compatibility", item: "https://chartchemistry.com/compatibility" },
                 { "@type": "ListItem", position: 3, name: `${capitalize(sign1)} & ${capitalize(sign2)} Compatibility` },
+              ],
+            },
+            {
+              "@context": "https://schema.org",
+              "@type": "FAQPage",
+              mainEntity: [
+                {
+                  "@type": "Question",
+                  name: `Are ${capitalize(sign1)} and ${capitalize(sign2)} compatible?`,
+                  acceptedAnswer: {
+                    "@type": "Answer",
+                    text: `${capitalize(sign1)} (${el1}) and ${capitalize(sign2)} (${el2}) ${el1 === el2 ? "share the same element, creating natural understanding and harmony" : "bring different elemental energies that can complement each other"}. ${elementNote} For a deeper analysis beyond sun signs, a full birth chart compatibility report considers Moon signs, Venus placements, and planetary aspects.`,
+                  },
+                },
+                {
+                  "@type": "Question",
+                  name: `What is ${capitalize(sign1)} and ${capitalize(sign2)} compatibility in love?`,
+                  acceptedAnswer: {
+                    "@type": "Answer",
+                    text: `In love, ${capitalize(sign1)} and ${capitalize(sign2)} can build a meaningful connection by understanding their elemental dynamics. ${el1 === el2 ? "As fellow " + el1 + " signs, they share core values and emotional rhythms." : "The " + el1 + "-" + el2 + " combination creates a dynamic where both partners can grow."} True romantic compatibility depends on the full birth chart — including Venus signs (love language), Mars signs (passion), and Moon signs (emotional needs).`,
+                  },
+                },
+                {
+                  "@type": "Question",
+                  name: "How accurate is sun sign compatibility?",
+                  acceptedAnswer: {
+                    "@type": "Answer",
+                    text: "Sun sign compatibility provides a useful starting point, but represents only one layer of astrological analysis. A comprehensive compatibility reading analyzes the full birth chart including Moon signs, Venus and Mars placements, house overlays, and planetary aspects between two charts (synastry). ChartChemistry offers AI-powered full birth chart analysis for deeper insights.",
+                  },
+                },
               ],
             },
           ]),

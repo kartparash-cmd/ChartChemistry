@@ -31,11 +31,13 @@ function getSunSign(dateStr: string): string {
 export async function generateMetadata({
   searchParams,
 }: {
-  searchParams: Promise<{ a?: string; b?: string }>;
+  searchParams: Promise<{ a?: string; b?: string; na?: string; nb?: string }>;
 }): Promise<Metadata> {
   const params = await searchParams;
   const a = params.a;
   const b = params.b;
+  const na = params.na;
+  const nb = params.nb;
 
   // Default metadata when no result params
   if (!a || !b) {
@@ -64,10 +66,15 @@ export async function generateMetadata({
   const signB = getSunSign(b);
   const emojiA = SIGN_EMOJIS[signA] || "";
   const emojiB = SIGN_EMOJIS[signB] || "";
-  const ogUrl = `${SITE_URL}/api/og?a=${encodeURIComponent(a)}&b=${encodeURIComponent(b)}`;
+  const ogParams = new URLSearchParams({ a, b });
+  if (na) ogParams.set("na", na);
+  if (nb) ogParams.set("nb", nb);
+  const ogUrl = `${SITE_URL}/api/og?${ogParams.toString()}`;
 
-  const title = `${emojiA} ${signA} & ${emojiB} ${signB} Compatibility — ChartChemistry`;
-  const desc = `See how ${signA} and ${signB} match up! Instant zodiac compatibility score powered by ChartChemistry.`;
+  const labelA = na || signA;
+  const labelB = nb || signB;
+  const title = `${emojiA} ${labelA} & ${emojiB} ${labelB} Compatibility — ChartChemistry`;
+  const desc = `See how ${labelA} (${signA}) and ${labelB} (${signB}) match up! Instant zodiac compatibility score powered by ChartChemistry.`;
 
   return {
     title,

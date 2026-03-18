@@ -4,7 +4,7 @@ import { useState, useMemo } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, Heart, ArrowRight, Share2, Copy, RotateCcw } from "lucide-react";
+import { Sparkles, Heart, ArrowRight, Share2, Copy, RotateCcw, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -128,19 +128,21 @@ export default function QuickMatchClient() {
   const initialState = useMemo(() => {
     const paramA = searchParams.get("a");
     const paramB = searchParams.get("b");
+    const paramNA = searchParams.get("na") || "";
+    const paramNB = searchParams.get("nb") || "";
     if (paramA && paramB) {
       const signA = getSunSign(paramA);
       const signB = getSunSign(paramB);
       const score = getCompatibility(signA, signB);
       trackEvent("quick_match");
-      return { dateA: paramA, dateB: paramB, result: { signA, signB, score } };
+      return { dateA: paramA, dateB: paramB, nameA: paramNA, nameB: paramNB, result: { signA, signB, score } };
     }
-    return { dateA: "", dateB: "", result: null };
+    return { dateA: "", dateB: "", nameA: "", nameB: "", result: null };
   }, [searchParams]);
 
-  const [nameA, setNameA] = useState("");
+  const [nameA, setNameA] = useState(initialState.nameA);
   const [dateA, setDateA] = useState(initialState.dateA);
-  const [nameB, setNameB] = useState("");
+  const [nameB, setNameB] = useState(initialState.nameB);
   const [dateB, setDateB] = useState(initialState.dateB);
   const [result, setResult] = useState<{
     signA: string; signB: string; score: number;
@@ -169,13 +171,27 @@ export default function QuickMatchClient() {
     setNameB(""); setDateB("");
   }
 
-  function shareResult() {
-    if (!result) return;
+  function buildShareUrl() {
+    const params = new URLSearchParams();
+    params.set("a", dateA);
+    params.set("b", dateB);
+    if (nameA) params.set("na", nameA);
+    if (nameB) params.set("nb", nameB);
+    return `${SITE_URL}/quick-match?${params.toString()}`;
+  }
+
+  function buildShareText() {
+    if (!result) return "";
     const labelA = nameA || result.signA;
     const labelB = nameB || result.signB;
-    const verdict = getVerdict(result.score);
-    const text = `${SIGN_EMOJIS[result.signA]} ${labelA} + ${SIGN_EMOJIS[result.signB]} ${labelB} = ${result.score}% compatible (${verdict.text})! Check your compatibility:`;
-    const url = `${SITE_URL}/quick-match?a=${encodeURIComponent(dateA)}&b=${encodeURIComponent(dateB)}`;
+    const v = getVerdict(result.score);
+    return `${SIGN_EMOJIS[result.signA]} ${labelA} + ${SIGN_EMOJIS[result.signB]} ${labelB} = ${result.score}% compatible (${v.text})! Check your compatibility:`;
+  }
+
+  function shareResult() {
+    if (!result) return;
+    const text = buildShareText();
+    const url = buildShareUrl();
 
     if (navigator.share) {
       navigator.share({ title: "Zodiac Compatibility", text, url }).catch(() => {});
@@ -184,6 +200,22 @@ export default function QuickMatchClient() {
       setCopied(true);
       setTimeout(() => setCopied(false), 2500);
     }
+    setHasShared(true);
+  }
+
+  function shareToWhatsApp() {
+    if (!result) return;
+    const text = buildShareText();
+    const url = buildShareUrl();
+    window.open(`https://wa.me/?text=${encodeURIComponent(`${text}\n${url}`)}`, "_blank");
+    setHasShared(true);
+  }
+
+  function shareToTwitter() {
+    if (!result) return;
+    const text = buildShareText();
+    const url = buildShareUrl();
+    window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`, "_blank");
     setHasShared(true);
   }
 
@@ -299,19 +331,34 @@ export default function QuickMatchClient() {
                 </p>
               </div>
 
-              {/* Actions */}
-              <div className="flex flex-col sm:flex-row gap-3">
-                <Button
-                  onClick={shareResult}
-                  className="flex-1 bg-cosmic-purple hover:bg-cosmic-purple-dark text-white"
-                >
-                  {copied ? <Copy className="w-4 h-4 mr-2" /> : <Share2 className="w-4 h-4 mr-2" />}
-                  {copied ? "Copied!" : "Share Result"}
-                </Button>
+              {/* Share buttons */}
+              <div className="space-y-3">
+                <div className="grid grid-cols-3 gap-2">
+                  <Button
+                    onClick={shareToWhatsApp}
+                    className="bg-[#25D366] hover:bg-[#20bd5a] text-white text-xs"
+                  >
+                    WhatsApp
+                  </Button>
+                  <Button
+                    onClick={shareToTwitter}
+                    className="bg-[#1DA1F2] hover:bg-[#1a8cd8] text-white text-xs"
+                  >
+                    Twitter / X
+                  </Button>
+                  <Button
+                    onClick={shareResult}
+                    variant="outline"
+                    className="border-white/20 text-white hover:bg-white/10 text-xs"
+                  >
+                    {copied ? <Check className="w-3.5 h-3.5 mr-1" /> : <Copy className="w-3.5 h-3.5 mr-1" />}
+                    {copied ? "Copied!" : "Copy Link"}
+                  </Button>
+                </div>
                 <Button
                   onClick={reset}
                   variant="outline"
-                  className="flex-1 border-cosmic-purple/30 text-foreground hover:bg-cosmic-purple/10"
+                  className="w-full border-cosmic-purple/30 text-foreground hover:bg-cosmic-purple/10"
                 >
                   <RotateCcw className="w-4 h-4 mr-2" />
                   Try Another Pair

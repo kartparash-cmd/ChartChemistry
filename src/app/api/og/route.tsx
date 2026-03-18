@@ -91,6 +91,8 @@ export async function GET(req: NextRequest) {
   const { searchParams } = req.nextUrl;
   const a = searchParams.get("a");
   const b = searchParams.get("b");
+  const nameA = searchParams.get("na");
+  const nameB = searchParams.get("nb");
   const hasResult = a && b;
 
   let signA = "";
@@ -143,12 +145,14 @@ export async function GET(req: NextRequest) {
             <div style={{ display: "flex", alignItems: "center", gap: "32px", marginBottom: "24px" }}>
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
                 <span style={{ fontSize: "64px" }}>{SIGN_EMOJIS[signA] || ""}</span>
-                <span style={{ color: "#A78BFA", fontSize: "18px", fontWeight: 600 }}>{signA}</span>
+                {nameA && <span style={{ color: "white", fontSize: "20px", fontWeight: 700 }}>{nameA}</span>}
+                <span style={{ color: "#A78BFA", fontSize: "16px", fontWeight: 600 }}>{signA}</span>
               </div>
               <span style={{ fontSize: "32px", color: "#F59E0B" }}>+</span>
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
                 <span style={{ fontSize: "64px" }}>{SIGN_EMOJIS[signB] || ""}</span>
-                <span style={{ color: "#FCD34D", fontSize: "18px", fontWeight: 600 }}>{signB}</span>
+                {nameB && <span style={{ color: "white", fontSize: "20px", fontWeight: 700 }}>{nameB}</span>}
+                <span style={{ color: "#FCD34D", fontSize: "16px", fontWeight: 600 }}>{signB}</span>
               </div>
             </div>
 

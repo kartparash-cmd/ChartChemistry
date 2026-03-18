@@ -662,6 +662,50 @@ export default function CompatibilityPage() {
           </motion.div>
         )}
       </AnimatePresence>
+
+        {/* Zodiac Compatibility Hub — SEO internal linking to all 78 pages */}
+        {pageState === "input" && (
+          <section className="mt-20 border-t border-border pt-12">
+            <h2 className="text-2xl font-heading font-bold text-center mb-2">
+              Explore Zodiac <span className="cosmic-text">Compatibility</span>
+            </h2>
+            <p className="text-center text-muted-foreground text-sm mb-8 max-w-md mx-auto">
+              Browse compatibility insights for every zodiac pairing
+            </p>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+              {(() => {
+                const signs = [
+                  "aries", "taurus", "gemini", "cancer", "leo", "virgo",
+                  "libra", "scorpio", "sagittarius", "capricorn", "aquarius", "pisces",
+                ];
+                const emojis: Record<string, string> = {
+                  aries: "\u2648", taurus: "\u2649", gemini: "\u264A", cancer: "\u264B",
+                  leo: "\u264C", virgo: "\u264D", libra: "\u264E", scorpio: "\u264F",
+                  sagittarius: "\u2650", capricorn: "\u2651", aquarius: "\u2652", pisces: "\u2653",
+                };
+                const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+                const pairs: { slug: string; label: string }[] = [];
+                for (let i = 0; i < signs.length; i++) {
+                  for (let j = i; j < signs.length; j++) {
+                    pairs.push({
+                      slug: `${signs[i]}-${signs[j]}`,
+                      label: `${emojis[signs[i]]} ${cap(signs[i])} & ${emojis[signs[j]]} ${cap(signs[j])}`,
+                    });
+                  }
+                }
+                return pairs.map((p) => (
+                  <Link
+                    key={p.slug}
+                    href={`/compatibility/${p.slug}`}
+                    className="rounded-lg border border-border px-3 py-2 text-xs text-muted-foreground hover:text-foreground hover:border-cosmic-purple/40 hover:bg-muted/50 transition-colors text-center"
+                  >
+                    {p.label}
+                  </Link>
+                ));
+              })()}
+            </div>
+          </section>
+        )}
     </main>
   );
 }

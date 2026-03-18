@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import QuickMatchClient from "./QuickMatchClient";
 
 const SITE_URL = "https://chartchemistry.com";
@@ -31,5 +32,9 @@ export const metadata: Metadata = {
 };
 
 export default function QuickMatchPage() {
-  return <QuickMatchClient />;
+  return (
+    <Suspense>
+      <QuickMatchClient />
+    </Suspense>
+  );
 }

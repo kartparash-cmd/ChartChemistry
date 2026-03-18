@@ -81,6 +81,8 @@ export async function generateMetadata({
     title,
     description: desc,
     openGraph: { title: `${title} | ChartChemistry`, description: desc },
+    twitter: { card: "summary_large_image", title, description: desc },
+    alternates: { canonical: `https://chartchemistry.com/compatibility/${signs}` },
   };
 }
 
@@ -178,6 +180,9 @@ export default async function ZodiacPairPage({
           <p className="text-sm text-muted-foreground mt-3">
             AI-powered analysis using your complete birth charts
           </p>
+          <p className="text-sm text-muted-foreground mt-3">
+            Or try our <Link href="/quick-match" className="text-cosmic-purple dark:text-cosmic-purple-light hover:underline">instant Quick Match</Link> for a fast check
+          </p>
         </div>
       </div>
 
@@ -187,7 +192,7 @@ export default async function ZodiacPairPage({
         </h3>
         <div className="flex flex-wrap justify-center gap-2">
           {ZODIAC_SIGNS.filter((s) => s !== sign1 && s !== sign2)
-            .slice(0, 6)
+            .slice(0, 10)
             .map((s) => (
               <Link
                 key={s}
@@ -204,14 +209,25 @@ export default async function ZodiacPairPage({
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "Article",
-            headline: `${capitalize(sign1)} and ${capitalize(sign2)} Compatibility`,
-            description: `Astrological compatibility analysis for ${capitalize(sign1)} and ${capitalize(sign2)}.`,
-            author: { "@type": "Organization", name: "ChartChemistry" },
-            publisher: { "@type": "Organization", name: "ChartChemistry" },
-          }),
+          __html: JSON.stringify([
+            {
+              "@context": "https://schema.org",
+              "@type": "Article",
+              headline: `${capitalize(sign1)} and ${capitalize(sign2)} Compatibility`,
+              description: `Astrological compatibility analysis for ${capitalize(sign1)} and ${capitalize(sign2)}.`,
+              author: { "@type": "Organization", name: "ChartChemistry" },
+              publisher: { "@type": "Organization", name: "ChartChemistry" },
+            },
+            {
+              "@context": "https://schema.org",
+              "@type": "BreadcrumbList",
+              itemListElement: [
+                { "@type": "ListItem", position: 1, name: "Home", item: "https://chartchemistry.com" },
+                { "@type": "ListItem", position: 2, name: "Compatibility", item: "https://chartchemistry.com/compatibility" },
+                { "@type": "ListItem", position: 3, name: `${capitalize(sign1)} & ${capitalize(sign2)} Compatibility` },
+              ],
+            },
+          ]),
         }}
       />
     </div>

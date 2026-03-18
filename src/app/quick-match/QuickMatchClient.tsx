@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles, Heart, ArrowRight, Share2, Copy, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -121,13 +122,29 @@ function getBlurb(sign1: string, sign2: string, score: number): string {
 const SITE_URL = "https://chartchemistry.com";
 
 export default function QuickMatchClient() {
+  const searchParams = useSearchParams();
+
+  // Compute initial state from URL params (for shared links)
+  const initialState = useMemo(() => {
+    const paramA = searchParams.get("a");
+    const paramB = searchParams.get("b");
+    if (paramA && paramB) {
+      const signA = getSunSign(paramA);
+      const signB = getSunSign(paramB);
+      const score = getCompatibility(signA, signB);
+      trackEvent("quick_match");
+      return { dateA: paramA, dateB: paramB, result: { signA, signB, score } };
+    }
+    return { dateA: "", dateB: "", result: null };
+  }, [searchParams]);
+
   const [nameA, setNameA] = useState("");
-  const [dateA, setDateA] = useState("");
+  const [dateA, setDateA] = useState(initialState.dateA);
   const [nameB, setNameB] = useState("");
-  const [dateB, setDateB] = useState("");
+  const [dateB, setDateB] = useState(initialState.dateB);
   const [result, setResult] = useState<{
     signA: string; signB: string; score: number;
-  } | null>(null);
+  } | null>(initialState.result);
   const [copied, setCopied] = useState(false);
   const [animating, setAnimating] = useState(false);
   const [hasShared, setHasShared] = useState(false);

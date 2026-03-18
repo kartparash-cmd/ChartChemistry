@@ -9,6 +9,66 @@ const SIGN_EMOJIS: Record<string, string> = {
   Sagittarius: "\u2650", Capricorn: "\u2651", Aquarius: "\u2652", Pisces: "\u2653",
 };
 
+const SIGNS = [
+  "Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo",
+  "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces",
+] as const;
+
+// Compatibility matrix (inlined for edge runtime)
+const COMPAT: Record<string, Record<string, number>> = {};
+function setCompat(a: string, b: string, score: number) {
+  if (!COMPAT[a]) COMPAT[a] = {};
+  if (!COMPAT[b]) COMPAT[b] = {};
+  COMPAT[a][b] = score;
+  COMPAT[b][a] = score;
+}
+
+SIGNS.forEach((s) => setCompat(s, s, 78));
+setCompat("Aries", "Leo", 93); setCompat("Aries", "Sagittarius", 90); setCompat("Leo", "Sagittarius", 88);
+setCompat("Taurus", "Virgo", 90); setCompat("Taurus", "Capricorn", 92); setCompat("Virgo", "Capricorn", 88);
+setCompat("Gemini", "Libra", 89); setCompat("Gemini", "Aquarius", 85); setCompat("Libra", "Aquarius", 91);
+setCompat("Cancer", "Scorpio", 94); setCompat("Cancer", "Pisces", 92); setCompat("Scorpio", "Pisces", 90);
+setCompat("Aries", "Gemini", 83); setCompat("Aries", "Libra", 72); setCompat("Aries", "Aquarius", 79);
+setCompat("Leo", "Gemini", 80); setCompat("Leo", "Libra", 85); setCompat("Leo", "Aquarius", 68);
+setCompat("Sagittarius", "Gemini", 70); setCompat("Sagittarius", "Libra", 82); setCompat("Sagittarius", "Aquarius", 87);
+setCompat("Taurus", "Cancer", 89); setCompat("Taurus", "Scorpio", 73); setCompat("Taurus", "Pisces", 84);
+setCompat("Virgo", "Cancer", 82); setCompat("Virgo", "Scorpio", 86); setCompat("Virgo", "Pisces", 65);
+setCompat("Capricorn", "Cancer", 68); setCompat("Capricorn", "Scorpio", 88); setCompat("Capricorn", "Pisces", 81);
+setCompat("Aries", "Cancer", 47); setCompat("Aries", "Scorpio", 55); setCompat("Aries", "Pisces", 62);
+setCompat("Leo", "Cancer", 58); setCompat("Leo", "Scorpio", 60); setCompat("Leo", "Pisces", 52);
+setCompat("Sagittarius", "Cancer", 42); setCompat("Sagittarius", "Scorpio", 58); setCompat("Sagittarius", "Pisces", 70);
+setCompat("Aries", "Taurus", 52); setCompat("Aries", "Virgo", 48); setCompat("Aries", "Capricorn", 55);
+setCompat("Leo", "Taurus", 65); setCompat("Leo", "Virgo", 55); setCompat("Leo", "Capricorn", 50);
+setCompat("Sagittarius", "Taurus", 45); setCompat("Sagittarius", "Virgo", 50); setCompat("Sagittarius", "Capricorn", 60);
+setCompat("Gemini", "Cancer", 55); setCompat("Gemini", "Scorpio", 48); setCompat("Gemini", "Pisces", 58);
+setCompat("Libra", "Cancer", 50); setCompat("Libra", "Scorpio", 72); setCompat("Libra", "Pisces", 60);
+setCompat("Aquarius", "Cancer", 42); setCompat("Aquarius", "Scorpio", 65); setCompat("Aquarius", "Pisces", 55);
+setCompat("Gemini", "Taurus", 60); setCompat("Gemini", "Virgo", 62); setCompat("Gemini", "Capricorn", 50);
+setCompat("Libra", "Taurus", 68); setCompat("Libra", "Virgo", 55); setCompat("Libra", "Capricorn", 58);
+setCompat("Aquarius", "Taurus", 48); setCompat("Aquarius", "Virgo", 52); setCompat("Aquarius", "Capricorn", 60);
+
+function getCompatibility(sign1: string, sign2: string): number {
+  return COMPAT[sign1]?.[sign2] ?? 65;
+}
+
+function getVerdict(score: number): string {
+  if (score >= 90) return "Cosmic Soulmates";
+  if (score >= 80) return "Written in the Stars";
+  if (score >= 70) return "Strong Connection";
+  if (score >= 55) return "Interesting Dynamic";
+  if (score >= 40) return "Challenging but Passionate";
+  return "Opposites Attract?";
+}
+
+function getScoreColor(score: number): string {
+  if (score >= 90) return "#F59E0B";
+  if (score >= 80) return "#A78BFA";
+  if (score >= 70) return "#4ADE80";
+  if (score >= 55) return "#60A5FA";
+  if (score >= 40) return "#FB923C";
+  return "#F87171";
+}
+
 function getSunSign(dateStr: string): string {
   const d = new Date(dateStr + "T12:00:00");
   const m = d.getMonth() + 1;
@@ -35,9 +95,15 @@ export async function GET(req: NextRequest) {
 
   let signA = "";
   let signB = "";
+  let score = 0;
+  let verdict = "";
+  let scoreColor = "";
   if (hasResult) {
     signA = getSunSign(a);
     signB = getSunSign(b);
+    score = getCompatibility(signA, signB);
+    verdict = getVerdict(score);
+    scoreColor = getScoreColor(score);
   }
 
   return new ImageResponse(
@@ -73,20 +139,63 @@ export async function GET(req: NextRequest) {
 
         {hasResult ? (
           <>
-            {/* Signs */}
-            <div style={{ display: "flex", alignItems: "center", gap: "32px", marginBottom: "20px" }}>
+            {/* Signs row */}
+            <div style={{ display: "flex", alignItems: "center", gap: "32px", marginBottom: "24px" }}>
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-                <span style={{ fontSize: "72px" }}>{SIGN_EMOJIS[signA] || ""}</span>
-                <span style={{ color: "#A78BFA", fontSize: "20px", fontWeight: 600 }}>{signA}</span>
+                <span style={{ fontSize: "64px" }}>{SIGN_EMOJIS[signA] || ""}</span>
+                <span style={{ color: "#A78BFA", fontSize: "18px", fontWeight: 600 }}>{signA}</span>
               </div>
-              <span style={{ fontSize: "36px", color: "#F59E0B" }}>+</span>
+              <span style={{ fontSize: "32px", color: "#F59E0B" }}>+</span>
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-                <span style={{ fontSize: "72px" }}>{SIGN_EMOJIS[signB] || ""}</span>
-                <span style={{ color: "#FCD34D", fontSize: "20px", fontWeight: 600 }}>{signB}</span>
+                <span style={{ fontSize: "64px" }}>{SIGN_EMOJIS[signB] || ""}</span>
+                <span style={{ color: "#FCD34D", fontSize: "18px", fontWeight: 600 }}>{signB}</span>
               </div>
             </div>
-            <div style={{ fontSize: "28px", color: "#94A3B8", marginBottom: "8px" }}>
-              See how compatible they are!
+
+            {/* Score - hero element */}
+            <div
+              style={{
+                display: "flex",
+                alignItems: "baseline",
+                gap: "4px",
+                marginBottom: "12px",
+              }}
+            >
+              <span
+                style={{
+                  fontSize: "96px",
+                  fontWeight: 800,
+                  color: scoreColor,
+                  lineHeight: 1,
+                }}
+              >
+                {score}
+              </span>
+              <span
+                style={{
+                  fontSize: "40px",
+                  fontWeight: 700,
+                  color: scoreColor,
+                  opacity: 0.8,
+                }}
+              >
+                %
+              </span>
+            </div>
+
+            {/* Verdict */}
+            <div
+              style={{
+                fontSize: "28px",
+                fontWeight: 700,
+                color: "white",
+                marginBottom: "8px",
+              }}
+            >
+              {verdict}
+            </div>
+            <div style={{ fontSize: "18px", color: "#94A3B8" }}>
+              Tap to check your own compatibility
             </div>
           </>
         ) : (

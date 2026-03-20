@@ -55,6 +55,13 @@ interface StarFieldProps {
   cosmic?: boolean;
 }
 
+// Parallax depth multipliers per layer
+const PARALLAX_NEBULA = 0.5;
+const PARALLAX_PLANET = 0.8;
+const PARALLAX_STAR = 1.2;
+// Max offset in pixels for the fastest layer (stars at 1.2x)
+const PARALLAX_MAX_PX = 15;
+
 export function StarField({ starCount = 100, className, cosmic = false }: StarFieldProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const starsRef = useRef<Star[]>([]);
@@ -64,6 +71,11 @@ export function StarField({ starCount = 100, className, cosmic = false }: StarFi
   const animationRef = useRef<number>(0);
   const isVisibleRef = useRef<boolean>(true);
   const cosmicInitRef = useRef<boolean>(false);
+
+  // Mouse parallax refs — using refs to avoid re-renders
+  const mouseXRef = useRef<number>(0); // normalized -1 to 1
+  const mouseYRef = useRef<number>(0); // normalized -1 to 1
+  const hasPointerFineRef = useRef<boolean>(false);
 
   const initStars = useCallback(
     (width: number, height: number) => {
@@ -133,6 +145,22 @@ export function StarField({ starCount = 100, className, cosmic = false }: StarFi
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
+    // Detect pointer type once for parallax
+    hasPointerFineRef.current = window.matchMedia("(pointer: fine)").matches;
+
+    // Mouse move handler for parallax (non-touch only)
+    const handleMouseMove = (e: MouseEvent) => {
+      const cx = window.innerWidth / 2;
+      const cy = window.innerHeight / 2;
+      // Normalize to -1..1 range relative to viewport center
+      mouseXRef.current = (e.clientX - cx) / cx;
+      mouseYRef.current = (e.clientY - cy) / cy;
+    };
+
+    if (hasPointerFineRef.current) {
+      window.addEventListener("mousemove", handleMouseMove);
+    }
+
     const resizeCanvas = () => {
       const dpr = window.devicePixelRatio || 1;
       const rect = canvas.getBoundingClientRect();
@@ -166,6 +194,17 @@ export function StarField({ starCount = 100, className, cosmic = false }: StarFi
 
     let time = 0;
 
+    // Helper: compute parallax offset for a given depth multiplier
+    const getParallaxOffset = (depthMultiplier: number) => {
+      if (!hasPointerFineRef.current) return { dx: 0, dy: 0 };
+      // Base max offset scaled by depth; PARALLAX_MAX_PX is for the fastest layer
+      const maxOffset = (PARALLAX_MAX_PX / PARALLAX_STAR) * depthMultiplier;
+      return {
+        dx: mouseXRef.current * maxOffset,
+        dy: mouseYRef.current * maxOffset,
+      };
+    };
+
     const animate = () => {
       if (!isVisibleRef.current) {
         animationRef.current = 0;
@@ -179,12 +218,13 @@ export function StarField({ starCount = 100, className, cosmic = false }: StarFi
 
       // ── Nebulae (drawn first, behind everything) ──
       if (cosmic) {
+        const nebulaOffset = getParallaxOffset(PARALLAX_NEBULA);
         for (const nebula of nebulaeRef.current) {
           const pulse = Math.sin(time * nebula.pulseSpeed + nebula.pulseOffset) * 0.4 + 0.6;
           const currentOpacity = nebula.opacity * pulse;
 
           ctx.save();
-          ctx.translate(nebula.x, nebula.y);
+          ctx.translate(nebula.x + nebulaOffset.dx, nebula.y + nebulaOffset.dy);
           ctx.rotate(nebula.rotation);
 
           const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, nebula.radiusX);
@@ -203,6 +243,7 @@ export function StarField({ starCount = 100, className, cosmic = false }: StarFi
 
       // ── Celestial bodies (faint planets) ──
       if (cosmic) {
+        const planetOffset = getParallaxOffset(PARALLAX_PLANET);
         for (const body of celestialRef.current) {
           body.x += body.driftX;
           body.y += body.driftY;
@@ -213,62 +254,71 @@ export function StarField({ starCount = 100, className, cosmic = false }: StarFi
           if (body.y < -50) body.y = rect.height + 50;
           if (body.y > rect.height + 50) body.y = -50;
 
+          const drawX = body.x + planetOffset.dx;
+          const drawY = body.y + planetOffset.dy;
+
           // Outer glow
           const glow = ctx.createRadialGradient(
-            body.x, body.y, body.radius * 0.5,
-            body.x, body.y, body.glowRadius
+            drawX, drawY, body.radius * 0.5,
+            drawX, drawY, body.glowRadius
           );
           glow.addColorStop(0, `hsla(${body.hue}, ${body.saturation}%, 60%, ${body.opacity * 0.4})`);
           glow.addColorStop(1, `hsla(${body.hue}, ${body.saturation}%, 50%, 0)`);
           ctx.beginPath();
-          ctx.arc(body.x, body.y, body.glowRadius, 0, Math.PI * 2);
+          ctx.arc(drawX, drawY, body.glowRadius, 0, Math.PI * 2);
           ctx.fillStyle = glow;
           ctx.fill();
 
           // Planet body with gradient for 3D feel
           const planetGrad = ctx.createRadialGradient(
-            body.x - body.radius * 0.3, body.y - body.radius * 0.3, body.radius * 0.1,
-            body.x, body.y, body.radius
+            drawX - body.radius * 0.3, drawY - body.radius * 0.3, body.radius * 0.1,
+            drawX, drawY, body.radius
           );
           planetGrad.addColorStop(0, `hsla(${body.hue}, ${body.saturation}%, 70%, ${body.opacity * 0.8})`);
           planetGrad.addColorStop(0.7, `hsla(${body.hue}, ${body.saturation}%, 40%, ${body.opacity * 0.6})`);
           planetGrad.addColorStop(1, `hsla(${body.hue}, ${body.saturation}%, 20%, ${body.opacity * 0.3})`);
 
           ctx.beginPath();
-          ctx.arc(body.x, body.y, body.radius, 0, Math.PI * 2);
+          ctx.arc(drawX, drawY, body.radius, 0, Math.PI * 2);
           ctx.fillStyle = planetGrad;
           ctx.fill();
         }
       }
 
       // ── Stars ──
-      for (const star of starsRef.current) {
-        star.x += star.vx;
-        star.y += star.vy;
+      {
+        const starOffset = getParallaxOffset(PARALLAX_STAR);
+        for (const star of starsRef.current) {
+          star.x += star.vx;
+          star.y += star.vy;
 
-        if (star.x < 0) star.x = rect.width;
-        if (star.x > rect.width) star.x = 0;
-        if (star.y < 0) star.y = rect.height;
-        if (star.y > rect.height) star.y = 0;
+          if (star.x < 0) star.x = rect.width;
+          if (star.x > rect.width) star.x = 0;
+          if (star.y < 0) star.y = rect.height;
+          if (star.y > rect.height) star.y = 0;
 
-        const twinkle =
-          Math.sin(time * star.twinkleSpeed + star.twinkleOffset) * 0.3 + 0.7;
-        const currentOpacity = star.opacity * twinkle;
+          const drawX = star.x + starOffset.dx;
+          const drawY = star.y + starOffset.dy;
 
-        ctx.beginPath();
-        ctx.arc(star.x, star.y, star.radius, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(167, 139, 250, ${currentOpacity})`;
-        ctx.fill();
+          const twinkle =
+            Math.sin(time * star.twinkleSpeed + star.twinkleOffset) * 0.3 + 0.7;
+          const currentOpacity = star.opacity * twinkle;
 
-        if (star.radius > 1) {
           ctx.beginPath();
-          ctx.arc(star.x, star.y, star.radius * 2, 0, Math.PI * 2);
-          ctx.fillStyle = `rgba(167, 139, 250, ${currentOpacity * 0.15})`;
+          ctx.arc(drawX, drawY, star.radius, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(167, 139, 250, ${currentOpacity})`;
           ctx.fill();
+
+          if (star.radius > 1) {
+            ctx.beginPath();
+            ctx.arc(drawX, drawY, star.radius * 2, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(167, 139, 250, ${currentOpacity * 0.15})`;
+            ctx.fill();
+          }
         }
       }
 
-      // ── Shooting stars ──
+      // ── Shooting stars (unaffected by parallax) ──
       if (cosmic) {
         // Spawn new shooting star occasionally (~1 every 4 seconds at 60fps)
         if (Math.random() < 0.004) {
@@ -345,6 +395,9 @@ export function StarField({ starCount = 100, className, cosmic = false }: StarFi
     return () => {
       observer.disconnect();
       window.removeEventListener("resize", handleResize);
+      if (hasPointerFineRef.current) {
+        window.removeEventListener("mousemove", handleMouseMove);
+      }
       cancelAnimationFrame(animationRef.current);
     };
   }, [initStars, initCosmic, cosmic]);

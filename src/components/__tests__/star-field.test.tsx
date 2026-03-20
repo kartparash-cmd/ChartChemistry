@@ -2,8 +2,22 @@ import { describe, it, expect, vi, beforeAll } from "vitest";
 import { render } from "@testing-library/react";
 import { StarField } from "@/components/star-field";
 
-// Mock canvas APIs that jsdom doesn't support
+// Mock canvas APIs and browser APIs that jsdom doesn't support
 beforeAll(() => {
+  // Mock matchMedia for parallax detection
+  Object.defineProperty(window, "matchMedia", {
+    writable: true,
+    value: vi.fn().mockImplementation((query: string) => ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    })),
+  });
   // Mock HTMLCanvasElement.getContext
   HTMLCanvasElement.prototype.getContext = vi.fn(
     () =>

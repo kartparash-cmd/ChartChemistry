@@ -9,6 +9,9 @@ import { Footer } from "@/components/footer";
 import { ImpersonationBanner } from "@/components/admin/impersonation-banner";
 import { StarField } from "@/components/star-field";
 import { CookieConsent } from "@/components/cookie-consent";
+import { PageTransition } from "@/components/page-transition";
+import { CursorGlow } from "@/components/cursor-glow";
+import { ConstellationLines } from "@/components/constellation-lines";
 import { Toaster } from "sonner";
 import "./globals.css";
 
@@ -111,12 +114,16 @@ export default function RootLayout({
           Skip to main content
         </a>
         <StarField starCount={60} cosmic className="fixed inset-0 z-0 opacity-30 pointer-events-none" />
+        <ConstellationLines />
+        <CursorGlow />
         <ThemeProvider>
           <SessionProvider>
             <TooltipProvider>
               <ImpersonationBanner />
               <Navigation />
-              <main id="main-content" className="min-h-screen pb-20 md:pb-0">{children}</main>
+              <main id="main-content" className="min-h-screen pb-20 md:pb-0">
+                <PageTransition>{children}</PageTransition>
+              </main>
               <Footer />
             </TooltipProvider>
           </SessionProvider>

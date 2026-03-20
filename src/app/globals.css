@@ -171,8 +171,27 @@
 }
 
 /* ============================================================================
+   Breathing Background — Dark Mode
+   ============================================================================ */
+.dark body {
+  animation: cosmic-breathe 30s ease-in-out infinite;
+}
+
+/* ============================================================================
    Custom Keyframes
    ============================================================================ */
+@keyframes cosmic-breathe {
+  0%, 100% {
+    background-color: hsl(222, 47%, 6%);
+  }
+  33% {
+    background-color: hsl(260, 30%, 8%);
+  }
+  66% {
+    background-color: hsl(210, 40%, 7%);
+  }
+}
+
 @keyframes shimmer {
   0% {
     background-position: -200% 0;
@@ -598,6 +617,67 @@
   .print-report .text-emerald-400 {
     color: #10B981 !important;
   }
+}
+
+/* ============================================================================
+   Zodiac Element Hover Micro-Animations
+   ============================================================================ */
+@keyframes fire-glow {
+  0%, 100% {
+    text-shadow: 0 0 4px rgba(249, 115, 22, 0.4), 0 0 8px rgba(239, 68, 68, 0.2);
+  }
+  50% {
+    text-shadow: 0 0 6px rgba(249, 115, 22, 0.7), 0 0 8px rgba(239, 68, 68, 0.5);
+  }
+}
+
+@keyframes water-ripple {
+  0%, 100% {
+    transform: scale(1);
+    text-shadow: 0 0 4px rgba(59, 130, 246, 0.3), 0 0 8px rgba(96, 165, 250, 0.2);
+  }
+  50% {
+    transform: scale(1.05);
+    text-shadow: 0 0 6px rgba(59, 130, 246, 0.6), 0 0 8px rgba(96, 165, 250, 0.4);
+  }
+}
+
+@keyframes earth-pulse {
+  0%, 100% {
+    transform: scale(1);
+    text-shadow: 0 0 4px rgba(34, 197, 94, 0.3), 0 0 8px rgba(74, 222, 128, 0.2);
+  }
+  50% {
+    transform: scale(1.04);
+    text-shadow: 0 0 6px rgba(34, 197, 94, 0.6), 0 0 8px rgba(74, 222, 128, 0.4);
+  }
+}
+
+@keyframes air-float {
+  0%, 100% {
+    transform: translateY(0);
+    text-shadow: 0 0 4px rgba(6, 182, 212, 0.3), 0 0 8px rgba(34, 211, 238, 0.2);
+  }
+  50% {
+    transform: translateY(-3px);
+    text-shadow: 0 0 6px rgba(6, 182, 212, 0.6), 0 0 8px rgba(34, 211, 238, 0.4);
+  }
+}
+
+.zodiac-fire:hover {
+  animation: fire-glow 0.8s ease-in-out infinite;
+}
+
+.zodiac-water:hover {
+  animation: water-ripple 0.8s ease-in-out infinite;
+}
+
+.zodiac-earth:hover {
+  animation: earth-pulse 0.8s ease-in-out infinite;
+}
+
+.zodiac-air:hover {
+  animation: air-float 0.8s ease-in-out infinite;
 }
 
 /* ============================================================================

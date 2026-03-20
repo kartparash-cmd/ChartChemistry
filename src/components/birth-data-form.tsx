@@ -600,11 +600,21 @@ export function BirthDataForm({
         <div
           className={cn(
             "h-2 w-2 rounded-full transition-colors",
-            isValid ? "bg-green-500" : "bg-muted-foreground/30"
+            isValid ? "bg-green-500" : "bg-amber-400"
           )}
         />
         <span className="text-xs text-muted-foreground">
-          {isValid ? "All details filled" : "Please complete all fields"}
+          {isValid
+            ? "All details filled"
+            : `Missing: ${[
+                !name.trim() && "name",
+                !birthDate && "date of birth",
+                !unknownTime && !birthTime && "birth time",
+                !birthCity.trim() && "birth city",
+                !birthCountry && "birth country",
+              ]
+                .filter(Boolean)
+                .join(", ")}`}
         </span>
       </div>
     </div>

@@ -706,6 +706,13 @@ const ELEMENT_TEXT: Record<string, string> = {
   Water: "text-blue-400",
 };
 
+const ELEMENT_HOVER: Record<string, string> = {
+  Fire: "zodiac-fire",
+  Earth: "zodiac-earth",
+  Air: "zodiac-air",
+  Water: "zodiac-water",
+};
+
 function cap(s: string) {
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
@@ -754,6 +761,7 @@ function ZodiacHub() {
               onClick={() => setSelectedSign(isActive ? null : sign)}
               className={cn(
                 "flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-all border",
+                ELEMENT_HOVER[element],
                 isActive
                   ? `bg-gradient-to-r ${ELEMENT_COLORS[element]} ${ELEMENT_TEXT[element]} border-current shadow-lg`
                   : "border-white/10 text-muted-foreground hover:text-foreground hover:border-white/20 hover:bg-white/5"
@@ -777,8 +785,9 @@ function ZodiacHub() {
               <div className="flex items-center gap-3 mb-3">
                 <div
                   className={cn(
-                    "flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br text-lg",
-                    ELEMENT_COLORS[element]
+                    "flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br text-lg cursor-default",
+                    ELEMENT_COLORS[element],
+                    ELEMENT_HOVER[element]
                   )}
                 >
                   {ZODIAC_EMOJIS[sign]}

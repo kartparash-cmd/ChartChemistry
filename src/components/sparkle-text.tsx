@@ -50,10 +50,11 @@ export function SparkleText({
   return (
     <motion.span
       className={className}
-      variants={containerVariants}
       initial="hidden"
-      animate="visible"
+      whileInView="visible"
+      viewport={{ once: true }}
       custom={delay}
+      variants={containerVariants}
       aria-label={children}
     >
       {children.split("").map((char, i) =>

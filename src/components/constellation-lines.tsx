@@ -54,14 +54,13 @@ export function ConstellationLines() {
     const points = pointsRef.current;
     const pairs = pairsRef.current;
     const scrollY = window.scrollY;
-    const progress = Math.min(scrollY / 500, 1);
+    // Base visibility of 0.3 + scroll adds up to 0.7 more
+    const progress = 0.3 + Math.min(scrollY / 500, 1) * 0.7;
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    if (progress === 0 && !prefersReducedMotion.current) return;
-
-    const lineAlpha = prefersReducedMotion.current ? 0.15 : 0.15 * progress;
-    const dotAlpha = prefersReducedMotion.current ? 0.25 : 0.25 * progress;
+    const lineAlpha = 0.15 * progress;
+    const dotAlpha = 0.25 * progress;
 
     // Draw lines
     ctx.lineWidth = 0.5;

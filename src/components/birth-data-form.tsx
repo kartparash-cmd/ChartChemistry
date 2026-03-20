@@ -394,6 +394,8 @@ export function BirthDataForm({
   return (
     <div
       className={cn("glass-card rounded-2xl p-6 space-y-5", className)}
+      // Prevent Chrome/Safari form autofill at container level
+      data-form-type="other"
     >
       <h3 className="text-lg font-semibold text-foreground">{label}</h3>
 
@@ -402,9 +404,12 @@ export function BirthDataForm({
         <Label htmlFor={`name-${label}`}>Name</Label>
         <Input
           id={`name-${label}`}
+          name={`cc_name_${label.replace(/\s/g, "_")}`}
           placeholder="Enter name"
           value={name}
           onChange={(e) => setName(e.target.value)}
+          autoComplete="one-time-code"
+          data-form-type="other"
           className="h-11 bg-background/50"
         />
       </div>
@@ -414,6 +419,7 @@ export function BirthDataForm({
         <Label htmlFor={`birthDate-${label}`}>Date of Birth</Label>
         <Input
           id={`birthDate-${label}`}
+          name={`cc_dob_${label.replace(/\s/g, "_")}`}
           type={birthDate ? "date" : "text"}
           placeholder="Select date of birth"
           value={birthDate}
@@ -421,7 +427,8 @@ export function BirthDataForm({
           onBlur={(e) => { if (!e.currentTarget.value) e.currentTarget.type = "text"; }}
           onChange={(e) => setBirthDate(e.target.value)}
           max={new Date().toISOString().split("T")[0]}
-          autoComplete="off"
+          autoComplete="one-time-code"
+          data-form-type="other"
           className="h-11 bg-background/50 [color-scheme:dark]"
         />
       </div>
@@ -475,13 +482,15 @@ export function BirthDataForm({
         {!unknownTime && (
           <Input
             id={`birthTime-${label}`}
+            name={`cc_time_${label.replace(/\s/g, "_")}`}
             type={birthTime ? "time" : "text"}
             placeholder="Select birth time"
             value={birthTime}
             onFocus={(e) => { e.currentTarget.type = "time"; }}
             onBlur={(e) => { if (!e.currentTarget.value) e.currentTarget.type = "text"; }}
             onChange={(e) => setBirthTime(e.target.value)}
-            autoComplete="off"
+            autoComplete="one-time-code"
+            data-form-type="other"
             className="h-11 bg-background/50 [color-scheme:dark]"
           />
         )}
@@ -515,7 +524,8 @@ export function BirthDataForm({
                 ? `city-option-${label}-${highlightedIndex}`
                 : undefined
             }
-            autoComplete="off"
+            autoComplete="one-time-code"
+            data-form-type="other"
             className={cn(
               "h-11 bg-background/50 pr-8",
               selectedCoords && "border-green-500/50"

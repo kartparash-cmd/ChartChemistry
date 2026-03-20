@@ -171,29 +171,8 @@
 }
 
 /* ============================================================================
-   Breathing Background — Dark Mode
-   ============================================================================ */
-html.dark {
-  animation: cosmic-breathe 25s ease-in-out infinite !important;
-}
-
-/* ============================================================================
    Custom Keyframes
    ============================================================================ */
-@keyframes cosmic-breathe {
-  0%, 100% {
-    background-color: hsl(222, 47%, 7%);
-  }
-  25% {
-    background-color: hsl(265, 35%, 10%);
-  }
-  50% {
-    background-color: hsl(240, 40%, 9%);
-  }
-  75% {
-    background-color: hsl(200, 45%, 8%);
-  }
-}
 
 @keyframes shimmer {
   0% {

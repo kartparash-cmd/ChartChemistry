@@ -12,6 +12,7 @@ import { CookieConsent } from "@/components/cookie-consent";
 import { PageTransition } from "@/components/page-transition";
 import { CursorGlow } from "@/components/cursor-glow";
 import { ConstellationLines } from "@/components/constellation-lines";
+import { BreathingBackground } from "@/components/breathing-bg";
 import { Toaster } from "sonner";
 import "./globals.css";
 
@@ -113,6 +114,7 @@ export default function RootLayout({
         >
           Skip to main content
         </a>
+        <BreathingBackground />
         <StarField starCount={60} cosmic className="fixed inset-0 z-0 opacity-30 pointer-events-none" />
         <ConstellationLines />
         <CursorGlow />

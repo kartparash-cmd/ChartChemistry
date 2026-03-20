@@ -22,16 +22,13 @@ const charVariants: Variants = {
   hidden: {
     opacity: 0,
     y: 5,
-    textShadow: "0 0 20px rgba(167,139,250,0.8)",
   },
   visible: {
     opacity: 1,
     y: 0,
-    textShadow: "0 0 0px transparent",
     transition: {
       opacity: { duration: 0.3, ease: "easeOut" },
       y: { duration: 0.3, ease: "easeOut" },
-      textShadow: { duration: 0.5, ease: "easeOut" },
     },
   },
 };
@@ -47,6 +44,9 @@ export function SparkleText({
     return <span className={className}>{children}</span>;
   }
 
+  // Split into words to prevent mid-word line breaks
+  const words = children.split(" ");
+
   return (
     <motion.span
       className={className}
@@ -56,19 +56,20 @@ export function SparkleText({
       variants={containerVariants}
       aria-label={children}
     >
-      {children.split("").map((char, i) =>
-        char === " " ? (
-          <span key={i}>&nbsp;</span>
-        ) : (
-          <motion.span
-            key={i}
-            variants={charVariants}
-            style={{ display: "inline-block" }}
-          >
-            {char}
-          </motion.span>
-        )
-      )}
+      {words.map((word, wi) => (
+        <span key={wi} style={{ whiteSpace: "nowrap" }}>
+          {word.split("").map((char, ci) => (
+            <motion.span
+              key={`${wi}-${ci}`}
+              variants={charVariants}
+              style={{ display: "inline-block" }}
+            >
+              {char}
+            </motion.span>
+          ))}
+          {wi < words.length - 1 && <span>&nbsp;</span>}
+        </span>
+      ))}
     </motion.span>
   );
 }

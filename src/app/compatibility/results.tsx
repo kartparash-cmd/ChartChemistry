@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
@@ -21,6 +21,7 @@ import {
   Send,
   Star,
   RefreshCw,
+  MessageCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -258,32 +259,40 @@ export function CompatibilityResults({
     { label: "Harmony", score: result.dimensions.harmony },
   ];
 
+  // Build the best share URL: report link if saved, otherwise the site
+  const getShareUrl = useCallback(() => {
+    const origin = typeof window !== "undefined" ? window.location.origin : "https://chartchemistry.com";
+    return reportId ? `${origin}/report/${reportId}` : `${origin}/compatibility`;
+  }, [reportId]);
+
+  const getShareText = useCallback(() => {
+    const emoji1 = getZodiacSymbol(result.personA.sunSign);
+    const emoji2 = getZodiacSymbol(result.personB.sunSign);
+    return `${emoji1} ${result.personA.name} & ${emoji2} ${result.personB.name} scored ${result.overallScore}% compatible on ChartChemistry!`;
+  }, [result]);
+
   const handleShare = async () => {
-    const shareText = `${result.personA.name} (${result.personA.sunSign}) & ${result.personB.name} (${result.personB.sunSign}) scored ${result.overallScore}/100 on ChartChemistry! Check your compatibility at chartchemistry.com`;
+    const text = getShareText();
+    const url = getShareUrl();
 
     if (navigator.share) {
       try {
-        await navigator.share({
-          title: "ChartChemistry Compatibility Results",
-          text: shareText,
-        });
+        await navigator.share({ title: "ChartChemistry Compatibility", text, url });
       } catch {
-        // User cancelled or error
+        // User cancelled
       }
     } else {
-      await navigator.clipboard.writeText(shareText);
+      await navigator.clipboard.writeText(`${text}\n${url}`);
       setShareToast(true);
       setTimeout(() => setShareToast(false), 2000);
     }
   };
 
   const handleCopyLink = async () => {
-    const origin = typeof window !== "undefined" ? window.location.origin : "https://chartchemistry.com";
-    const url = reportId
-      ? `${origin}/report/${reportId}`
-      : `${origin}/compatibility`;
+    const text = getShareText();
+    const url = getShareUrl();
     try {
-      await navigator.clipboard.writeText(url);
+      await navigator.clipboard.writeText(`${text}\n${url}`);
       setLinkCopied(true);
       setTimeout(() => setLinkCopied(false), 2000);
     } catch {
@@ -291,11 +300,20 @@ export function CompatibilityResults({
     }
   };
 
+  const handleShareWhatsApp = () => {
+    const text = getShareText();
+    const url = getShareUrl();
+    window.open(`https://wa.me/?text=${encodeURIComponent(`${text}\n${url}`)}`, "_blank");
+  };
+
+  const handleShareTwitter = () => {
+    const text = getShareText();
+    const url = getShareUrl();
+    window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`, "_blank");
+  };
+
   const handleSendToThem = async () => {
-    const origin = typeof window !== "undefined" ? window.location.origin : "https://chartchemistry.com";
-    const url = reportId
-      ? `${origin}/report/${reportId}`
-      : `${origin}/compatibility`;
+    const url = getShareUrl();
     const shareText = `I just checked our compatibility on ChartChemistry \u2014 we scored ${result.overallScore}%! Check it out: ${url}`;
 
     if (navigator.share) {
@@ -306,7 +324,7 @@ export function CompatibilityResults({
           url,
         });
       } catch {
-        // User cancelled or error
+        // User cancelled
       }
     } else {
       try {
@@ -321,6 +339,18 @@ export function CompatibilityResults({
 
   const handleGenerateFullReport = async () => {
     if (!personAData || !personBData) return;
+
+    // Redirect unauthenticated users to sign up first
+    if (!session) {
+      if (typeof window !== "undefined") {
+        sessionStorage.setItem("pendingCompatibilityResults", JSON.stringify({
+          personAData, personBData, result,
+        }));
+      }
+      router.push(`/auth/signup?callbackUrl=${encodeURIComponent("/compatibility?restored=true")}`);
+      return;
+    }
+
     setPremiumLoading(true);
     setPremiumError("");
 
@@ -510,6 +540,62 @@ export function CompatibilityResults({
         })()}
       </motion.div>
 
+      {/* ── Quick Share Bar (right after score — the viral moment) ── */}
+      <motion.div
+        className="flex flex-col items-center gap-3"
+        initial={prefersReducedMotion ? "visible" : "hidden"}
+        animate="visible"
+        variants={fadeInUp}
+        transition={{ duration: prefersReducedMotion ? 0 : 0.5, delay: prefersReducedMotion ? 0 : 0.35 }}
+      >
+        <p className="text-xs text-muted-foreground">Share your results</p>
+        <div className="flex flex-wrap items-center justify-center gap-2">
+          <Button
+            onClick={handleShareWhatsApp}
+            size="sm"
+            className="rounded-full bg-[#25D366] hover:bg-[#20bd5a] text-white text-xs h-8 px-3"
+          >
+            <MessageCircle className="mr-1.5 h-3.5 w-3.5" />
+            WhatsApp
+          </Button>
+          <Button
+            onClick={handleShareTwitter}
+            size="sm"
+            className="rounded-full bg-[#1DA1F2] hover:bg-[#1a8cd8] text-white text-xs h-8 px-3"
+          >
+            <Send className="mr-1.5 h-3.5 w-3.5" />
+            Twitter / X
+          </Button>
+          <Button
+            onClick={handleCopyLink}
+            size="sm"
+            variant="outline"
+            className="rounded-full border-white/20 text-xs h-8 px-3"
+          >
+            {linkCopied ? (
+              <>
+                <Check className="mr-1.5 h-3.5 w-3.5 text-green-500" />
+                Copied!
+              </>
+            ) : (
+              <>
+                <Copy className="mr-1.5 h-3.5 w-3.5" />
+                Copy
+              </>
+            )}
+          </Button>
+          <Button
+            onClick={handleShare}
+            size="sm"
+            variant="outline"
+            className="rounded-full border-white/20 text-xs h-8 px-3"
+          >
+            <Share2 className="mr-1.5 h-3.5 w-3.5" />
+            Share
+          </Button>
+        </div>
+      </motion.div>
+
       {/* Radar Chart */}
       <motion.div
         className="glass-card rounded-2xl p-4 sm:p-6"
@@ -692,7 +778,7 @@ export function CompatibilityResults({
             </Button>
           </div>
         ) : !trialUsed ? (
-          /* ---- Free user eligible for trial: show trial CTA + locked sections ---- */
+          /* ---- Free/unauth user eligible for trial: show trial CTA + locked sections ---- */
           <>
             <div className="glass-card rounded-2xl p-8 text-center border border-gold/20">
               <div className="inline-flex items-center gap-2 rounded-full border border-gold/30 bg-gold/10 px-4 py-1.5 mb-4">
@@ -712,23 +798,33 @@ export function CompatibilityResults({
                   {premiumError}
                 </div>
               )}
-              <Button
-                onClick={handleGenerateFullReport}
-                disabled={premiumLoading || !personAData || !personBData}
-                className="rounded-full bg-gradient-to-r from-gold to-cosmic-purple px-8 text-sm font-semibold text-white hover:brightness-110"
-              >
-                {premiumLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Generating Your Free Report...
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="mr-2 h-4 w-4" />
-                    Generate Free Full Report
-                  </>
-                )}
-              </Button>
+              {session ? (
+                <Button
+                  onClick={handleGenerateFullReport}
+                  disabled={premiumLoading || !personAData || !personBData}
+                  className="rounded-full bg-gradient-to-r from-gold to-cosmic-purple px-8 text-sm font-semibold text-white hover:brightness-110"
+                >
+                  {premiumLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Generating Your Free Report...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="mr-2 h-4 w-4" />
+                      Generate Free Full Report
+                    </>
+                  )}
+                </Button>
+              ) : (
+                <Button
+                  onClick={handleGenerateFullReport}
+                  className="rounded-full bg-gradient-to-r from-gold to-cosmic-purple px-8 text-sm font-semibold text-white hover:brightness-110"
+                >
+                  <UserPlus className="mr-2 h-4 w-4" />
+                  Sign Up to Get Your Free Report
+                </Button>
+              )}
             </div>
 
             <LockedSection
@@ -783,42 +879,6 @@ export function CompatibilityResults({
         )}
       </motion.div>
 
-      {/* Action Buttons */}
-      <motion.div
-        className="flex flex-col items-center gap-3 sm:flex-row sm:justify-center"
-        initial={prefersReducedMotion ? "visible" : "hidden"}
-        animate="visible"
-        variants={fadeInUp}
-        transition={{ duration: prefersReducedMotion ? 0 : 0.5, delay: prefersReducedMotion ? 0 : 1.1 }}
-      >
-        <Button
-          onClick={handleShare}
-          variant="outline"
-          className="w-full rounded-full sm:w-auto"
-        >
-          <Share2 className="mr-2 h-4 w-4" />
-          Share Your Results
-        </Button>
-        <Button
-          variant="outline"
-          className="w-full rounded-full sm:w-auto"
-          disabled={saved}
-          onClick={handleSave}
-        >
-          {saved ? (
-            <>
-              <Check className="mr-2 h-4 w-4 text-green-500" />
-              Report Saved
-            </>
-          ) : (
-            <>
-              <Bookmark className="mr-2 h-4 w-4" />
-              Save This Report
-            </>
-          )}
-        </Button>
-      </motion.div>
-
       {/* "Send to them" viral CTA */}
       <motion.div
         className="relative overflow-hidden rounded-2xl border border-cosmic-purple/40 bg-gradient-to-br from-cosmic-purple/10 via-pink-500/5 to-gold/10 p-8 text-center"
@@ -859,21 +919,12 @@ export function CompatibilityResults({
               )}
             </Button>
             <Button
-              onClick={handleCopyLink}
-              variant="outline"
-              className="w-full rounded-full border-cosmic-purple/30 sm:w-auto"
+              onClick={handleShareWhatsApp}
+              size="sm"
+              className="w-full rounded-full bg-[#25D366] hover:bg-[#20bd5a] text-white sm:w-auto"
             >
-              {linkCopied ? (
-                <>
-                  <Check className="mr-2 h-4 w-4 text-green-500" />
-                  Link Copied!
-                </>
-              ) : (
-                <>
-                  <Copy className="mr-2 h-4 w-4" />
-                  Copy Link
-                </>
-              )}
+              <MessageCircle className="mr-2 h-4 w-4" />
+              WhatsApp
             </Button>
           </div>
         </div>
@@ -891,24 +942,44 @@ export function CompatibilityResults({
           What to Do Next
         </h3>
         <div className="grid gap-3 sm:grid-cols-2">
-          {/* Sign up to save (unauthenticated only) */}
+          {/* Sign up to save + get free report (unauthenticated) */}
           {!session && (
             <Link
               href={`/auth/signup?callbackUrl=${encodeURIComponent("/compatibility?restored=true")}`}
-              className="group flex items-start gap-3 rounded-xl border border-white/10 bg-white/[0.03] p-4 transition-colors hover:border-cosmic-purple/30 hover:bg-white/[0.06]"
+              className="group flex items-start gap-3 rounded-xl border border-gold/20 bg-gold/[0.05] p-4 transition-colors hover:border-gold/40 hover:bg-gold/[0.08]"
             >
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-cosmic-purple/15">
-                <UserPlus className="h-4 w-4 text-cosmic-purple-light" />
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gold/15">
+                <UserPlus className="h-4 w-4 text-gold" />
               </div>
               <div>
-                <p className="text-sm font-semibold group-hover:text-cosmic-purple-light">
-                  Sign up to save this result
+                <p className="text-sm font-semibold group-hover:text-gold">
+                  Sign up &mdash; get your first full report free
                 </p>
                 <p className="mt-0.5 text-xs text-muted-foreground">
-                  Create a free account and never lose your compatibility reports.
+                  Create a free account to save this result and unlock a complimentary 7-section premium report.
                 </p>
               </div>
             </Link>
+          )}
+
+          {/* Save report (authenticated, not yet saved) */}
+          {session && !saved && (
+            <button
+              onClick={handleSave}
+              className="group flex items-start gap-3 rounded-xl border border-white/10 bg-white/[0.03] p-4 transition-colors hover:border-cosmic-purple/30 hover:bg-white/[0.06] text-left w-full"
+            >
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-cosmic-purple/15">
+                <Bookmark className="h-4 w-4 text-cosmic-purple-light" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold group-hover:text-cosmic-purple-light">
+                  Save this report
+                </p>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  Keep this compatibility result in your dashboard for future reference.
+                </p>
+              </div>
+            </button>
           )}
 
           {/* Get full premium report (logged in + free tier, no premium report yet) */}

@@ -8,10 +8,6 @@ const footerLinks = {
     { href: "/compatibility", label: "Compatibility" },
     { href: "/learn", label: "Learn" },
     { href: "/pricing", label: "Pricing" },
-    { href: "/dashboard", label: "Dashboard" },
-  ],
-  company: [
-    { href: "mailto:support@chartchemistry.com", label: "Contact" },
   ],
   legal: [
     { href: "/privacy", label: "Privacy Policy" },
@@ -57,35 +53,6 @@ export function Footer() {
                     >
                       {link.label}
                     </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {/* Company Links */}
-            <div>
-              <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-foreground/80">
-                Company
-              </h3>
-              <ul className="space-y-1">
-                {footerLinks.company.map((link) => (
-                  <li key={link.href}>
-                    {link.href.startsWith("mailto:") ? (
-                      <a
-                        href={link.href}
-                        className="inline-block py-2 text-sm text-muted-foreground transition-colors hover:text-cosmic-purple-light"
-                        aria-label="Send email to ChartChemistry support"
-                      >
-                        {link.label}
-                      </a>
-                    ) : (
-                      <Link
-                        href={link.href}
-                        className="inline-block py-2 text-sm text-muted-foreground transition-colors hover:text-cosmic-purple-light"
-                      >
-                        {link.label}
-                      </Link>
-                    )}
                   </li>
                 ))}
               </ul>

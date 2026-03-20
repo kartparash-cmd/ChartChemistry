@@ -414,15 +414,15 @@ export function BirthDataForm({
         <Label htmlFor={`birthDate-${label}`}>Date of Birth</Label>
         <Input
           id={`birthDate-${label}`}
-          type="date"
+          type={birthDate ? "date" : "text"}
+          placeholder="Select date of birth"
           value={birthDate}
+          onFocus={(e) => { e.currentTarget.type = "date"; }}
+          onBlur={(e) => { if (!e.currentTarget.value) e.currentTarget.type = "text"; }}
           onChange={(e) => setBirthDate(e.target.value)}
           max={new Date().toISOString().split("T")[0]}
           autoComplete="off"
-          className={cn(
-            "h-11 bg-background/50 [color-scheme:dark]",
-            !birthDate && "text-muted-foreground"
-          )}
+          className="h-11 bg-background/50 [color-scheme:dark]"
         />
       </div>
 
@@ -475,14 +475,14 @@ export function BirthDataForm({
         {!unknownTime && (
           <Input
             id={`birthTime-${label}`}
-            type="time"
+            type={birthTime ? "time" : "text"}
+            placeholder="Select birth time"
             value={birthTime}
+            onFocus={(e) => { e.currentTarget.type = "time"; }}
+            onBlur={(e) => { if (!e.currentTarget.value) e.currentTarget.type = "text"; }}
             onChange={(e) => setBirthTime(e.target.value)}
             autoComplete="off"
-            className={cn(
-              "h-11 bg-background/50 [color-scheme:dark]",
-              !birthTime && "text-muted-foreground"
-            )}
+            className="h-11 bg-background/50 [color-scheme:dark]"
           />
         )}
       </div>

@@ -367,6 +367,14 @@ export function BirthDataForm({
     setSelectedCoords({ lat: result.lat, lon: result.lon });
     setShowSuggestions(false);
     setHighlightedIndex(-1);
+
+    // Auto-fill country from city selection
+    if (result.country) {
+      const match = COUNTRIES.find(
+        (c) => c.toLowerCase() === result.country.toLowerCase()
+      );
+      if (match) setBirthCountry(match);
+    }
   };
 
   const handleCityKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {

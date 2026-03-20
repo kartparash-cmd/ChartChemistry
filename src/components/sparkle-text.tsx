@@ -51,8 +51,7 @@ export function SparkleText({
     <motion.span
       className={className}
       initial="hidden"
-      whileInView="visible"
-      viewport={{ once: true }}
+      animate="visible"
       custom={delay}
       variants={containerVariants}
       aria-label={children}

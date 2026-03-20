@@ -198,14 +198,15 @@ export default function Home() {
           animate="visible"
           variants={staggerContainer}
         >
-          <motion.h1
-            className="text-4xl font-bold leading-tight tracking-tight sm:text-5xl md:text-6xl lg:text-7xl"
+          <motion.div
             variants={fadeInUp}
             transition={{ duration: 0.6 }}
           >
-            <SparkleText delay={0.3}>Stop judging compatibility</SparkleText>{" "}
-            <SparkleText className="cosmic-text" delay={0.8}>by sun signs.</SparkleText>
-          </motion.h1>
+            <h1 className="text-4xl font-bold leading-tight tracking-tight sm:text-5xl md:text-6xl lg:text-7xl">
+              <SparkleText delay={0.3}>Stop judging compatibility</SparkleText>{" "}
+              <SparkleText className="cosmic-text" delay={0.8}>by sun signs.</SparkleText>
+            </h1>
+          </motion.div>
 
           <motion.p
             className="text-xl font-medium text-cosmic-purple-light sm:text-2xl md:text-3xl"

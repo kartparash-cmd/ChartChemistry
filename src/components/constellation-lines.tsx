@@ -59,11 +59,11 @@ export function ConstellationLines() {
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    const lineAlpha = 0.15 * progress;
-    const dotAlpha = 0.25 * progress;
+    const lineAlpha = 0.25 * progress;
+    const dotAlpha = 0.4 * progress;
 
     // Draw lines
-    ctx.lineWidth = 0.5;
+    ctx.lineWidth = 0.8;
     ctx.strokeStyle = `rgba(167, 139, 250, ${lineAlpha})`;
 
     if (!prefersReducedMotion.current) {
@@ -85,7 +85,7 @@ export function ConstellationLines() {
     ctx.fillStyle = `rgba(167, 139, 250, ${dotAlpha})`;
     for (const point of points) {
       ctx.beginPath();
-      ctx.arc(point.x, point.y, 2, 0, Math.PI * 2);
+      ctx.arc(point.x, point.y, 2.5, 0, Math.PI * 2);
       ctx.fill();
     }
   }, []);
@@ -174,7 +174,7 @@ export function ConstellationLines() {
   return (
     <canvas
       ref={canvasRef}
-      className="pointer-events-none fixed inset-0 z-0"
+      className="pointer-events-none fixed inset-0 z-[1]"
       aria-hidden="true"
     />
   );

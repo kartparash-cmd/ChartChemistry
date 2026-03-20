@@ -17,11 +17,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { chatWithAstrologer, buildChatContext } from "@/lib/claude";
+import { chatWithAstrologer, buildChatContext, getClient, CLAUDE_MODEL } from "@/lib/claude";
 import { createRateLimiter, getClientIp } from "@/lib/rate-limit";
 import type { ChatMessage, ChatRequest } from "@/types/astrology";
 import type { Prisma } from "@/generated/prisma/client";
-import Anthropic from "@anthropic-ai/sdk";
 
 // ============================================================
 // Rate limiter: 20 requests per hour per user
@@ -55,18 +54,12 @@ function isContextSummary(entry: StoredEntry): entry is ConversationSummaryMeta 
 async function generateConversationSummary(
   messages: ChatMessage[]
 ): Promise<string> {
-  let _claude: Anthropic | null = null;
-  if (!process.env.ANTHROPIC_API_KEY) {
-    return "";
-  }
-  _claude = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-
   const transcript = messages
     .map((m) => `${m.role === "user" ? "User" : "Astrologer"}: ${m.content}`)
     .join("\n\n");
 
-  const response = await _claude.messages.create({
-    model: "claude-sonnet-4-20250514",
+  const response = await getClient().messages.create({
+    model: CLAUDE_MODEL,
     max_tokens: 512,
     system:
       "You are a helpful assistant. Summarize the following astrology chat conversation into a brief paragraph (3-5 sentences). " +

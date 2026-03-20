@@ -15,9 +15,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { calculateTransits } from "@/lib/astro-client";
-import { CLAUDE_MODEL } from "@/lib/claude";
+import { getClient, CLAUDE_MODEL } from "@/lib/claude";
 import { createRateLimiter } from "@/lib/rate-limit";
-import Anthropic from "@anthropic-ai/sdk";
 import type { NatalChartInput, TransitResult, NatalChart } from "@/types/astrology";
 
 // ============================================================
@@ -25,22 +24,6 @@ import type { NatalChartInput, TransitResult, NatalChart } from "@/types/astrolo
 // ============================================================
 
 const weeklyLimiter = createRateLimiter(5, 60 * 60 * 1000, "weekly-insight");
-
-// ============================================================
-// Lazy Claude client (matches pattern from src/lib/claude.ts)
-// ============================================================
-
-let _claude: Anthropic | null = null;
-
-function getClient(): Anthropic {
-  if (!_claude) {
-    if (!process.env.ANTHROPIC_API_KEY) {
-      throw new Error("ANTHROPIC_API_KEY is not set in environment variables");
-    }
-    _claude = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-  }
-  return _claude;
-}
 
 // ============================================================
 // System prompt

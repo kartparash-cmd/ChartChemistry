@@ -26,7 +26,7 @@ import type {
 
 let _claude: Anthropic | null = null;
 
-function getClient(): Anthropic {
+export function getClient(): Anthropic {
   if (!_claude) {
     if (!process.env.ANTHROPIC_API_KEY) {
       throw new Error("ANTHROPIC_API_KEY is not set in environment variables");
@@ -328,22 +328,32 @@ export async function generateFreeReport(
     person2Chart
   );
 
-  const response = await getClient().messages.create({
-    model: CLAUDE_MODEL,
-    max_tokens: 1024,
-    system: FREE_REPORT_PROMPT,
-    messages: [
-      {
-        role: "user",
-        content: `Write "The Big Picture" compatibility narrative for ${person1Name} and ${person2Name} based on the following astrological data:\n\n${chartContext}`,
-      },
-    ],
-  });
+  const userContent = `Write "The Big Picture" compatibility narrative for ${person1Name} and ${person2Name} based on the following astrological data:\n\n${chartContext}`;
 
-  const textBlock = response.content.find((block) => block.type === "text");
-  const narrative = textBlock ? textBlock.text.trim() : "";
+  try {
+    const response = await getClient().messages.create({
+      model: CLAUDE_MODEL,
+      max_tokens: 1024,
+      system: FREE_REPORT_PROMPT,
+      messages: [{ role: "user", content: userContent }],
+    });
 
-  return { narrative };
+    const textBlock = response.content.find((block) => block.type === "text");
+    const narrative = textBlock ? textBlock.text.trim() : "";
+    return { narrative };
+  } catch (claudeError) {
+    console.error('[ChartChemistry] Claude failed for free report, falling back to OpenAI:', claudeError);
+    const response = await getOpenAIClient().chat.completions.create({
+      model: OPENAI_MODEL,
+      max_tokens: 1024,
+      messages: [
+        { role: "system", content: FREE_REPORT_PROMPT },
+        { role: "user", content: userContent },
+      ],
+    });
+    const narrative = response.choices[0]?.message?.content?.trim() || "";
+    return { narrative };
+  }
 }
 
 /**
@@ -375,20 +385,32 @@ export async function generatePremiumReport(
       "\n\n" + formatCompositeForPrompt(compositeData);
   }
 
-  const response = await getClient().messages.create({
-    model: CLAUDE_MODEL,
-    max_tokens: 4096,
-    system: PREMIUM_REPORT_PROMPT,
-    messages: [
-      {
-        role: "user",
-        content: `Write a comprehensive compatibility report for ${person1Name} and ${person2Name} based on the following astrological data:\n\n${chartContext}`,
-      },
-    ],
-  });
+  const userContent = `Write a comprehensive compatibility report for ${person1Name} and ${person2Name} based on the following astrological data:\n\n${chartContext}`;
 
-  const textBlock = response.content.find((block) => block.type === "text");
-  const fullText = textBlock ? textBlock.text.trim() : "";
+  let fullText: string;
+
+  try {
+    const response = await getClient().messages.create({
+      model: CLAUDE_MODEL,
+      max_tokens: 4096,
+      system: PREMIUM_REPORT_PROMPT,
+      messages: [{ role: "user", content: userContent }],
+    });
+
+    const textBlock = response.content.find((block) => block.type === "text");
+    fullText = textBlock ? textBlock.text.trim() : "";
+  } catch (claudeError) {
+    console.error('[ChartChemistry] Claude failed for premium report, falling back to OpenAI:', claudeError);
+    const response = await getOpenAIClient().chat.completions.create({
+      model: OPENAI_MODEL,
+      max_tokens: 4096,
+      messages: [
+        { role: "system", content: PREMIUM_REPORT_PROMPT },
+        { role: "user", content: userContent },
+      ],
+    });
+    fullText = response.choices[0]?.message?.content?.trim() || "";
+  }
 
   // Parse the response into sections
   const parsedSections = parseReportSections(fullText);
@@ -517,13 +539,28 @@ export async function chatWithAstrologer(
     })),
   ];
 
-  const response = await getOpenAIClient().chat.completions.create({
-    model: OPENAI_MODEL,
-    max_tokens: 1024,
-    messages: openaiMessages,
-  });
-
-  return response.choices[0]?.message?.content?.trim() || "";
+  try {
+    const response = await getOpenAIClient().chat.completions.create({
+      model: OPENAI_MODEL,
+      max_tokens: 1024,
+      messages: openaiMessages,
+    });
+    return response.choices[0]?.message?.content?.trim() || "";
+  } catch (openaiError) {
+    console.error('[ChartChemistry] OpenAI failed for chat, falling back to Claude:', openaiError);
+    const claudeMessages = messages.map((msg) => ({
+      role: msg.role as "user" | "assistant",
+      content: msg.content,
+    }));
+    const response = await getClient().messages.create({
+      model: CLAUDE_MODEL,
+      max_tokens: 1024,
+      system: systemPrompt,
+      messages: claudeMessages,
+    });
+    const textBlock = response.content.find((block) => block.type === "text");
+    return textBlock ? textBlock.text.trim() : "";
+  }
 }
 
 /**
@@ -701,19 +738,31 @@ export async function generateDailyHoroscope(
     chartLines.push(formatPlanet(p));
   }
 
-  const response = await getOpenAIClient().chat.completions.create({
-    model: OPENAI_MODEL,
-    max_tokens: 1024,
-    messages: [
-      { role: "system", content: HOROSCOPE_PROMPT },
-      {
-        role: "user",
-        content: `Write a personalized daily horoscope for ${userName} for ${date}.\n\n${chartLines.join("\n")}`,
-      },
-    ],
-  });
+  const horoscopeUserContent = `Write a personalized daily horoscope for ${userName} for ${date}.\n\n${chartLines.join("\n")}`;
 
-  const raw = response.choices[0]?.message?.content?.trim() || "";
+  let raw: string;
+
+  try {
+    const response = await getOpenAIClient().chat.completions.create({
+      model: OPENAI_MODEL,
+      max_tokens: 1024,
+      messages: [
+        { role: "system", content: HOROSCOPE_PROMPT },
+        { role: "user", content: horoscopeUserContent },
+      ],
+    });
+    raw = response.choices[0]?.message?.content?.trim() || "";
+  } catch (openaiError) {
+    console.error('[ChartChemistry] OpenAI failed for horoscope, falling back to Claude:', openaiError);
+    const response = await getClient().messages.create({
+      model: CLAUDE_MODEL,
+      max_tokens: 1024,
+      system: HOROSCOPE_PROMPT,
+      messages: [{ role: "user", content: horoscopeUserContent }],
+    });
+    const textBlock = response.content.find((block) => block.type === "text");
+    raw = textBlock ? textBlock.text.trim() : "";
+  }
 
   try {
     const jsonMatch = raw.match(/\{[\s\S]*\}/);
@@ -744,22 +793,30 @@ export async function explainChartElement(
 ): Promise<string> {
   const chartContext = chartData.planets.map(formatPlanet).join("\n");
 
-  const response = await getOpenAIClient().chat.completions.create({
-    model: OPENAI_MODEL,
-    max_tokens: 512,
-    messages: [
-      {
-        role: "system",
-        content: `You are an expert astrologer explaining a specific placement or aspect in someone's natal chart. Be warm, insightful, and educational. Write 80-150 words. Use accessible language. Reference how this placement interacts with other elements in their chart.`,
-      },
-      {
-        role: "user",
-        content: `Explain what "${element}" means in ${userName}'s natal chart.\n\nFull chart:\n${chartContext}`,
-      },
-    ],
-  });
+  const explainSystemPrompt = `You are an expert astrologer explaining a specific placement or aspect in someone's natal chart. Be warm, insightful, and educational. Write 80-150 words. Use accessible language. Reference how this placement interacts with other elements in their chart.`;
+  const explainUserContent = `Explain what "${element}" means in ${userName}'s natal chart.\n\nFull chart:\n${chartContext}`;
 
-  return response.choices[0]?.message?.content?.trim() || "";
+  try {
+    const response = await getOpenAIClient().chat.completions.create({
+      model: OPENAI_MODEL,
+      max_tokens: 512,
+      messages: [
+        { role: "system", content: explainSystemPrompt },
+        { role: "user", content: explainUserContent },
+      ],
+    });
+    return response.choices[0]?.message?.content?.trim() || "";
+  } catch (openaiError) {
+    console.error('[ChartChemistry] OpenAI failed for chart explanation, falling back to Claude:', openaiError);
+    const response = await getClient().messages.create({
+      model: CLAUDE_MODEL,
+      max_tokens: 512,
+      system: explainSystemPrompt,
+      messages: [{ role: "user", content: explainUserContent }],
+    });
+    const textBlock = response.content.find((block) => block.type === "text");
+    return textBlock ? textBlock.text.trim() : "";
+  }
 }
 
 // ============================================================
@@ -841,19 +898,31 @@ export async function generateWellnessSuggestions(
     chartLines.push(formatPlanet(p));
   }
 
-  const response = await getOpenAIClient().chat.completions.create({
-    model: OPENAI_MODEL,
-    max_tokens: 2048,
-    messages: [
-      { role: "system", content: WELLNESS_PROMPT },
-      {
-        role: "user",
-        content: `Generate wellness and timing suggestions for ${userName} for ${date}.\n\n${chartLines.join("\n")}`,
-      },
-    ],
-  });
+  const wellnessUserContent = `Generate wellness and timing suggestions for ${userName} for ${date}.\n\n${chartLines.join("\n")}`;
 
-  const raw = response.choices[0]?.message?.content?.trim() || "";
+  let raw: string;
+
+  try {
+    const response = await getOpenAIClient().chat.completions.create({
+      model: OPENAI_MODEL,
+      max_tokens: 2048,
+      messages: [
+        { role: "system", content: WELLNESS_PROMPT },
+        { role: "user", content: wellnessUserContent },
+      ],
+    });
+    raw = response.choices[0]?.message?.content?.trim() || "";
+  } catch (openaiError) {
+    console.error('[ChartChemistry] OpenAI failed for wellness, falling back to Claude:', openaiError);
+    const response = await getClient().messages.create({
+      model: CLAUDE_MODEL,
+      max_tokens: 2048,
+      system: WELLNESS_PROMPT,
+      messages: [{ role: "user", content: wellnessUserContent }],
+    });
+    const textBlock = response.content.find((block) => block.type === "text");
+    raw = textBlock ? textBlock.text.trim() : "";
+  }
 
   try {
     const jsonMatch = raw.match(/\[[\s\S]*\]/);
@@ -978,20 +1047,31 @@ export async function generateRelationshipInsights(
     `Elements: Fire ${chart2.elementBalance.fire}, Earth ${chart2.elementBalance.earth}, Air ${chart2.elementBalance.air}, Water ${chart2.elementBalance.water}`
   );
 
-  const response = await getClient().messages.create({
-    model: CLAUDE_MODEL,
-    max_tokens: 2048,
-    system: RELATIONSHIP_INSIGHTS_PROMPT,
-    messages: [
-      {
-        role: "user",
-        content: `Generate romantic relationship insights for ${name1} and ${name2} based on their natal charts:\n\n${chartLines.join("\n")}`,
-      },
-    ],
-  });
+  const insightsUserContent = `Generate romantic relationship insights for ${name1} and ${name2} based on their natal charts:\n\n${chartLines.join("\n")}`;
 
-  const textBlock = response.content.find((block) => block.type === "text");
-  const raw = textBlock ? textBlock.text.trim() : "";
+  let raw: string;
+
+  try {
+    const response = await getClient().messages.create({
+      model: CLAUDE_MODEL,
+      max_tokens: 2048,
+      system: RELATIONSHIP_INSIGHTS_PROMPT,
+      messages: [{ role: "user", content: insightsUserContent }],
+    });
+    const textBlock = response.content.find((block) => block.type === "text");
+    raw = textBlock ? textBlock.text.trim() : "";
+  } catch (claudeError) {
+    console.error('[ChartChemistry] Claude failed for relationship insights, falling back to OpenAI:', claudeError);
+    const response = await getOpenAIClient().chat.completions.create({
+      model: OPENAI_MODEL,
+      max_tokens: 2048,
+      messages: [
+        { role: "system", content: RELATIONSHIP_INSIGHTS_PROMPT },
+        { role: "user", content: insightsUserContent },
+      ],
+    });
+    raw = response.choices[0]?.message?.content?.trim() || "";
+  }
 
   try {
     const jsonMatch = raw.match(/\{[\s\S]*\}/);

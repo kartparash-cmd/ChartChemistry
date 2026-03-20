@@ -9,8 +9,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { CLAUDE_MODEL } from "@/lib/claude";
-import Anthropic from "@anthropic-ai/sdk";
+import { getClient, CLAUDE_MODEL } from "@/lib/claude";
 import { createRateLimiter } from "@/lib/rate-limit";
 
 // ---------------------------------------------------------------------------
@@ -49,22 +48,6 @@ if (
   "unref" in cacheCleanupTimer
 ) {
   cacheCleanupTimer.unref();
-}
-
-// ---------------------------------------------------------------------------
-// Claude client (lazy-initialized, same pattern as lib/claude.ts)
-// ---------------------------------------------------------------------------
-
-let _claude: Anthropic | null = null;
-
-function getClient(): Anthropic {
-  if (!_claude) {
-    if (!process.env.ANTHROPIC_API_KEY) {
-      throw new Error("ANTHROPIC_API_KEY is not set in environment variables");
-    }
-    _claude = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-  }
-  return _claude;
 }
 
 // ---------------------------------------------------------------------------

@@ -143,7 +143,7 @@ function PricingContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl");
-  const [billing, setBilling] = useState<BillingPeriod>("annual");
+  const [billing, setBilling] = useState<BillingPeriod>("monthly");
   const [toastVisible, setToastVisible] = useState(false);
   const [loadingTier, setLoadingTier] = useState<string | null>(null);
 

@@ -112,7 +112,7 @@ export default function RootLayout({
         >
           Skip to main content
         </a>
-        <StarField starCount={30} className="fixed inset-0 z-0 opacity-20 pointer-events-none" />
+        <StarField starCount={60} cosmic className="fixed inset-0 z-0 opacity-30 pointer-events-none" />
         <ThemeProvider>
           <SessionProvider>
             <TooltipProvider>

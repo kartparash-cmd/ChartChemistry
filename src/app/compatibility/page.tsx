@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import { useSession } from "next-auth/react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { ArrowRight, AlertTriangle, RefreshCw, LayoutDashboard, Crown, X, Infinity } from "lucide-react";
@@ -665,47 +665,161 @@ export default function CompatibilityPage() {
 
         {/* Zodiac Compatibility Hub — SEO internal linking to all 78 pages */}
         {pageState === "input" && (
-          <section className="mt-20 border-t border-border pt-12">
-            <h2 className="text-2xl font-heading font-bold text-center mb-2">
-              Explore Zodiac <span className="cosmic-text">Compatibility</span>
-            </h2>
-            <p className="text-center text-muted-foreground text-sm mb-8 max-w-md mx-auto">
-              Browse compatibility insights for every zodiac pairing
-            </p>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
-              {(() => {
-                const signs = [
-                  "aries", "taurus", "gemini", "cancer", "leo", "virgo",
-                  "libra", "scorpio", "sagittarius", "capricorn", "aquarius", "pisces",
-                ];
-                const emojis: Record<string, string> = {
-                  aries: "\u2648", taurus: "\u2649", gemini: "\u264A", cancer: "\u264B",
-                  leo: "\u264C", virgo: "\u264D", libra: "\u264E", scorpio: "\u264F",
-                  sagittarius: "\u2650", capricorn: "\u2651", aquarius: "\u2652", pisces: "\u2653",
-                };
-                const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
-                const pairs: { slug: string; label: string }[] = [];
-                for (let i = 0; i < signs.length; i++) {
-                  for (let j = i; j < signs.length; j++) {
-                    pairs.push({
-                      slug: `${signs[i]}-${signs[j]}`,
-                      label: `${emojis[signs[i]]} ${cap(signs[i])} & ${emojis[signs[j]]} ${cap(signs[j])}`,
-                    });
-                  }
-                }
-                return pairs.map((p) => (
-                  <Link
-                    key={p.slug}
-                    href={`/compatibility/${p.slug}`}
-                    className="rounded-lg border border-border px-3 py-2 text-xs text-muted-foreground hover:text-foreground hover:border-cosmic-purple/40 hover:bg-muted/50 transition-colors text-center"
-                  >
-                    {p.label}
-                  </Link>
-                ));
-              })()}
-            </div>
-          </section>
+          <ZodiacHub />
         )}
     </main>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Zodiac Hub — filterable sign-based layout for 78 compatibility pages      */
+/* -------------------------------------------------------------------------- */
+
+const ZODIAC_SIGNS = [
+  "aries", "taurus", "gemini", "cancer", "leo", "virgo",
+  "libra", "scorpio", "sagittarius", "capricorn", "aquarius", "pisces",
+] as const;
+
+const ZODIAC_EMOJIS: Record<string, string> = {
+  aries: "\u2648", taurus: "\u2649", gemini: "\u264A", cancer: "\u264B",
+  leo: "\u264C", virgo: "\u264D", libra: "\u264E", scorpio: "\u264F",
+  sagittarius: "\u2650", capricorn: "\u2651", aquarius: "\u2652", pisces: "\u2653",
+};
+
+const ZODIAC_ELEMENTS: Record<string, string> = {
+  aries: "Fire", taurus: "Earth", gemini: "Air", cancer: "Water",
+  leo: "Fire", virgo: "Earth", libra: "Air", scorpio: "Water",
+  sagittarius: "Fire", capricorn: "Earth", aquarius: "Air", pisces: "Water",
+};
+
+const ELEMENT_COLORS: Record<string, string> = {
+  Fire: "from-red-500/20 to-orange-500/20 border-red-500/20",
+  Earth: "from-emerald-500/20 to-lime-500/20 border-emerald-500/20",
+  Air: "from-sky-500/20 to-indigo-500/20 border-sky-500/20",
+  Water: "from-blue-500/20 to-cyan-500/20 border-blue-500/20",
+};
+
+const ELEMENT_TEXT: Record<string, string> = {
+  Fire: "text-red-400",
+  Earth: "text-emerald-400",
+  Air: "text-sky-400",
+  Water: "text-blue-400",
+};
+
+function cap(s: string) {
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+function ZodiacHub() {
+  const [selectedSign, setSelectedSign] = useState<string | null>(null);
+
+  // Build all pairs grouped by sign
+  const pairsBySign = useMemo(() => {
+    const grouped: Record<string, { slug: string; partner: string }[]> = {};
+    for (const sign of ZODIAC_SIGNS) {
+      grouped[sign] = [];
+    }
+    for (let i = 0; i < ZODIAC_SIGNS.length; i++) {
+      for (let j = i; j < ZODIAC_SIGNS.length; j++) {
+        const a = ZODIAC_SIGNS[i];
+        const b = ZODIAC_SIGNS[j];
+        grouped[a].push({ slug: `${a}-${b}`, partner: b });
+        if (a !== b) {
+          grouped[b].push({ slug: `${a}-${b}`, partner: a });
+        }
+      }
+    }
+    return grouped;
+  }, []);
+
+  const visibleSigns = selectedSign ? [selectedSign] : [...ZODIAC_SIGNS];
+
+  return (
+    <section className="mt-20 border-t border-border pt-12 pb-4">
+      <h2 className="text-2xl font-heading font-bold text-center mb-2">
+        Explore Zodiac <span className="cosmic-text">Compatibility</span>
+      </h2>
+      <p className="text-center text-muted-foreground text-sm mb-8 max-w-md mx-auto">
+        Pick a sign to explore its pairings, or browse them all
+      </p>
+
+      {/* Sign filter bar */}
+      <div className="flex flex-wrap justify-center gap-2 mb-10 max-w-2xl mx-auto">
+        {ZODIAC_SIGNS.map((sign) => {
+          const isActive = selectedSign === sign;
+          const element = ZODIAC_ELEMENTS[sign];
+          return (
+            <button
+              key={sign}
+              onClick={() => setSelectedSign(isActive ? null : sign)}
+              className={cn(
+                "flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-all border",
+                isActive
+                  ? `bg-gradient-to-r ${ELEMENT_COLORS[element]} ${ELEMENT_TEXT[element]} border-current shadow-lg`
+                  : "border-white/10 text-muted-foreground hover:text-foreground hover:border-white/20 hover:bg-white/5"
+              )}
+            >
+              <span className="text-sm">{ZODIAC_EMOJIS[sign]}</span>
+              {cap(sign)}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Sign groups */}
+      <div className="space-y-8 max-w-4xl mx-auto">
+        {visibleSigns.map((sign) => {
+          const element = ZODIAC_ELEMENTS[sign];
+          const pairs = pairsBySign[sign];
+          return (
+            <div key={sign}>
+              {/* Sign header */}
+              <div className="flex items-center gap-3 mb-3">
+                <div
+                  className={cn(
+                    "flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br text-lg",
+                    ELEMENT_COLORS[element]
+                  )}
+                >
+                  {ZODIAC_EMOJIS[sign]}
+                </div>
+                <div>
+                  <h3 className="font-heading font-semibold text-sm">
+                    {cap(sign)} Compatibility
+                  </h3>
+                  <p className={cn("text-[11px] font-medium", ELEMENT_TEXT[element])}>
+                    {element} Sign
+                  </p>
+                </div>
+              </div>
+
+              {/* Pairing cards */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                {pairs.map(({ slug, partner }) => {
+                  const partnerElement = ZODIAC_ELEMENTS[partner];
+                  return (
+                    <Link
+                      key={slug}
+                      href={`/compatibility/${slug}`}
+                      className="group flex items-center gap-2 rounded-xl border border-white/[0.06] bg-white/[0.02] px-3 py-2.5 transition-all hover:border-cosmic-purple/30 hover:bg-cosmic-purple/[0.04] hover:shadow-sm"
+                    >
+                      <span className="text-base">{ZODIAC_EMOJIS[partner]}</span>
+                      <div className="min-w-0">
+                        <p className="text-xs font-medium text-foreground/90 group-hover:text-foreground truncate">
+                          {cap(sign)} & {cap(partner)}
+                        </p>
+                        <p className={cn("text-[10px]", ELEMENT_TEXT[partnerElement])}>
+                          {partnerElement}
+                        </p>
+                      </div>
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </section>
   );
 }

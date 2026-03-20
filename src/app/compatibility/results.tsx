@@ -259,11 +259,26 @@ export function CompatibilityResults({
     { label: "Harmony", score: result.dimensions.harmony },
   ];
 
-  // Build the best share URL: report link if saved, otherwise the site
+  // Build the best share URL: report link if saved, otherwise encode scores in URL
   const getShareUrl = useCallback(() => {
     const origin = typeof window !== "undefined" ? window.location.origin : "https://chartchemistry.com";
-    return reportId ? `${origin}/report/${reportId}` : `${origin}/compatibility`;
-  }, [reportId]);
+    if (reportId) return `${origin}/report/${reportId}`;
+
+    // Encode scores + names in query params for a shareable results page
+    const params = new URLSearchParams({
+      a: result.personA.name,
+      as: result.personA.sunSign,
+      b: result.personB.name,
+      bs: result.personB.sunSign,
+      o: String(result.overallScore),
+      e: String(result.dimensions.emotional),
+      ch: String(result.dimensions.chemistry),
+      co: String(result.dimensions.communication),
+      st: String(result.dimensions.stability),
+      h: String(result.dimensions.harmony),
+    });
+    return `${origin}/compatibility/shared?${params.toString()}`;
+  }, [reportId, result]);
 
   const getShareText = useCallback(() => {
     const emoji1 = getZodiacSymbol(result.personA.sunSign);

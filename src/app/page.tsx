@@ -17,6 +17,8 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { StarField } from "@/components/star-field";
+import { SparkleText } from "@/components/sparkle-text";
+import { TiltCard } from "@/components/tilt-card";
 import { cn } from "@/lib/utils";
 
 /* -------------------------------------------------------------------------- */
@@ -201,8 +203,8 @@ export default function Home() {
             variants={fadeInUp}
             transition={{ duration: 0.6 }}
           >
-            Stop judging compatibility{" "}
-            <span className="cosmic-text">by sun signs.</span>
+            <SparkleText delay={0.3}>Stop judging compatibility</SparkleText>{" "}
+            <SparkleText className="cosmic-text" delay={0.8}>by sun signs.</SparkleText>
           </motion.h1>
 
           <motion.p
@@ -279,19 +281,19 @@ export default function Home() {
                 key={step.title}
                 variants={fadeInUp}
                 transition={{ duration: 0.5 }}
-                className="glass-card group relative flex flex-col items-center gap-4 rounded-2xl p-8 text-center transition-all hover:border-cosmic-purple/30"
               >
-                {/* Step number */}
-                <span className="absolute -top-3 left-6 flex h-7 w-7 items-center justify-center rounded-full bg-cosmic-purple text-xs font-bold text-white">
-                  {i + 1}
-                </span>
-                <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-cosmic-purple/10 text-cosmic-purple-light transition-colors group-hover:bg-cosmic-purple/20">
-                  <step.icon className="h-7 w-7" />
-                </div>
-                <h3 className="text-lg font-semibold">{step.title}</h3>
-                <p className="text-sm text-muted-foreground">
-                  {step.description}
-                </p>
+                <TiltCard className="glass-card group relative flex flex-col items-center gap-4 rounded-2xl p-8 text-center transition-all hover:border-cosmic-purple/30 h-full">
+                  <span className="absolute -top-3 left-6 flex h-7 w-7 items-center justify-center rounded-full bg-cosmic-purple text-xs font-bold text-white">
+                    {i + 1}
+                  </span>
+                  <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-cosmic-purple/10 text-cosmic-purple-light transition-colors group-hover:bg-cosmic-purple/20">
+                    <step.icon className="h-7 w-7" />
+                  </div>
+                  <h3 className="text-lg font-semibold">{step.title}</h3>
+                  <p className="text-sm text-muted-foreground">
+                    {step.description}
+                  </p>
+                </TiltCard>
               </motion.div>
             ))}
           </motion.div>
@@ -328,15 +330,16 @@ export default function Home() {
                 key={dim.title}
                 variants={fadeInUp}
                 transition={{ duration: 0.5 }}
-                className="glass-card group rounded-2xl p-6 transition-all hover:border-cosmic-purple/30"
               >
-                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-cosmic-purple/10 text-cosmic-purple-light transition-colors group-hover:bg-cosmic-purple/20">
-                  <dim.icon className="h-6 w-6" />
-                </div>
-                <h3 className="mb-2 text-lg font-semibold">{dim.title}</h3>
-                <p className="text-sm leading-relaxed text-muted-foreground">
-                  {dim.description}
-                </p>
+                <TiltCard className="glass-card group rounded-2xl p-6 transition-all hover:border-cosmic-purple/30 h-full">
+                  <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-cosmic-purple/10 text-cosmic-purple-light transition-colors group-hover:bg-cosmic-purple/20">
+                    <dim.icon className="h-6 w-6" />
+                  </div>
+                  <h3 className="mb-2 text-lg font-semibold">{dim.title}</h3>
+                  <p className="text-sm leading-relaxed text-muted-foreground">
+                    {dim.description}
+                  </p>
+                </TiltCard>
               </motion.div>
             ))}
           </motion.div>
@@ -416,20 +419,20 @@ export default function Home() {
                 key={testimonial.name}
                 variants={fadeInUp}
                 transition={{ duration: 0.5 }}
-                className="glass-card group flex flex-col gap-4 rounded-2xl p-6 transition-all hover:border-cosmic-purple/30"
               >
-                <p className="flex-1 text-sm leading-relaxed text-muted-foreground italic">
-                  &ldquo;{testimonial.quote}&rdquo;
-                </p>
-
-                <div className="flex items-center justify-between pt-2">
-                  <span className="text-sm font-semibold">
-                    {testimonial.name}
-                  </span>
-                  <span className="rounded-full bg-cosmic-purple/10 px-3 py-1 text-xs font-medium text-cosmic-purple-light">
-                    {testimonial.sign}
-                  </span>
-                </div>
+                <TiltCard className="glass-card group flex flex-col gap-4 rounded-2xl p-6 transition-all hover:border-cosmic-purple/30 h-full">
+                  <p className="flex-1 text-sm leading-relaxed text-muted-foreground italic">
+                    &ldquo;{testimonial.quote}&rdquo;
+                  </p>
+                  <div className="flex items-center justify-between pt-2">
+                    <span className="text-sm font-semibold">
+                      {testimonial.name}
+                    </span>
+                    <span className="rounded-full bg-cosmic-purple/10 px-3 py-1 text-xs font-medium text-cosmic-purple-light">
+                      {testimonial.sign}
+                    </span>
+                  </div>
+                </TiltCard>
               </motion.div>
             ))}
           </motion.div>

@@ -255,7 +255,9 @@ export function BirthDataForm({
   const [name, setName] = useState(defaultValues?.name ?? "");
   const [birthDate, setBirthDate] = useState(defaultValues?.birthDate ?? "");
   const [birthTime, setBirthTime] = useState(defaultValues?.birthTime ?? "");
-  const [unknownTime, setUnknownTime] = useState(false);
+  const [unknownTime, setUnknownTime] = useState(
+    defaultValues?.birthTime ? false : true
+  );
   const [birthCity, setBirthCity] = useState(defaultValues?.birthCity ?? "");
   const [birthCountry, setBirthCountry] = useState(
     defaultValues?.birthCountry ?? ""
@@ -416,14 +418,21 @@ export function BirthDataForm({
           value={birthDate}
           onChange={(e) => setBirthDate(e.target.value)}
           max={new Date().toISOString().split("T")[0]}
-          className="h-11 bg-background/50"
+          autoComplete="off"
+          className={cn(
+            "h-11 bg-background/50 [color-scheme:dark]",
+            !birthDate && "text-muted-foreground"
+          )}
         />
       </div>
 
-      {/* Birth Time */}
+      {/* Birth Time (optional — defaults to unknown) */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <Label htmlFor={`birthTime-${label}`}>Birth Time</Label>
+          <Label htmlFor={`birthTime-${label}`}>
+            Birth Time
+            <span className="text-xs text-muted-foreground font-normal ml-1.5">(optional)</span>
+          </Label>
           <div className="flex items-center gap-2">
             <label
               htmlFor={`unknownTime-${label}`}
@@ -440,7 +449,7 @@ export function BirthDataForm({
                 className="h-4 w-4 rounded border-border accent-cosmic-purple"
               />
               <span className="text-xs text-muted-foreground">
-                I don&apos;t know my birth time
+                I don&apos;t know
               </span>
             </label>
             <Tooltip>
@@ -469,7 +478,11 @@ export function BirthDataForm({
             type="time"
             value={birthTime}
             onChange={(e) => setBirthTime(e.target.value)}
-            className="h-11 bg-background/50"
+            autoComplete="off"
+            className={cn(
+              "h-11 bg-background/50 [color-scheme:dark]",
+              !birthTime && "text-muted-foreground"
+            )}
           />
         )}
       </div>

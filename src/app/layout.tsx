@@ -9,7 +9,6 @@ import { Footer } from "@/components/footer";
 import { ImpersonationBanner } from "@/components/admin/impersonation-banner";
 import { StarField } from "@/components/star-field";
 import { CookieConsent } from "@/components/cookie-consent";
-import { InstallPrompt } from "@/components/install-prompt";
 import { Toaster } from "sonner";
 import "./globals.css";
 
@@ -44,7 +43,6 @@ export const metadata: Metadata = {
     "zodiac compatibility",
   ],
   authors: [{ name: "ChartChemistry" }],
-  manifest: "/manifest.json",
   openGraph: {
     title: "ChartChemistry — AI-Powered Astrological Compatibility",
     description:
@@ -124,7 +122,6 @@ export default function RootLayout({
           </SessionProvider>
           <Toaster position="top-right" richColors />
           <CookieConsent />
-          <InstallPrompt />
         </ThemeProvider>
       </body>
     </html>

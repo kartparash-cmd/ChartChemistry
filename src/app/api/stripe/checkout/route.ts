@@ -10,6 +10,9 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { stripe, PLANS } from "@/lib/stripe";
 import { prisma } from "@/lib/prisma";
+import { createRateLimiter } from "@/lib/rate-limit";
+
+const checkoutLimiter = createRateLimiter(5, 60 * 60 * 1000, "checkout");
 
 export async function POST(request: Request) {
   try {
@@ -19,6 +22,15 @@ export async function POST(request: Request) {
       return NextResponse.json(
         { error: "Authentication required" },
         { status: 401 }
+      );
+    }
+
+    // Rate limit: 5 checkout attempts per hour per user
+    const rateLimitResult = checkoutLimiter.check(session.user.id);
+    if (!rateLimitResult.allowed) {
+      return NextResponse.json(
+        { error: "Too many checkout attempts. Please try again later." },
+        { status: 429 }
       );
     }
 
@@ -101,7 +113,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ url: checkoutSession.url });
   } catch (error) {
-    console.error("[POST /api/stripe/checkout] Error:", error);
+    console.error(JSON.stringify({ event: "checkout_error", error: error instanceof Error ? error.message : "Unknown error", timestamp: new Date().toISOString() }));
     return NextResponse.json(
       { error: "Failed to create checkout session" },
       { status: 500 }

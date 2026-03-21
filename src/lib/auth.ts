@@ -104,8 +104,12 @@ export const authOptions: NextAuthOptions = {
         token.plan = (user as { plan?: string }).plan ?? "FREE";
         token.role = (user as { role?: string }).role ?? "USER";
       }
-      // Refresh plan and role from DB on session update or periodically
-      if (trigger === "update" || (token.sub && !user)) {
+      // Only refresh from DB every 5 minutes (not every request)
+      const REFRESH_INTERVAL = 5 * 60 * 1000; // 5 minutes
+      const now = Date.now();
+      const lastRefresh = (token.lastRefresh as number) || 0;
+
+      if (trigger === "update" || (token.sub && !user && now - lastRefresh > REFRESH_INTERVAL)) {
         try {
           const dbUser = await prisma.user.findUnique({
             where: { id: token.sub },
@@ -115,6 +119,7 @@ export const authOptions: NextAuthOptions = {
             token.plan = dbUser.plan;
             token.role = dbUser.role;
           }
+          token.lastRefresh = now;
         } catch {
           // Keep existing values on DB error
         }

@@ -25,6 +25,10 @@ import type {
   FullCompatibilityRequest,
 } from "@/types/astrology";
 import { Prisma } from "@/generated/prisma/client";
+import { createRateLimiter, getClientIp } from "@/lib/rate-limit";
+
+// Rate limit trial reports: 3 per IP per 24 hours
+const trialLimiter = createRateLimiter(3, 24 * 60 * 60 * 1000, "trial-report");
 
 // ============================================================
 // Helper: build NatalChartInput from a BirthProfile record
@@ -77,6 +81,15 @@ export async function POST(request: Request) {
       });
 
       if (premiumReportCount === 0) {
+        // Rate limit trial reports by IP to prevent abuse via account creation
+        const ip = getClientIp(request);
+        const trialRateResult = trialLimiter.check(ip);
+        if (!trialRateResult.allowed) {
+          return NextResponse.json(
+            { error: "Trial limit reached", message: "Too many trial reports from this network. Please try again later or upgrade to Premium." },
+            { status: 429 }
+          );
+        }
         // This is the user's first premium report — allow it as a trial
         isTrial = true;
       } else {

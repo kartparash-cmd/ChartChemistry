@@ -102,74 +102,81 @@ export async function GET(request: Request) {
   let failed = 0;
   const errors: { userId: string; error: string }[] = [];
 
-  for (const user of users) {
-    const profile = user.birthProfiles[0];
-    if (!profile) {
-      // Shouldn't happen given the query, but guard anyway.
-      continue;
-    }
+  const BATCH_SIZE = 5;
+  for (let i = 0; i < users.length; i += BATCH_SIZE) {
+    const batch = users.slice(i, i + BATCH_SIZE);
+    const results = await Promise.allSettled(
+      batch.map(async (user) => {
+        const profile = user.birthProfiles[0];
+        if (!profile) {
+          // Shouldn't happen given the query, but guard anyway.
+          return;
+        }
 
-    try {
-      const chartData = profile.chartData as unknown as NatalChart;
+        const chartData = profile.chartData as unknown as NatalChart;
 
-      // Build the input required by calculateTransits
-      const chartInput: NatalChartInput = {
-        birthDate: profile.birthDate.toISOString().split("T")[0],
-        birthTime: profile.birthTime || undefined,
-        latitude: profile.latitude,
-        longitude: profile.longitude,
-        timezone: profile.timezone,
-      };
-
-      // Calculate transits (fallback to empty if astro-service is down)
-      let transitData;
-      try {
-        transitData = await calculateTransits(chartInput, today);
-      } catch (transitError) {
-        console.warn(
-          `[daily-digest] Transit calculation failed for user ${user.id}, proceeding without transits:`,
-          transitError
-        );
-        transitData = {
-          aspectsToNatal: [] as { transitingPlanet: string; natalPlanet: string; aspect: string; orb: number; keywords: string }[],
-          transitingPositions: [] as NatalChart["planets"],
-          date: today,
+        // Build the input required by calculateTransits
+        const chartInput: NatalChartInput = {
+          birthDate: profile.birthDate.toISOString().split("T")[0],
+          birthTime: profile.birthTime || undefined,
+          latitude: profile.latitude,
+          longitude: profile.longitude,
+          timezone: profile.timezone,
         };
-      }
 
-      // Generate the horoscope via Claude
-      const horoscope = await generateDailyHoroscope(
-        chartData,
-        transitData,
-        profile.name,
-        today
-      );
+        // Calculate transits (fallback to empty if astro-service is down)
+        let transitData;
+        try {
+          transitData = await calculateTransits(chartInput, today);
+        } catch (transitError) {
+          console.warn(
+            `[daily-digest] Transit calculation failed for user ${user.id}, proceeding without transits:`,
+            transitError
+          );
+          transitData = {
+            aspectsToNatal: [] as { transitingPlanet: string; natalPlanet: string; aspect: string; orb: number; keywords: string }[],
+            transitingPositions: [] as NatalChart["planets"],
+            date: today,
+          };
+        }
 
-      // Send the digest email
-      const result = await sendHoroscopeDigest(
-        user.email,
-        user.name || profile.name,
-        horoscope
-      );
+        // Generate the horoscope via Claude
+        const horoscope = await generateDailyHoroscope(
+          chartData,
+          transitData,
+          profile.name,
+          today
+        );
 
-      if (result.success) {
+        // Send the digest email
+        const result = await sendHoroscopeDigest(
+          user.email,
+          user.name || profile.name,
+          horoscope
+        );
+
+        if (!result.success) {
+          throw new Error("Email send returned success: false (likely missing RESEND_API_KEY)");
+        }
+      })
+    );
+
+    // Tally results and log failures
+    results.forEach((result, idx) => {
+      if (result.status === "fulfilled") {
         sent++;
       } else {
         failed++;
-        errors.push({
-          userId: user.id,
-          error: "Email send returned success: false (likely missing RESEND_API_KEY)",
-        });
+        const message = result.reason?.message || "Unknown";
+        console.error(JSON.stringify({
+          event: "digest_user_failed",
+          userId: batch[idx].id,
+          error: message,
+          timestamp: new Date().toISOString(),
+        }));
+        errors.push({ userId: batch[idx].id, error: message });
       }
-    } catch (err) {
-      failed++;
-      const message = err instanceof Error ? err.message : String(err);
-      console.error(
-        `[daily-digest] Failed for user ${user.id}:`,
-        message
-      );
-      errors.push({ userId: user.id, error: message });
-    }
+    });
   }
 
   // ---------------------------------------------------------------

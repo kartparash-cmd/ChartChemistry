@@ -15,18 +15,6 @@ import { prisma } from "@/lib/prisma";
 import { sendPaymentFailedEmail, sendReceiptEmail } from "@/lib/email";
 import type Stripe from "stripe";
 
-// Simple in-memory idempotency set (use DB-backed store in production)
-const processedEvents = new Set<string>();
-const MAX_PROCESSED = 1000;
-
-function markProcessed(eventId: string) {
-  if (processedEvents.size >= MAX_PROCESSED) {
-    const first = processedEvents.values().next().value;
-    if (first) processedEvents.delete(first);
-  }
-  processedEvents.add(eventId);
-}
-
 /**
  * Map a Stripe Price ID back to the internal plan name.
  * Returns "FREE" if the price ID doesn't match any known plan.
@@ -70,11 +58,6 @@ export async function POST(request: Request) {
     );
   }
 
-  // Idempotency check
-  if (processedEvents.has(event.id)) {
-    return NextResponse.json({ received: true });
-  }
-
   try {
     switch (event.type) {
       case "checkout.session.completed": {
@@ -84,6 +67,13 @@ export async function POST(request: Request) {
         if (!userId) {
           console.error(JSON.stringify({ event: "webhook_error", type: event.type, error: "Missing metadata in checkout session", sessionId: session.id, timestamp: new Date().toISOString() }));
           break;
+        }
+
+        // DB-backed idempotency: skip if user was updated more recently than this event
+        const existingUser = await prisma.user.findUnique({ where: { id: userId } });
+        if (existingUser && existingUser.updatedAt > new Date(event.created * 1000)) {
+          console.log(JSON.stringify({ event: "webhook_skipped_stale", type: event.type, timestamp: new Date().toISOString() }));
+          return NextResponse.json({ received: true });
         }
 
         // Verify plan against actual price paid
@@ -218,7 +208,6 @@ export async function POST(request: Request) {
 
     if (isPrismaNotFound) {
       console.warn(JSON.stringify({ event: "webhook_warning", type: event.type, error: "Record not found", detail: errMsg, timestamp: new Date().toISOString() }));
-      markProcessed(event.id);
       return NextResponse.json({ received: true });
     }
 
@@ -229,6 +218,5 @@ export async function POST(request: Request) {
     );
   }
 
-  markProcessed(event.id);
   return NextResponse.json({ received: true });
 }

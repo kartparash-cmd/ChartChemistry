@@ -98,11 +98,13 @@ export default function RootLayout({
             strategy="afterInteractive"
           />
         )}
-        <Script id="sw-register" strategy="afterInteractive">
+        <Script id="sw-cleanup" strategy="afterInteractive">
           {`
             if ('serviceWorker' in navigator) {
-              navigator.serviceWorker.register('/sw.js').catch(function(err) {
-                console.log('ServiceWorker registration failed:', err);
+              navigator.serviceWorker.getRegistrations().then(function(registrations) {
+                registrations.forEach(function(registration) {
+                  registration.unregister();
+                });
               });
             }
           `}

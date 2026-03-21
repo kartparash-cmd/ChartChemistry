@@ -35,6 +35,7 @@ import {
   Gift,
   Copy,
   Check,
+  Pencil,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -357,6 +358,10 @@ function DashboardContent() {
   } | null>(null);
   const [referralCopied, setReferralCopied] = useState(false);
   const [showCheckIn, setShowCheckIn] = useState(false);
+  const [editingProfile, setEditingProfile] = useState(false);
+  const [editName, setEditName] = useState("");
+  const [editBirthTime, setEditBirthTime] = useState("");
+  const [editSaving, setEditSaving] = useState(false);
 
   // Determine greeting: first-visit detection + time-of-day
   useEffect(() => {
@@ -833,26 +838,75 @@ function DashboardContent() {
                         <div className="rounded-xl border border-white/10 bg-white/[0.03] p-6 backdrop-blur-sm">
                           <div className="flex items-center justify-between mb-4">
                             <div>
-                              <h2 className="font-heading text-xl font-semibold">
-                                {data.profile.name}
-                              </h2>
-                              <p className="text-sm text-muted-foreground">
-                                Born {new Date(data.profile.birthDate).toLocaleDateString("en-US", {
-                                  month: "long",
-                                  day: "numeric",
-                                  year: "numeric",
-                                })}
-                                {data.profile.birthTime &&
-                                  ` at ${data.profile.birthTime}`}{" "}
-                                in {data.profile.birthCity}
-                              </p>
+                              {editingProfile ? (
+                                <div className="space-y-2">
+                                  <input
+                                    value={editName}
+                                    onChange={(e) => setEditName(e.target.value)}
+                                    className="h-9 rounded-lg border border-white/10 bg-white/5 px-3 text-sm font-semibold"
+                                    placeholder="Name"
+                                  />
+                                  <input
+                                    type="time"
+                                    value={editBirthTime}
+                                    onChange={(e) => setEditBirthTime(e.target.value)}
+                                    className="h-9 rounded-lg border border-white/10 bg-white/5 px-3 text-sm [color-scheme:dark]"
+                                    placeholder="Birth time"
+                                  />
+                                  <div className="flex gap-2">
+                                    <Button size="sm" disabled={editSaving} onClick={async () => {
+                                      setEditSaving(true);
+                                      try {
+                                        await fetch(`/api/profile/${data.profile!.id}`, {
+                                          method: "PATCH",
+                                          headers: { "Content-Type": "application/json" },
+                                          body: JSON.stringify({ name: editName, ...(editBirthTime ? { birthTime: editBirthTime } : {}) }),
+                                        });
+                                        setEditingProfile(false);
+                                        router.refresh();
+                                      } catch {} finally { setEditSaving(false); }
+                                    }} className="bg-cosmic-purple text-white text-xs">
+                                      {editSaving ? "Saving..." : "Save"}
+                                    </Button>
+                                    <Button size="sm" variant="outline" onClick={() => setEditingProfile(false)} className="text-xs border-white/10">
+                                      Cancel
+                                    </Button>
+                                  </div>
+                                </div>
+                              ) : (
+                                <>
+                                  <h2 className="font-heading text-xl font-semibold">{data.profile.name}</h2>
+                                  <p className="text-sm text-muted-foreground">
+                                    Born {new Date(data.profile.birthDate).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
+                                    {data.profile.birthTime && ` at ${data.profile.birthTime}`} in {data.profile.birthCity}
+                                  </p>
+                                </>
+                              )}
                             </div>
-                            <Button asChild variant="outline" size="sm" className="border-white/10">
-                              <Link href={`/chart/${data.profile.id}`}>
-                                View Full Chart
-                                <ArrowRight className="ml-2 h-3 w-3" />
-                              </Link>
-                            </Button>
+                            <div className="flex items-center gap-2">
+                              {!editingProfile && (
+                                <>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
+                                    onClick={() => {
+                                      setEditName(data.profile!.name);
+                                      setEditBirthTime(data.profile!.birthTime || "");
+                                      setEditingProfile(true);
+                                    }}
+                                  >
+                                    <Pencil className="h-3.5 w-3.5" />
+                                  </Button>
+                                  <Button asChild variant="outline" size="sm" className="border-white/10">
+                                    <Link href={`/chart/${data.profile.id}`}>
+                                      View Full Chart
+                                      <ArrowRight className="ml-2 h-3 w-3" />
+                                    </Link>
+                                  </Button>
+                                </>
+                              )}
+                            </div>
                           </div>
 
                           {/* Sign cards */}

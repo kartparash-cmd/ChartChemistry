@@ -3,6 +3,7 @@
  *
  * GET    — fetch a single birth profile by ID
  * PUT    — update a birth profile
+ * PATCH  — lightweight update (name, birthTime)
  * DELETE — delete a birth profile
  */
 
@@ -248,6 +249,50 @@ export async function PUT(
       { error: "Internal server error" },
       { status: 500 }
     );
+  }
+}
+
+// ============================================================
+// PATCH — lightweight update (name, birthTime)
+// ============================================================
+
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Authentication required" }, { status: 401 });
+    }
+    const { id } = await params;
+    const profile = await prisma.birthProfile.findUnique({ where: { id } });
+    if (!profile) return NextResponse.json({ error: "Profile not found" }, { status: 404 });
+    if (profile.userId !== session.user.id) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+
+    const body = await request.json();
+    const updateData: Record<string, unknown> = {};
+
+    if (body.name && typeof body.name === "string") updateData.name = body.name.trim().substring(0, 100);
+    if (body.birthTime && typeof body.birthTime === "string" && /^\d{2}:\d{2}$/.test(body.birthTime)) {
+      updateData.birthTime = body.birthTime;
+      // Clear cached chart data so it gets recalculated with the new time
+      updateData.chartData = null;
+    }
+
+    if (Object.keys(updateData).length === 0) {
+      return NextResponse.json({ error: "No valid fields to update" }, { status: 400 });
+    }
+
+    const updated = await prisma.birthProfile.update({
+      where: { id },
+      data: updateData,
+    });
+
+    return NextResponse.json({ profile: updated });
+  } catch (error) {
+    console.error("[PATCH /api/profile/[id]] Error:", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
 

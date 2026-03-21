@@ -29,7 +29,6 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { ThemeToggle } from "@/components/theme-toggle";
 import { cn } from "@/lib/utils";
 
 const publicNavLinks = [
@@ -133,7 +132,6 @@ export function Navigation() {
 
           {/* Auth / User Section */}
           <div className="hidden md:flex items-center gap-3">
-            <ThemeToggle />
             {session?.user && (!session.user.plan || session.user.plan === "FREE") && (
               <Link
                 href="/pricing"
@@ -324,10 +322,6 @@ export function Navigation() {
                     );
                   })}
 
-                  <div className="flex items-center gap-2 px-4 py-2">
-                    <ThemeToggle />
-                    <span className="text-sm text-muted-foreground">Toggle theme</span>
-                  </div>
 
                   <div className="my-4 border-t border-border" />
 

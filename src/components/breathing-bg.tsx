@@ -1,29 +1,33 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 /**
  * Full-screen fixed overlay that cycles through subtle dark background
  * colors, creating a "breathing" effect behind all content.
+ * Uses inline styles exclusively to avoid Tailwind purge issues.
  */
 export function BreathingBackground() {
   const ref = useRef<HTMLDivElement>(null);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
+
     const prefersReducedMotion = window.matchMedia(
       "(prefers-reduced-motion: reduce)"
     ).matches;
     if (prefersReducedMotion) return;
 
     const colors = [
-      "hsl(222, 47%, 7%)",   // navy (base)
-      "hsl(265, 35%, 10%)",  // purple tint
-      "hsl(240, 40%, 9%)",   // indigo
-      "hsl(200, 45%, 8%)",   // deep teal
+      [222, 47, 7],   // navy (base)
+      [265, 35, 10],  // purple tint
+      [240, 40, 9],   // indigo
+      [200, 45, 8],   // deep teal
     ];
 
     let start: number | null = null;
-    const cycleDuration = 25000; // 25 seconds full cycle
+    const cycleDuration = 25000;
     let raf: number;
 
     const animate = (time: number) => {
@@ -31,21 +35,19 @@ export function BreathingBackground() {
       const elapsed = (time - start) % cycleDuration;
       const progress = elapsed / cycleDuration;
 
-      // Smoothly interpolate between color stops
       const segmentCount = colors.length;
       const rawIndex = progress * segmentCount;
       const i = Math.floor(rawIndex) % segmentCount;
       const next = (i + 1) % segmentCount;
       const t = rawIndex - Math.floor(rawIndex);
-
-      // Smooth ease
       const ease = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
 
+      const h = colors[i][0] + (colors[next][0] - colors[i][0]) * ease;
+      const s = colors[i][1] + (colors[next][1] - colors[i][1]) * ease;
+      const l = colors[i][2] + (colors[next][2] - colors[i][2]) * ease;
+
       if (ref.current) {
-        ref.current.style.backgroundColor = colors[i];
-        ref.current.style.opacity = String(1 - ease * 0.3);
-        // Blend by fading toward next color
-        ref.current.style.backgroundColor = lerpColor(colors[i], colors[next], ease);
+        ref.current.style.backgroundColor = `hsl(${h}, ${s}%, ${l}%)`;
       }
 
       raf = requestAnimationFrame(animate);
@@ -55,30 +57,22 @@ export function BreathingBackground() {
     return () => cancelAnimationFrame(raf);
   }, []);
 
+  if (!mounted) return null;
+
   return (
     <div
       ref={ref}
-      className="fixed inset-0 -z-10"
-      style={{ backgroundColor: "hsl(222, 47%, 7%)" }}
       aria-hidden="true"
+      style={{
+        position: "fixed",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        zIndex: -10,
+        backgroundColor: "hsl(222, 47%, 7%)",
+        pointerEvents: "none",
+      }}
     />
   );
-}
-
-/** Parse an HSL string and lerp between two colors */
-function lerpColor(a: string, b: string, t: number): string {
-  const pa = parseHSL(a);
-  const pb = parseHSL(b);
-  if (!pa || !pb) return a;
-
-  const h = pa.h + (pb.h - pa.h) * t;
-  const s = pa.s + (pb.s - pa.s) * t;
-  const l = pa.l + (pb.l - pa.l) * t;
-  return `hsl(${h.toFixed(0)}, ${s.toFixed(0)}%, ${l.toFixed(1)}%)`;
-}
-
-function parseHSL(str: string): { h: number; s: number; l: number } | null {
-  const m = str.match(/hsl\(\s*([\d.]+)\s*,\s*([\d.]+)%\s*,\s*([\d.]+)%\s*\)/);
-  if (!m) return null;
-  return { h: parseFloat(m[1]), s: parseFloat(m[2]), l: parseFloat(m[3]) };
 }

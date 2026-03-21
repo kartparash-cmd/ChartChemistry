@@ -12,7 +12,7 @@ const containerVariants: Variants = {
   hidden: {},
   visible: (delay: number) => ({
     transition: {
-      staggerChildren: 0.03,
+      staggerChildren: 0.05,
       delayChildren: delay,
     },
   }),
@@ -21,14 +21,17 @@ const containerVariants: Variants = {
 const charVariants: Variants = {
   hidden: {
     opacity: 0,
-    y: 5,
+    y: 8,
+    filter: "blur(4px)",
   },
   visible: {
     opacity: 1,
     y: 0,
+    filter: "blur(0px)",
     transition: {
-      opacity: { duration: 0.3, ease: "easeOut" },
-      y: { duration: 0.3, ease: "easeOut" },
+      opacity: { duration: 0.4, ease: "easeOut" },
+      y: { duration: 0.5, ease: "easeOut" },
+      filter: { duration: 0.4, ease: "easeOut" },
     },
   },
 };
@@ -44,7 +47,6 @@ export function SparkleText({
     return <span className={className}>{children}</span>;
   }
 
-  // Split into words to prevent mid-word line breaks
   const words = children.split(" ");
 
   return (

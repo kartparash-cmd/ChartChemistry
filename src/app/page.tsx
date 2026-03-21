@@ -17,7 +17,6 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { StarField } from "@/components/star-field";
-import { SparkleText } from "@/components/sparkle-text";
 import { TiltCard } from "@/components/tilt-card";
 import { cn } from "@/lib/utils";
 
@@ -192,20 +191,20 @@ export default function Home() {
       <section className="relative flex min-h-[90vh] flex-col items-center justify-center px-4 text-center">
         <StarField className="z-0" />
 
-        {/* Hero headline — outside stagger container so SparkleText animates independently */}
-        <div className="relative z-10 mx-auto max-w-3xl text-center mb-6">
-          <h1 className="text-3xl font-bold leading-tight tracking-tight sm:text-4xl md:text-5xl lg:text-6xl">
-            <SparkleText delay={0.2}>Stop judging compatibility</SparkleText>{" "}
-            <SparkleText className="cosmic-text" delay={1.0}>by sun signs.</SparkleText>
-          </h1>
-        </div>
-
         <motion.div
-          className="relative z-10 mx-auto max-w-3xl space-y-6 text-center"
+          className="relative z-10 mx-auto max-w-3xl space-y-6"
           initial={shouldReduceMotion ? "visible" : "hidden"}
           animate="visible"
           variants={staggerContainer}
         >
+          <motion.h1
+            className="text-3xl font-bold leading-tight tracking-tight text-center sm:text-4xl md:text-5xl lg:text-6xl"
+            variants={fadeInUp}
+            transition={{ duration: 0.6 }}
+          >
+            Stop judging compatibility{" "}
+            <span className="cosmic-text">by sun signs.</span>
+          </motion.h1>
           <motion.p
             className="text-xl font-medium text-cosmic-purple-light sm:text-2xl md:text-3xl"
             variants={fadeInUp}

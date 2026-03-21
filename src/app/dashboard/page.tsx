@@ -1241,6 +1241,51 @@ function DashboardContent() {
                     </div>
                   </div>
 
+                  {/* Background Theme */}
+                  <div className="rounded-xl border border-white/10 bg-white/[0.03] p-6 backdrop-blur-sm">
+                    <h3 className="font-heading text-lg font-semibold mb-2">Background Theme</h3>
+                    <p className="text-xs text-muted-foreground mb-4">Choose a static background color or the animated cosmic gradient.</p>
+                    <div className="grid grid-cols-5 gap-3">
+                      {[
+                        { key: "animated", label: "Cosmic", desc: "Animated gradient", style: "conic-gradient(hsl(222,50%,12%), hsl(265,35%,15%), hsl(200,50%,12%), hsl(222,50%,12%))" },
+                        { key: "navy", label: "Navy", desc: "Deep navy", style: "hsl(222, 50%, 12%)" },
+                        { key: "purple", label: "Purple", desc: "Dark purple", style: "hsl(265, 35%, 15%)" },
+                        { key: "indigo", label: "Indigo", desc: "Deep indigo", style: "hsl(240, 40%, 14%)" },
+                        { key: "teal", label: "Teal", desc: "Deep teal", style: "hsl(200, 50%, 13%)" },
+                      ].map((t) => {
+                        const current = typeof window !== "undefined" ? localStorage.getItem("cc_bg_theme") || "animated" : "animated";
+                        const isActive = current === t.key;
+                        return (
+                          <button
+                            key={t.key}
+                            onClick={() => {
+                              localStorage.setItem("cc_bg_theme", t.key);
+                              window.dispatchEvent(new CustomEvent("theme-change", { detail: t.key }));
+                            }}
+                            className={cn(
+                              "flex flex-col items-center gap-2 rounded-xl border p-3 transition-all",
+                              isActive
+                                ? "border-white/40 bg-white/[0.06]"
+                                : "border-white/10 bg-white/[0.02] hover:border-white/20"
+                            )}
+                          >
+                            <div
+                              className={cn(
+                                "h-8 w-8 rounded-full border-2",
+                                isActive ? "border-white" : "border-white/20"
+                              )}
+                              style={{ background: t.style }}
+                            />
+                            <div className="text-center">
+                              <p className="text-xs font-medium">{t.label}</p>
+                              <p className="text-[10px] text-muted-foreground">{t.desc}</p>
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
                   {/* Sign Out */}
                   <div className="rounded-xl border border-white/10 bg-white/[0.03] p-6 backdrop-blur-sm">
                     <h3 className="font-heading text-lg font-semibold mb-4">Session</h3>

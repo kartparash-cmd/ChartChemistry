@@ -394,6 +394,7 @@ export const ModelName = {
   ChatSession: 'ChatSession',
   SupportTicket: 'SupportTicket',
   TicketReply: 'TicketReply',
+  MarieMemory: 'MarieMemory',
   UserAchievement: 'UserAchievement'
 } as const
 
@@ -410,7 +411,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "user" | "account" | "session" | "verificationToken" | "passwordResetToken" | "birthProfile" | "compatibilityReport" | "chatSession" | "supportTicket" | "ticketReply" | "userAchievement"
+    modelProps: "user" | "account" | "session" | "verificationToken" | "passwordResetToken" | "birthProfile" | "compatibilityReport" | "chatSession" | "supportTicket" | "ticketReply" | "marieMemory" | "userAchievement"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -1154,6 +1155,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    MarieMemory: {
+      payload: Prisma.$MarieMemoryPayload<ExtArgs>
+      fields: Prisma.MarieMemoryFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.MarieMemoryFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MarieMemoryPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.MarieMemoryFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MarieMemoryPayload>
+        }
+        findFirst: {
+          args: Prisma.MarieMemoryFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MarieMemoryPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.MarieMemoryFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MarieMemoryPayload>
+        }
+        findMany: {
+          args: Prisma.MarieMemoryFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MarieMemoryPayload>[]
+        }
+        create: {
+          args: Prisma.MarieMemoryCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MarieMemoryPayload>
+        }
+        createMany: {
+          args: Prisma.MarieMemoryCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.MarieMemoryCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MarieMemoryPayload>[]
+        }
+        delete: {
+          args: Prisma.MarieMemoryDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MarieMemoryPayload>
+        }
+        update: {
+          args: Prisma.MarieMemoryUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MarieMemoryPayload>
+        }
+        deleteMany: {
+          args: Prisma.MarieMemoryDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.MarieMemoryUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.MarieMemoryUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MarieMemoryPayload>[]
+        }
+        upsert: {
+          args: Prisma.MarieMemoryUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MarieMemoryPayload>
+        }
+        aggregate: {
+          args: Prisma.MarieMemoryAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateMarieMemory>
+        }
+        groupBy: {
+          args: Prisma.MarieMemoryGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.MarieMemoryGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.MarieMemoryCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.MarieMemoryCountAggregateOutputType> | number
+        }
+      }
+    }
     UserAchievement: {
       payload: Prisma.$UserAchievementPayload<ExtArgs>
       fields: Prisma.UserAchievementFieldRefs
@@ -1428,6 +1503,18 @@ export const TicketReplyScalarFieldEnum = {
 } as const
 
 export type TicketReplyScalarFieldEnum = (typeof TicketReplyScalarFieldEnum)[keyof typeof TicketReplyScalarFieldEnum]
+
+
+export const MarieMemoryScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  key: 'key',
+  value: 'value',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type MarieMemoryScalarFieldEnum = (typeof MarieMemoryScalarFieldEnum)[keyof typeof MarieMemoryScalarFieldEnum]
 
 
 export const UserAchievementScalarFieldEnum = {
@@ -1731,6 +1818,7 @@ export type GlobalOmitConfig = {
   chatSession?: Prisma.ChatSessionOmit
   supportTicket?: Prisma.SupportTicketOmit
   ticketReply?: Prisma.TicketReplyOmit
+  marieMemory?: Prisma.MarieMemoryOmit
   userAchievement?: Prisma.UserAchievementOmit
 }
 

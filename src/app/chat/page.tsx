@@ -63,6 +63,14 @@ const INITIAL_SUGGESTED_QUESTIONS = [
   "How can we improve our communication?",
 ];
 
+const EDUCATION_SUGGESTED_QUESTIONS = [
+  "Teach me about my Sun sign placement",
+  "What does my Moon sign say about my emotions?",
+  "Explain my Rising sign and how others see me",
+  "What does Venus in my chart say about how I love?",
+  "Walk me through my birth chart step by step",
+];
+
 const STORAGE_KEY_PREFIX = "cc_chat_";
 
 // ---------------------------------------------------------------------------
@@ -98,7 +106,7 @@ function generateFollowUpSuggestions(messages: Message[]): string[] {
     .reverse()
     .find((m) => m.role === "user");
 
-  if (!lastAssistant || !lastUser) return INITIAL_SUGGESTED_QUESTIONS;
+  if (!lastAssistant || !lastUser) return [...INITIAL_SUGGESTED_QUESTIONS, ...EDUCATION_SUGGESTED_QUESTIONS].slice(0, 8);
 
   const content = lastAssistant.content.toLowerCase();
   const suggestions: string[] = [];
@@ -126,6 +134,23 @@ function generateFollowUpSuggestions(messages: Message[]): string[] {
   if (content.includes("sun") || content.includes("sign") || content.includes("zodiac")) {
     suggestions.push("How do our sun signs interact day to day?");
     suggestions.push("What role do our rising signs play in this dynamic?");
+  }
+
+  // Education follow-ups
+  if (content.includes("sun")) {
+    suggestions.push("How does my Sun sign affect my daily energy?");
+  }
+  if (content.includes("house") || content.includes("houses")) {
+    suggestions.push("What do the houses in my chart mean?");
+  }
+  if (content.includes("aspect") || content.includes("trine") || content.includes("square") || content.includes("conjunction")) {
+    suggestions.push("Explain what aspects are and why they matter");
+  }
+  if (content.includes("rising") || content.includes("ascendant")) {
+    suggestions.push("How does my Rising sign shape first impressions?");
+  }
+  if (content.includes("retrograde")) {
+    suggestions.push("How do retrogrades affect me personally?");
   }
 
   if (suggestions.length < 3) {
@@ -290,6 +315,7 @@ function ChatPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const reportId = searchParams?.get("reportId");
+  const initialQuestion = searchParams?.get("ask");
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -586,6 +612,27 @@ function ChatPageContent() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isLoading]);
+
+  // -------------------------------------------------------------------
+  // Auto-fill input from "ask" query param
+  // -------------------------------------------------------------------
+
+  const [initialQuestionApplied, setInitialQuestionApplied] = useState(false);
+
+  useEffect(() => {
+    if (
+      initialQuestion &&
+      !initialQuestionApplied &&
+      !isRestoringSession &&
+      selectedReportId &&
+      isPremium
+    ) {
+      setInput(initialQuestion);
+      setInitialQuestionApplied(true);
+      // Focus the input
+      setTimeout(() => inputRef.current?.focus(), 100);
+    }
+  }, [initialQuestion, initialQuestionApplied, isRestoringSession, selectedReportId, isPremium]);
 
   // -------------------------------------------------------------------
   // Send message

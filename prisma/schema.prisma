@@ -38,6 +38,7 @@ model User {
   supportTickets SupportTicket[]
   ticketReplies  TicketReply[]
   achievements   UserAchievement[]
+  marieMemories  MarieMemory[]
 
   @@index([stripeCustomerId])
 }
@@ -209,6 +210,19 @@ model TicketReply {
   message   String   @db.Text
   isAdmin   Boolean  @default(false)
   createdAt DateTime @default(now())
+}
+
+model MarieMemory {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  key       String   // e.g. "user_name", "partner_name", "relationship_concern", "communication_style"
+  value     String   @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, key])
+  @@index([userId])
 }
 
 model UserAchievement {

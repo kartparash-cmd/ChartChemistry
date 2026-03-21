@@ -355,12 +355,15 @@ function NarrativeSectionCard({
   isPremium,
   index,
   reducedMotion = false,
+  reportId,
 }: {
   section: NarrativeSection;
   isPremium: boolean;
   index: number;
   reducedMotion?: boolean;
+  reportId?: string;
 }) {
+  const router = useRouter();
   const [isOpen, setIsOpen] = useState(section.freeAccess);
   const isLocked = !section.freeAccess && !isPremium;
 
@@ -431,6 +434,18 @@ function NarrativeSectionCard({
               <p className="text-sm leading-relaxed text-muted-foreground whitespace-pre-line">
                 {section.content}
               </p>
+              {reportId && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    router.push(`/chat?reportId=${reportId}&ask=${encodeURIComponent(`Tell me more about the "${section.title}" section of our compatibility report`)}`);
+                  }}
+                  className="inline-flex items-center gap-1 text-xs text-cosmic-purple-light hover:text-cosmic-purple transition-colors mt-3 print:hidden"
+                >
+                  <MessageCircle className="h-3 w-3" />
+                  Ask Marie
+                </button>
+              )}
             </div>
           </motion.div>
         )}
@@ -1233,6 +1248,7 @@ export default function ReportPage() {
                 isPremium={isPremium}
                 index={i}
                 reducedMotion={!shouldAnimate}
+                reportId={reportId}
               />
             ))}
 

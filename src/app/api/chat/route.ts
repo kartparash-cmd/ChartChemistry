@@ -17,7 +17,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { chatWithAstrologer, buildChatContext, getClient, CLAUDE_MODEL, generateChatTitle } from "@/lib/claude";
+import { chatWithAstrologer, buildChatContext, getClient, CLAUDE_MODEL, generateChatTitle, extractMemories } from "@/lib/claude";
 import { createRateLimiter, getClientIp } from "@/lib/rate-limit";
 import type { ChatMessage, ChatRequest } from "@/types/astrology";
 import type { Prisma } from "@/generated/prisma/client";
@@ -205,6 +205,13 @@ export async function POST(request: Request) {
       );
     }
 
+    // --- 1b. Load Marie's long-term memories for this user ---
+    const memories = await prisma.marieMemory.findMany({
+      where: { userId: session.user.id },
+      orderBy: { updatedAt: "desc" },
+      take: 20,
+    });
+
     // --- 2. Parse + validate body ---
     let body: ChatRequest;
     try {
@@ -349,6 +356,65 @@ export async function POST(request: Request) {
         : summaryBlock;
     }
 
+    // --- 5c. Inject long-term memories into context ---
+    if (memories.length > 0) {
+      const memoryBlock =
+        "\n\nMARIE'S MEMORY (facts you remember about this user from past sessions — reference these naturally):\n" +
+        memories.map((m) => `- ${m.key}: ${m.value}`).join("\n");
+      enhancedChartContext = enhancedChartContext
+        ? enhancedChartContext + memoryBlock
+        : memoryBlock;
+    }
+
+    // --- 5d. Fetch current transits for first message in a session ---
+    // Gives Marie context to proactively mention relevant cosmic events
+    if (conversationHistory.length <= 1) {
+      try {
+        const userProfile = await prisma.birthProfile.findFirst({
+          where: { userId: session.user.id },
+          orderBy: { createdAt: "asc" },
+        });
+        if (userProfile && userProfile.chartData) {
+          const { calculateTransits } = await import("@/lib/astro-client");
+          const today = new Date().toISOString().split("T")[0];
+          const transitData = await calculateTransits(
+            {
+              birthDate: userProfile.birthDate.toISOString().split("T")[0],
+              birthTime: userProfile.birthTime || undefined,
+              latitude: userProfile.latitude,
+              longitude: userProfile.longitude,
+              timezone: userProfile.timezone,
+            },
+            today
+          );
+
+          if (
+            transitData &&
+            transitData.aspectsToNatal &&
+            transitData.aspectsToNatal.length > 0
+          ) {
+            const transitBlock =
+              "\n\nCURRENT TRANSITS (mention 1-2 of these naturally if relevant to the user's question):\n" +
+              transitData.aspectsToNatal
+                .slice(0, 5)
+                .map(
+                  (t) =>
+                    `Transit ${t.transitingPlanet} ${t.aspect} Natal ${t.natalPlanet} (${t.orb.toFixed(1)}° orb) — ${t.keywords}`
+                )
+                .join("\n");
+            enhancedChartContext = enhancedChartContext
+              ? enhancedChartContext + transitBlock
+              : transitBlock;
+          }
+        }
+      } catch (err) {
+        console.error(
+          "[POST /api/chat] Transit fetch failed (non-blocking):",
+          err
+        );
+      }
+    }
+
     // --- 6. Call Claude API ---
     const aiReply = await chatWithAstrologer(messagesToSend, enhancedChartContext);
 
@@ -448,6 +514,30 @@ export async function POST(request: Request) {
           });
       }
     }
+
+    // --- 8b. Extract long-term memories (fire-and-forget) ---
+    extractMemories(
+      conversationHistory.slice(-4),
+      memories.map((m) => ({ key: m.key, value: m.value }))
+    )
+      .then(async (newMemories) => {
+        for (const mem of newMemories) {
+          await prisma.marieMemory.upsert({
+            where: {
+              userId_key: { userId: session.user.id, key: mem.key },
+            },
+            create: {
+              userId: session.user.id,
+              key: mem.key,
+              value: mem.value,
+            },
+            update: { value: mem.value },
+          });
+        }
+      })
+      .catch((err) =>
+        console.error("[Marie Memory] Extraction failed:", err)
+      );
 
     // --- 9. Return response ---
     return NextResponse.json({

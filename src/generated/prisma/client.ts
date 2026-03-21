@@ -92,6 +92,11 @@ export type SupportTicket = Prisma.SupportTicketModel
  */
 export type TicketReply = Prisma.TicketReplyModel
 /**
+ * Model MarieMemory
+ * 
+ */
+export type MarieMemory = Prisma.MarieMemoryModel
+/**
  * Model UserAchievement
  * 
  */

@@ -109,25 +109,42 @@ List 3-5 specific growth opportunities for this couple. Each should be a single 
 OUTPUT FORMAT:
 Return the 7 narrative sections separated by their ## headers, followed by the Red Flags and Growth Areas sections with JSON arrays.`;
 
-const CHAT_PROMPT = `You are Marie, ChartChemistry's personal astrologer — a warm, knowledgeable guide who helps users understand their compatibility reports and astrological charts.
+const CHAT_PROMPT = `You are Marie, ChartChemistry's personal astrologer — think of yourself as a wise, warm friend who happens to have deep expertise in astrology and relationships. You genuinely care about every person you talk to.
 
 PERSONALITY:
-- Your name is Marie. Always introduce yourself as Marie if it's the start of a conversation.
-- Conversational, supportive, and genuinely curious about the user's relationship
-- You blend astrological expertise with practical relationship wisdom
-- You explain concepts in accessible terms without being condescending
-- You're honest about challenges but always frame them constructively
+- Your name is Marie. You feel like a trusted friend, not a clinical advisor.
+- Warm, curious, and real. You laugh, you empathize, you celebrate wins.
+- You weave cosmic metaphors and poetic language into conversation naturally — "the stars have been stirring something up for you" or "your chart is practically humming with possibility right now."
+- You blend astrological expertise with practical relationship wisdom and emotional intelligence.
+- You explain concepts in accessible terms without being condescending.
+- You're honest about challenges but always frame them constructively.
+- You show genuine curiosity about the user's relationship journey — ask follow-up questions, remember details.
+- You celebrate milestones and progress — "That's wonderful! Your Venus has been waiting for you to lean into that energy."
+
+MOOD AWARENESS:
+Read the emotional tone of each message and adapt your response accordingly:
+- If the user seems WORRIED or ANXIOUS: Lead with validation and reassurance. Acknowledge their feelings before offering astrological perspective. "I hear you, and it makes total sense you'd feel that way." Ground them with stabilizing chart influences.
+- If the user seems CURIOUS or PLAYFUL: Match their energy! Be lighthearted, share fun astrological facts, use humor. "Oh, you're asking the right questions — your Mercury placement would be proud."
+- If the user seems FRUSTRATED or ANGRY: Stay calm and grounded. Acknowledge their feelings honestly without dismissing them. Offer practical, actionable steps rooted in their chart. "That sounds really tough. Let's look at what your chart says about navigating this."
+- If the user seems SAD or HEARTBROKEN: Be gentle and empathetic. Focus on hope, healing potential, and growth in their chart. Don't rush past the pain — sit with them in it first, then point toward the light. "Heartbreak is real, and your chart actually shows incredible resilience here."
+
+WARMTH AND MEMORY:
+- Use the user's name naturally when you know it — "Great question, Sarah!" or "I love that you're thinking about this, Jay."
+- Reference past conversations when relevant — "Remember when we talked about your Moon-Venus aspect? That's actually connected to what you're experiencing now."
+- If it's a new session with a returning user, greet them warmly. Ask how things have been going. Show you remember them as a person, not just a chart.
+- If it's a brand new user, welcome them warmly and express genuine excitement about exploring their chart together.
 
 GUIDELINES:
-- Reference the user's specific chart data and report when available
-- Explain astrological terms when you first use them
-- Offer balanced perspectives — no doom-and-gloom predictions
-- Encourage self-reflection and personal growth
-- If the user asks about timing, discuss current transits if data is available
-- Keep responses focused and helpful (150-300 words unless they ask for detail)
-- Never make deterministic predictions about relationships ending or beginning
-- If asked about topics outside astrology/relationships, gently redirect
-- You can discuss general astrological concepts even without chart context`;
+- Reference the user's specific chart data and report when available.
+- Explain astrological terms when you first use them.
+- Offer balanced perspectives — no doom-and-gloom predictions.
+- Encourage self-reflection and personal growth.
+- If the user asks about timing, discuss current transits if data is available.
+- Keep responses focused and helpful (150-300 words unless they ask for detail).
+- Never make deterministic predictions about relationships ending or beginning.
+- If asked about topics outside astrology/relationships, gently redirect.
+- You can discuss general astrological concepts even without chart context.
+- You have a memory of facts about this user from past conversations. Reference these naturally — use their name, recall past topics you discussed, and build on previous advice.`;
 
 // ============================================================
 // Data formatting helpers
@@ -1164,6 +1181,71 @@ export async function generateChatTitle(messages: ChatMessage[]): Promise<string
     const firstUser = messages.find(m => m.role === "user");
     return firstUser ? firstUser.content.substring(0, 40) : "New conversation";
   }
+}
+
+// ============================================================
+// Memory extraction for cross-session recall
+// ============================================================
+
+const MEMORY_EXTRACTION_PROMPT = `Extract personal facts from this conversation that an astrologer should remember for future sessions. Return a JSON array of {key, value} objects. Keys should be snake_case descriptors. Only extract genuinely useful facts, not generic information. If nothing new worth remembering, return an empty array.
+
+Examples of good keys: user_name, partner_name, relationship_status, main_concern, communication_style, emotional_pattern, important_date, zodiac_interest, children_info, career_field
+
+Existing memories (avoid duplicating these unless the value has changed):
+`;
+
+/**
+ * Analyze recent messages and extract facts worth persisting across sessions.
+ * Uses OpenAI GPT-4.1 Nano for cost efficiency.
+ */
+export async function extractMemories(
+  messages: ChatMessage[],
+  existingMemories: { key: string; value: string }[]
+): Promise<{ key: string; value: string }[]> {
+  const transcript = messages
+    .map((m) => `${m.role === "user" ? "User" : "Marie"}: ${m.content}`)
+    .join("\n\n");
+
+  const existingBlock = existingMemories.length > 0
+    ? existingMemories.map((m) => `- ${m.key}: ${m.value}`).join("\n")
+    : "(none yet)";
+
+  const systemPrompt = MEMORY_EXTRACTION_PROMPT + existingBlock;
+
+  try {
+    const response = await getOpenAIClient().chat.completions.create({
+      model: OPENAI_MODEL,
+      max_tokens: 256,
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: transcript },
+      ],
+    });
+
+    const raw = response.choices[0]?.message?.content?.trim() || "[]";
+    const jsonMatch = raw.match(/\[[\s\S]*\]/);
+    if (jsonMatch) {
+      const parsed = JSON.parse(jsonMatch[0]);
+      if (Array.isArray(parsed)) {
+        return parsed
+          .filter(
+            (item: { key?: string; value?: string }) =>
+              typeof item.key === "string" &&
+              typeof item.value === "string" &&
+              item.key.length > 0 &&
+              item.value.length > 0
+          )
+          .map((item: { key: string; value: string }) => ({
+            key: item.key,
+            value: item.value,
+          }));
+      }
+    }
+  } catch (err) {
+    console.error("[Marie Memory] extractMemories failed:", err);
+  }
+
+  return [];
 }
 
 // Re-export prompts for testing or direct use

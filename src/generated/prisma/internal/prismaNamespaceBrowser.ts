@@ -61,6 +61,7 @@ export const ModelName = {
   ChatSession: 'ChatSession',
   SupportTicket: 'SupportTicket',
   TicketReply: 'TicketReply',
+  MarieMemory: 'MarieMemory',
   UserAchievement: 'UserAchievement'
 } as const
 
@@ -241,6 +242,18 @@ export const TicketReplyScalarFieldEnum = {
 } as const
 
 export type TicketReplyScalarFieldEnum = (typeof TicketReplyScalarFieldEnum)[keyof typeof TicketReplyScalarFieldEnum]
+
+
+export const MarieMemoryScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  key: 'key',
+  value: 'value',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type MarieMemoryScalarFieldEnum = (typeof MarieMemoryScalarFieldEnum)[keyof typeof MarieMemoryScalarFieldEnum]
 
 
 export const UserAchievementScalarFieldEnum = {

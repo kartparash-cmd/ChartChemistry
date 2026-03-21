@@ -198,18 +198,18 @@ export default function Home() {
           animate="visible"
           variants={staggerContainer}
         >
-          <div>
+          <motion.div variants={{ hidden: {}, visible: {} }}>
             <h1 className="text-4xl font-bold leading-tight tracking-tight sm:text-5xl md:text-6xl lg:text-7xl">
               <SparkleText delay={0.2}>Stop judging</SparkleText>{" "}
               <SparkleText delay={0.8}>compatibility</SparkleText>{" "}
               <SparkleText className="cosmic-text" delay={1.4}>by sun signs.</SparkleText>
             </h1>
-          </div>
+          </motion.div>
 
           <motion.p
             className="text-xl font-medium text-cosmic-purple-light sm:text-2xl md:text-3xl"
             variants={fadeInUp}
-            transition={{ duration: 0.6 }}
+            transition={{ duration: 0.6, delay: 1.8 }}
           >
             Go 10 layers deeper.
           </motion.p>
@@ -217,14 +217,14 @@ export default function Home() {
           <motion.p
             className="mx-auto max-w-xl text-base text-muted-foreground sm:text-lg"
             variants={fadeInUp}
-            transition={{ duration: 0.6 }}
+            transition={{ duration: 0.6, delay: 2.0 }}
           >
             ChartChemistry uses full synastry charts, composite analysis, house
             overlays, and AI to reveal the true dynamics of your connection
             &mdash; beyond what any horoscope can tell you.
           </motion.p>
 
-          <motion.div variants={fadeInUp} transition={{ duration: 0.6 }}>
+          <motion.div variants={fadeInUp} transition={{ duration: 0.6, delay: 2.2 }}>
             <Button
               asChild
               size="lg"
@@ -240,7 +240,7 @@ export default function Home() {
           <motion.p
             className="flex items-center justify-center gap-2 text-sm text-muted-foreground"
             variants={fadeInUp}
-            transition={{ duration: 0.6 }}
+            transition={{ duration: 0.6, delay: 2.4 }}
           >
             <Users className="h-4 w-4" />
             Powered by real astronomical data

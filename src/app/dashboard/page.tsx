@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useState, useRef } from "react";
 import { useSession, signOut } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
@@ -361,10 +361,25 @@ function DashboardContent() {
   const [showCheckIn, setShowCheckIn] = useState(false);
   const [editingProfile, setEditingProfile] = useState(false);
   const [editName, setEditName] = useState("");
+  const [editBirthDate, setEditBirthDate] = useState("");
   const [editBirthTime, setEditBirthTime] = useState("");
   const [editCity, setEditCity] = useState("");
+  const [editCitySuggestions, setEditCitySuggestions] = useState<{ city: string; state: string; country: string; lat: number; lon: number }[]>([]);
+  const [editCityCoords, setEditCityCoords] = useState<{ lat: number; lon: number } | null>(null);
   const [editSaving, setEditSaving] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
+  const cityDebounceRef = useRef<ReturnType<typeof setTimeout>>(null);
+
+  const searchEditCities = (query: string) => {
+    if (cityDebounceRef.current) clearTimeout(cityDebounceRef.current);
+    if (query.length < 2) { setEditCitySuggestions([]); return; }
+    cityDebounceRef.current = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/city-search?q=${encodeURIComponent(query)}`);
+        if (res.ok) setEditCitySuggestions(await res.json());
+      } catch {}
+    }, 400);
+  };
 
   // Determine greeting: first-visit detection + time-of-day
   useEffect(() => {
@@ -843,7 +858,7 @@ function DashboardContent() {
                             <div>
                               {editingProfile ? (
                                 <div className="space-y-3">
-                                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                     <div>
                                       <label className="text-[10px] text-muted-foreground mb-1 block">Name</label>
                                       <input
@@ -851,6 +866,16 @@ function DashboardContent() {
                                         onChange={(e) => setEditName(e.target.value)}
                                         className="h-9 w-full rounded-lg border border-white/10 bg-white/5 px-3 text-sm text-base"
                                         placeholder="Name"
+                                      />
+                                    </div>
+                                    <div>
+                                      <label className="text-[10px] text-muted-foreground mb-1 block">Date of Birth</label>
+                                      <input
+                                        type="date"
+                                        value={editBirthDate}
+                                        onChange={(e) => setEditBirthDate(e.target.value)}
+                                        max={new Date().toISOString().split("T")[0]}
+                                        className="h-9 w-full rounded-lg border border-white/10 bg-white/5 px-3 text-sm text-base [color-scheme:dark]"
                                       />
                                     </div>
                                     <div>
@@ -862,14 +887,40 @@ function DashboardContent() {
                                         className="h-9 w-full rounded-lg border border-white/10 bg-white/5 px-3 text-sm text-base [color-scheme:dark]"
                                       />
                                     </div>
-                                    <div>
+                                    <div className="relative">
                                       <label className="text-[10px] text-muted-foreground mb-1 block">Birth City</label>
                                       <input
                                         value={editCity}
-                                        onChange={(e) => setEditCity(e.target.value)}
+                                        onChange={(e) => {
+                                          setEditCity(e.target.value);
+                                          setEditCityCoords(null);
+                                          searchEditCities(e.target.value);
+                                        }}
                                         className="h-9 w-full rounded-lg border border-white/10 bg-white/5 px-3 text-sm text-base"
-                                        placeholder="City"
+                                        placeholder="Start typing..."
+                                        autoComplete="off"
                                       />
+                                      {editCitySuggestions.length > 0 && (
+                                        <div className="absolute z-50 mt-1 w-full rounded-lg border border-white/10 bg-popover shadow-lg max-h-40 overflow-y-auto">
+                                          {editCitySuggestions.map((s, i) => (
+                                            <button
+                                              key={`${s.lat}-${s.lon}-${i}`}
+                                              type="button"
+                                              className="flex w-full items-start gap-2 px-3 py-2 text-left text-xs hover:bg-white/5 transition-colors"
+                                              onClick={() => {
+                                                setEditCity(s.city);
+                                                setEditCityCoords({ lat: s.lat, lon: s.lon });
+                                                setEditCitySuggestions([]);
+                                              }}
+                                            >
+                                              <div>
+                                                <p className="font-medium">{s.city}</p>
+                                                <p className="text-[10px] text-muted-foreground">{[s.state, s.country].filter(Boolean).join(", ")}</p>
+                                              </div>
+                                            </button>
+                                          ))}
+                                        </div>
+                                      )}
                                     </div>
                                   </div>
                                   <div className="flex gap-2">
@@ -881,8 +932,10 @@ function DashboardContent() {
                                           headers: { "Content-Type": "application/json" },
                                           body: JSON.stringify({
                                             name: editName,
+                                            ...(editBirthDate ? { birthDate: editBirthDate } : {}),
                                             ...(editBirthTime ? { birthTime: editBirthTime } : {}),
                                             ...(editCity ? { birthCity: editCity } : {}),
+                                            ...(editCityCoords ? { latitude: editCityCoords.lat, longitude: editCityCoords.lon } : {}),
                                           }),
                                         });
                                         if (res.ok) {
@@ -918,8 +971,11 @@ function DashboardContent() {
                                     title="Edit profile"
                                     onClick={() => {
                                       setEditName(data.profile!.name);
+                                      setEditBirthDate(new Date(data.profile!.birthDate).toISOString().split("T")[0]);
                                       setEditBirthTime(data.profile!.birthTime || "");
                                       setEditCity(data.profile!.birthCity || "");
+                                      setEditCityCoords(null);
+                                      setEditCitySuggestions([]);
                                       setEditingProfile(true);
                                     }}
                                   >

@@ -361,7 +361,7 @@ export default function Home() {
               Meet <span className="cosmic-text">Marie</span>
             </h2>
             <p className="mt-3 text-muted-foreground">
-              Your personal AI astrologer who remembers you
+              Your AI relationship coach who uses astrology to guide your love life
             </p>
           </motion.div>
 
@@ -381,30 +381,30 @@ export default function Home() {
                   </div>
                   <div>
                     <h3 className="text-lg font-semibold">Marie</h3>
-                    <p className="text-sm text-muted-foreground">Personal Astrologer</p>
+                    <p className="text-sm text-muted-foreground">Your AI Relationship Coach &amp; Astrologer</p>
                   </div>
                 </div>
                 <p className="text-muted-foreground leading-relaxed">
-                  Marie isn&apos;t a generic chatbot. She remembers your name, your partner, your concerns, and your chart.
-                  She adapts to your mood &mdash; supportive when you&apos;re worried, playful when you&apos;re curious.
-                  The longer you talk, the better she knows you.
+                  Marie is your personal relationship coach powered by astrology. She remembers your name, your partner,
+                  your concerns, and your chart. She checks in proactively, tracks your relationship journey over time,
+                  and adapts to your mood &mdash; supportive when you&apos;re worried, playful when you&apos;re curious.
                 </p>
                 <ul className="space-y-3">
                   <li className="flex items-start gap-2 text-sm">
                     <Check className="mt-0.5 h-4 w-4 shrink-0 text-cosmic-purple-light" />
-                    <span>Remembers your relationship journey across sessions</span>
+                    <span>Remembers your relationship journey across every session</span>
                   </li>
                   <li className="flex items-start gap-2 text-sm">
                     <Check className="mt-0.5 h-4 w-4 shrink-0 text-cosmic-purple-light" />
-                    <span>Proactive check-ins when current transits affect your chart</span>
+                    <span>Weekly check-ins and proactive transit alerts for your chart</span>
                   </li>
                   <li className="flex items-start gap-2 text-sm">
                     <Check className="mt-0.5 h-4 w-4 shrink-0 text-cosmic-purple-light" />
-                    <span>Explains any part of your compatibility report in plain language</span>
+                    <span>Monthly relationship health tracking with mood and growth trends</span>
                   </li>
                   <li className="flex items-start gap-2 text-sm">
                     <Check className="mt-0.5 h-4 w-4 shrink-0 text-cosmic-purple-light" />
-                    <span>Teaches you astrology step by step, personalized to your chart</span>
+                    <span>Explains your chart and teaches astrology personalized to you</span>
                   </li>
                 </ul>
               </div>

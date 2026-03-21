@@ -338,6 +338,7 @@ function ChatPageContent() {
   const [loadingSessions, setLoadingSessions] = useState(true);
   const [sidebarFilter, setSidebarFilter] = useState<"all" | "pinned" | "archived">("all");
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
   const hasUserMessage = messages.some((m) => m.role === "user");
@@ -632,7 +633,10 @@ function ChatPageContent() {
   // -------------------------------------------------------------------
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    // Scroll the messages container to bottom (not the page)
+    if (messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+    }
   }, [messages, isLoading]);
 
   // -------------------------------------------------------------------
@@ -940,7 +944,7 @@ function ChatPageContent() {
         <h1 className="sr-only">Marie Chat</h1>
 
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto" role="log" aria-live="polite" aria-relevant="additions">
+        <div ref={messagesContainerRef} className="flex-1 overflow-y-auto" role="log" aria-live="polite" aria-relevant="additions">
           {/* Session restore loading */}
           {isRestoringSession && (
             <div className="flex justify-center py-8">

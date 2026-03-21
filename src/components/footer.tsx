@@ -8,10 +8,12 @@ const footerLinks = {
     { href: "/compatibility", label: "Compatibility" },
     { href: "/learn", label: "Learn" },
     { href: "/pricing", label: "Pricing" },
+    { href: "/quick-match", label: "Quick Match" },
   ],
   legal: [
     { href: "/privacy", label: "Privacy Policy" },
     { href: "/terms", label: "Terms of Service" },
+    { href: "/support", label: "Support" },
   ],
 };
 

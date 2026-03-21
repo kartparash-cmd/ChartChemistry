@@ -16,6 +16,7 @@ import { calculateNatalChart, calculateSynastry } from "@/lib/astro-client";
 import { generateFreeReport, extractSynastryHighlights } from "@/lib/claude";
 import { checkRateLimit, getClientIp, getRemainingChecks } from "@/lib/rate-limit";
 import { geocodeCity } from "@/lib/geocode";
+import { sanitizeInput } from "@/lib/sanitize";
 import type {
   PersonInput,
   CompatibilityRequest,
@@ -194,6 +195,18 @@ export async function POST(request: Request) {
     const person1 = v1.data;
     const person2 = v2.data;
 
+    // --- Sanitize person names ---
+    person1.name = sanitizeInput(person1.name);
+    person2.name = sanitizeInput(person2.name);
+
+    // --- Check that person1 and person2 are not the same person ---
+    if (person1.name === person2.name && person1.birthDate === person2.birthDate && person1.birthCity === person2.birthCity) {
+      return NextResponse.json(
+        { error: "Person 1 and Person 2 appear to be the same person. Please enter different birth details." },
+        { status: 400 }
+      );
+    }
+
     // --- Geocode if coordinates are missing ---
     const geocodePromises: Promise<void>[] = [];
 
@@ -288,4 +301,22 @@ export async function POST(request: Request) {
       { status: 500 }
     );
   }
+}
+
+// ============================================================
+// GET — Check remaining compatibility checks
+// ============================================================
+
+export async function GET(request: Request) {
+  const session = await getServerSession(authOptions);
+  const isPremium =
+    session?.user?.plan === "PREMIUM" || session?.user?.plan === "ANNUAL";
+
+  if (isPremium) {
+    return NextResponse.json({ remainingChecks: null });
+  }
+
+  const ip = getClientIp(request);
+  const remaining = getRemainingChecks(ip);
+  return NextResponse.json({ remainingChecks: remaining });
 }

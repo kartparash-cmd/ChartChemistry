@@ -3,7 +3,7 @@
 import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { Sparkles, ArrowRight, Heart, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CompatibilityScoreCard } from "@/components/compatibility-score-card";
@@ -18,13 +18,14 @@ const ZODIAC_SYMBOLS: Record<string, string> = {
 
 export default function SharedResultsPage() {
   return (
-    <Suspense>
+    <Suspense fallback={<div className="min-h-screen" />}>
       <SharedResults />
     </Suspense>
   );
 }
 
 function SharedResults() {
+  const prefersReducedMotion = useReducedMotion();
   const searchParams = useSearchParams();
 
   const nameA = searchParams.get("a") || "Person 1";
@@ -70,7 +71,7 @@ function SharedResults() {
         {/* Header */}
         <motion.div
           className="text-center"
-          initial={{ opacity: 0, y: 20 }}
+          initial={prefersReducedMotion ? false : { opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
         >
           <div className="inline-flex items-center gap-2 rounded-full border border-cosmic-purple/30 bg-cosmic-purple/10 px-4 py-1.5 mb-6">
@@ -88,9 +89,9 @@ function SharedResults() {
         {/* Names & Signs */}
         <motion.div
           className="flex items-center justify-center gap-6 sm:gap-8"
-          initial={{ opacity: 0 }}
+          initial={prefersReducedMotion ? false : { opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 0.2 }}
+          transition={prefersReducedMotion ? { duration: 0 } : { delay: 0.2 }}
         >
           <div className="text-center">
             <span className="text-3xl">{emojiA}</span>
@@ -109,9 +110,9 @@ function SharedResults() {
         {isHighScore && (
           <motion.div
             className="flex justify-center"
-            initial={{ opacity: 0, scale: 0.5 }}
+            initial={prefersReducedMotion ? false : { opacity: 0, scale: 0.5 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.3, type: "spring" }}
+            transition={prefersReducedMotion ? { duration: 0 } : { delay: 0.3, type: "spring" }}
           >
             <div className="inline-flex items-center gap-2 rounded-full border border-gold/40 bg-gold/10 px-5 py-2">
               <Sparkles className="h-5 w-5 text-gold animate-pulse" />
@@ -124,9 +125,9 @@ function SharedResults() {
         {/* Overall Score */}
         <motion.div
           className="flex justify-center"
-          initial={{ opacity: 0 }}
+          initial={prefersReducedMotion ? false : { opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 0.4 }}
+          transition={prefersReducedMotion ? { duration: 0 } : { delay: 0.4 }}
         >
           <CompatibilityScoreCard
             score={overall}
@@ -138,9 +139,9 @@ function SharedResults() {
         {/* Dimension Scores */}
         <motion.div
           className="glass-card rounded-2xl p-6 space-y-5"
-          initial={{ opacity: 0, y: 20 }}
+          initial={prefersReducedMotion ? false : { opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.6 }}
+          transition={prefersReducedMotion ? { duration: 0 } : { delay: 0.6 }}
         >
           <h3 className="text-lg font-semibold">Detailed Scores</h3>
           {dimensions.map((dim, i) => (
@@ -153,9 +154,9 @@ function SharedResults() {
         {/* CTA */}
         <motion.div
           className="glass-card rounded-2xl p-8 text-center border border-cosmic-purple/30"
-          initial={{ opacity: 0, y: 20 }}
+          initial={prefersReducedMotion ? false : { opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 1 }}
+          transition={prefersReducedMotion ? { duration: 0 } : { delay: 1 }}
         >
           <Sparkles className="mx-auto mb-3 h-8 w-8 text-cosmic-purple-light" />
           <h3 className="font-heading text-xl font-bold mb-2">

@@ -132,7 +132,7 @@ function FeatureValue({ value }: { value: boolean | string }) {
 
 export default function PricingPage() {
   return (
-    <Suspense>
+    <Suspense fallback={<div className="min-h-screen" />}>
       <PricingContent />
     </Suspense>
   );

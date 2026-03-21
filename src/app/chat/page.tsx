@@ -300,7 +300,7 @@ function ChatMessage({ message, userName }: { message: Message; userName?: strin
 
 export default function ChatPage() {
   return (
-    <Suspense>
+    <Suspense fallback={<div className="min-h-screen" />}>
       <ChatPageContent />
     </Suspense>
   );
@@ -570,12 +570,14 @@ function ChatPageContent() {
   };
 
   const handleArchiveSession = async (id: string) => {
+    const s = sessions.find((s) => s.id === id);
+    const archived = s ? !s.archived : true;
     await fetch(`/api/chat/sessions/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ archived: true }),
+      body: JSON.stringify({ archived }),
     });
-    if (id === sessionId) handleNewConversation();
+    if (archived && id === sessionId) handleNewConversation();
     fetchSessions();
   };
 
@@ -760,7 +762,7 @@ function ChatPageContent() {
               Marie Chat
             </h1>
             <p className="text-muted-foreground text-sm max-w-sm mx-auto">
-              Ask our Marie anything about your chart, compatibility, or cosmic events
+              Ask Marie anything about your chart, compatibility, or cosmic events
             </p>
           </div>
 
@@ -1064,8 +1066,8 @@ function ChatPageContent() {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Ask the Marie anything..."
-                aria-label="Type your message to the Marie"
+                placeholder="Ask Marie anything..."
+                aria-label="Type your message to Marie"
                 rows={1}
                 className="flex-1 resize-none bg-transparent px-4 py-3.5 text-sm placeholder:text-muted-foreground/50 focus:outline-none"
                 style={{ minHeight: "52px", maxHeight: "160px" }}

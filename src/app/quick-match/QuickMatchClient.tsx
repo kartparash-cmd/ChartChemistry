@@ -232,20 +232,7 @@ export default function QuickMatchClient() {
         <div className="absolute bottom-20 right-[40%] w-1.5 h-1.5 bg-cosmic-purple-light rounded-full animate-[star-twinkle_3s_ease-in-out_infinite_1.5s]" />
       </div>
 
-      {/* Header */}
-      <header className="relative z-10 border-b border-white/10">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-cosmic-purple-light" />
-            <span className="font-heading font-bold text-white">ChartChemistry</span>
-          </Link>
-          <Link href="/compatibility" className="text-sm text-white/50 hover:text-white/80 transition-colors">
-            Full Compatibility Analysis &rarr;
-          </Link>
-        </div>
-      </header>
-
-      <main className="relative z-10 max-w-2xl mx-auto px-4 sm:px-6 py-16">
+      <div className="relative z-10 max-w-2xl mx-auto px-4 sm:px-6 py-16">
         <AnimatePresence mode="wait">
           {/* ── Animating state ── */}
           {animating && (
@@ -504,7 +491,7 @@ export default function QuickMatchClient() {
             </motion.div>
           )}
         </AnimatePresence>
-      </main>
+      </div>
     </div>
   );
 }

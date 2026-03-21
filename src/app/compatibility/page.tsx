@@ -505,7 +505,7 @@ export default function CompatibilityPage() {
                 personBData={personB}
               />
 
-              {remainingChecks !== null && !session && (
+              {remainingChecks !== null && (
                 <motion.p
                   className="mt-6 text-center text-sm text-muted-foreground/70"
                   initial={prefersReducedMotion ? false : { opacity: 0 }}

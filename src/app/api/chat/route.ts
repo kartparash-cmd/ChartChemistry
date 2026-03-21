@@ -19,6 +19,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { chatWithAstrologer, buildChatContext, getClient, CLAUDE_MODEL, generateChatTitle, extractMemories } from "@/lib/claude";
 import { createRateLimiter, getClientIp } from "@/lib/rate-limit";
+import { sanitizeInput } from "@/lib/sanitize";
 import type { ChatMessage, ChatRequest } from "@/types/astrology";
 import type { Prisma } from "@/generated/prisma/client";
 
@@ -230,7 +231,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const userMessage = body.message.trim();
+    const userMessage = sanitizeInput(body.message.trim());
 
     // Limit message length to prevent abuse
     if (userMessage.length > 2000) {

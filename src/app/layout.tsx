@@ -81,14 +81,72 @@ export default function RootLayout({
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
-              "@context": "https://schema.org",
-              "@type": "Organization",
-              name: "ChartChemistry",
-              url: "https://chartchemistry.com",
-              description: "AI-powered astrology compatibility analysis using full synastry charts, composite analysis, and house overlays.",
-              logo: "https://chartchemistry.com/og-image.png",
-            }),
+            __html: JSON.stringify([
+              {
+                "@context": "https://schema.org",
+                "@type": "Organization",
+                name: "ChartChemistry",
+                url: "https://chartchemistry.com",
+                description: "AI-powered astrology compatibility analysis using full synastry charts, composite analysis, and house overlays.",
+                logo: "https://chartchemistry.com/og-image.png",
+              },
+              {
+                "@context": "https://schema.org",
+                "@type": "WebSite",
+                name: "ChartChemistry",
+                url: "https://chartchemistry.com",
+                description: "AI-powered astrological compatibility analysis using full birth charts, synastry, composite charts, and house overlays.",
+                publisher: {
+                  "@type": "Organization",
+                  name: "ChartChemistry",
+                },
+              },
+              {
+                "@context": "https://schema.org",
+                "@type": "SoftwareApplication",
+                name: "ChartChemistry",
+                url: "https://chartchemistry.com",
+                applicationCategory: "LifestyleApplication",
+                operatingSystem: "Web",
+                description: "Go beyond sun signs. Analyze full birth chart compatibility with AI-powered synastry, composite charts, house overlays, and planetary aspects.",
+                offers: [
+                  {
+                    "@type": "Offer",
+                    price: "0",
+                    priceCurrency: "USD",
+                    name: "Free",
+                    description: "3 compatibility checks per day, Sun/Moon/Rising comparison, and 1 free premium report",
+                  },
+                  {
+                    "@type": "Offer",
+                    price: "9.99",
+                    priceCurrency: "USD",
+                    name: "Premium",
+                    description: "Unlimited compatibility checks, full synastry reports, AI chat with Marie, daily horoscope, and transit alerts",
+                    priceSpecification: {
+                      "@type": "UnitPriceSpecification",
+                      price: "9.99",
+                      priceCurrency: "USD",
+                      billingDuration: "P1M",
+                    },
+                  },
+                  {
+                    "@type": "Offer",
+                    price: "79.99",
+                    priceCurrency: "USD",
+                    name: "Annual",
+                    description: "All Premium features billed annually at $6.67/month",
+                    priceSpecification: {
+                      "@type": "UnitPriceSpecification",
+                      price: "79.99",
+                      priceCurrency: "USD",
+                      billingDuration: "P1Y",
+                    },
+                  },
+                ],
+                featureList: "Synastry Charts, Composite Analysis, House Overlays, AI Compatibility Reports, Personal AI Astrologer, Daily Horoscopes, Transit Alerts",
+              },
+            ]),
           }}
         />
         {process.env.NEXT_PUBLIC_UMAMI_URL && process.env.NEXT_PUBLIC_UMAMI_SITE_ID && (

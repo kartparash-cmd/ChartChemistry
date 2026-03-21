@@ -56,7 +56,7 @@ export function TiltCard({ children, className, tiltAmount = 5 }: TiltCardProps)
       ref={cardRef}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
-      className={cn("relative", className)}
+      className={cn("relative active:scale-[0.98] transition-transform", className)}
       style={{ willChange: "transform" }}
     >
       {children}

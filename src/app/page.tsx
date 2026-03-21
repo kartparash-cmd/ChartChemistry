@@ -18,7 +18,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { StarField } from "@/components/star-field";
 import { TiltCard } from "@/components/tilt-card";
-import { cn } from "@/lib/utils";
 import { trackEvent } from "@/lib/analytics";
 
 /* -------------------------------------------------------------------------- */
@@ -42,27 +41,6 @@ const staggerContainer = {
 /* -------------------------------------------------------------------------- */
 /*  Data                                                                      */
 /* -------------------------------------------------------------------------- */
-
-const STEPS = [
-  {
-    icon: Calendar,
-    title: "Enter Your Birth Details",
-    description:
-      "Date, time, and place of birth for accurate planetary positions.",
-  },
-  {
-    icon: Users,
-    title: "Add Your Person",
-    description:
-      "Enter the birth details of the person you want to explore compatibility with.",
-  },
-  {
-    icon: Sparkles,
-    title: "Get Deep Insights",
-    description:
-      "Receive AI-powered analysis of your synastry, composite chart, and more.",
-  },
-];
 
 const DIMENSIONS = [
   {
@@ -142,44 +120,6 @@ const TESTIMONIALS = [
   },
 ];
 
-const PRICING_TIERS = [
-  {
-    name: "Free",
-    price: "$0",
-    period: "",
-    annualNote: "",
-    description: "Get a taste of real compatibility analysis",
-    features: [
-      "3 compatibility checks per day",
-      "Sun, Moon & Rising comparison",
-      "Short AI summary",
-      "1 free premium compatibility report",
-      "Save up to 3 profiles",
-    ],
-    cta: "Get Started Free",
-    href: "/compatibility",
-    featured: false,
-  },
-  {
-    name: "Premium",
-    price: "$9.99",
-    period: "/mo",
-    annualNote: "or $6.67/mo billed annually",
-    description: "Full reports, AI chat, daily horoscope & more",
-    features: [
-      "Unlimited compatibility checks",
-      "Full synastry report (all 7 sections)",
-      "Marie (personal astrologer) & daily horoscope",
-      "Transit alerts & wellness insights",
-      "Red flags & growth insights",
-      "Cancel anytime",
-    ],
-    cta: "Start Premium",
-    href: "/pricing",
-    featured: true,
-  },
-];
-
 /* -------------------------------------------------------------------------- */
 /*  Component                                                                 */
 /* -------------------------------------------------------------------------- */
@@ -200,7 +140,7 @@ export default function Home() {
           variants={staggerContainer}
         >
           <motion.h1
-            className="text-3xl font-bold leading-tight tracking-tight text-center sm:text-4xl md:text-5xl lg:text-6xl"
+            className="text-2xl font-bold leading-tight tracking-tight text-center sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl"
             variants={fadeInUp}
             transition={{ duration: 0.6 }}
           >
@@ -238,6 +178,25 @@ export default function Home() {
             </Button>
           </motion.div>
 
+          <motion.div
+            className="mt-6 flex flex-wrap items-center justify-center gap-6 text-sm text-muted-foreground"
+            variants={fadeInUp}
+            transition={{ duration: 0.6 }}
+          >
+            <div className="flex items-center gap-2">
+              <Calendar className="h-4 w-4 text-cosmic-purple-light" />
+              <span>Enter birth details</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Users className="h-4 w-4 text-cosmic-purple-light" />
+              <span>Add your person</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Sparkles className="h-4 w-4 text-cosmic-purple-light" />
+              <span>Get deep insights</span>
+            </div>
+          </motion.div>
+
           <motion.p
             className="flex items-center justify-center gap-2 text-sm text-muted-foreground"
             variants={fadeInUp}
@@ -250,54 +209,6 @@ export default function Home() {
 
         {/* Gradient fade at bottom of hero */}
         <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-background to-transparent" />
-      </section>
-
-      {/* ========================= HOW IT WORKS ========================= */}
-      <section className="relative px-4 py-24">
-        <div className="mx-auto max-w-5xl">
-          <motion.div
-            className="text-center"
-            initial={shouldReduceMotion ? "visible" : "hidden"}
-            whileInView="visible"
-            viewport={{ once: true, margin: "-100px" }}
-            variants={fadeInUp}
-            transition={{ duration: 0.5 }}
-          >
-            <h2 className="text-3xl font-bold sm:text-4xl">How It Works</h2>
-            <p className="mt-3 text-muted-foreground">
-              Three simple steps to understand your cosmic connection.
-            </p>
-          </motion.div>
-
-          <motion.div
-            className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
-            initial={shouldReduceMotion ? "visible" : "hidden"}
-            whileInView="visible"
-            viewport={{ once: true, margin: "-100px" }}
-            variants={staggerContainer}
-          >
-            {STEPS.map((step, i) => (
-              <motion.div
-                key={step.title}
-                variants={fadeInUp}
-                transition={{ duration: 0.5 }}
-              >
-                <TiltCard className="glass-card group relative flex flex-col items-center gap-4 rounded-2xl p-8 text-center transition-all hover:border-cosmic-purple/30 h-full">
-                  <span className="absolute -top-3 left-6 flex h-7 w-7 items-center justify-center rounded-full bg-cosmic-purple text-xs font-bold text-white">
-                    {i + 1}
-                  </span>
-                  <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-cosmic-purple/10 text-cosmic-purple-light transition-colors group-hover:bg-cosmic-purple/20">
-                    <step.icon className="h-7 w-7" />
-                  </div>
-                  <h3 className="text-lg font-semibold">{step.title}</h3>
-                  <p className="text-sm text-muted-foreground">
-                    {step.description}
-                  </p>
-                </TiltCard>
-              </motion.div>
-            ))}
-          </motion.div>
-        </div>
       </section>
 
       {/* ========================= WHAT WE ANALYZE ========================= */}
@@ -317,6 +228,15 @@ export default function Home() {
               techniques.
             </p>
           </motion.div>
+
+          <div className="mt-8 mb-10 flex flex-wrap justify-center gap-8">
+            {SOCIAL_PROOF.map((stat) => (
+              <div key={stat.label} className="text-center">
+                <p className="text-2xl font-bold cosmic-text">{stat.value}</p>
+                <p className="text-xs text-muted-foreground">{stat.label}</p>
+              </div>
+            ))}
+          </div>
 
           <motion.div
             className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
@@ -448,50 +368,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ========================= SOCIAL PROOF ========================= */}
-      <section className="relative px-4 py-24">
-        <div className="mx-auto max-w-5xl">
-          <motion.div
-            className="text-center"
-            initial={shouldReduceMotion ? "visible" : "hidden"}
-            whileInView="visible"
-            viewport={{ once: true, margin: "-100px" }}
-            variants={fadeInUp}
-            transition={{ duration: 0.5 }}
-          >
-            <h2 className="text-3xl font-bold sm:text-4xl">
-              What Powers Your Report
-            </h2>
-            <p className="mt-3 text-muted-foreground">
-              Real astronomical data. AI-driven analysis. Here is what goes into every reading.
-            </p>
-          </motion.div>
-
-          <motion.div
-            className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
-            initial={shouldReduceMotion ? "visible" : "hidden"}
-            whileInView="visible"
-            viewport={{ once: true, margin: "-100px" }}
-            variants={staggerContainer}
-          >
-            {SOCIAL_PROOF.map((stat) => (
-              <motion.div
-                key={stat.label}
-                variants={fadeInUp}
-                transition={{ duration: 0.5 }}
-                className="glass-card group flex flex-col items-center gap-4 rounded-2xl p-8 text-center transition-all hover:border-cosmic-purple/30"
-              >
-                <p className="text-3xl font-bold cosmic-text">{stat.value}</p>
-                <h3 className="text-lg font-semibold">{stat.label}</h3>
-                <p className="text-sm text-muted-foreground">
-                  {stat.description}
-                </p>
-              </motion.div>
-            ))}
-          </motion.div>
-        </div>
-      </section>
-
       {/* ========================= TESTIMONIALS ========================= */}
       <section className="relative px-4 py-24">
         <div className="mx-auto max-w-6xl">
@@ -541,95 +417,6 @@ export default function Home() {
           <p className="mt-6 text-center text-xs text-muted-foreground/50">
             Names and signs are illustrative. Testimonials reflect typical user experiences.
           </p>
-        </div>
-      </section>
-
-      {/* ========================= PRICING ========================= */}
-      <section className="relative px-4 py-24">
-        <div className="mx-auto max-w-5xl">
-          <motion.div
-            className="text-center"
-            initial={shouldReduceMotion ? "visible" : "hidden"}
-            whileInView="visible"
-            viewport={{ once: true, margin: "-100px" }}
-            variants={fadeInUp}
-            transition={{ duration: 0.5 }}
-          >
-            <h2 className="text-3xl font-bold sm:text-4xl">
-              Simple Pricing
-            </h2>
-            <p className="mt-3 text-muted-foreground">
-              Start free. Upgrade when you&apos;re ready.
-            </p>
-          </motion.div>
-
-          <motion.div
-            className="mt-14 grid gap-6 sm:grid-cols-2 max-w-3xl mx-auto"
-            initial={shouldReduceMotion ? "visible" : "hidden"}
-            whileInView="visible"
-            viewport={{ once: true, margin: "-100px" }}
-            variants={staggerContainer}
-          >
-            {PRICING_TIERS.map((tier) => (
-              <motion.div
-                key={tier.name}
-                variants={fadeInUp}
-                transition={{ duration: 0.5 }}
-                className={cn(
-                  "relative flex flex-col rounded-2xl p-6",
-                  tier.featured
-                    ? "border-2 border-cosmic-purple bg-cosmic-purple/5 shadow-lg shadow-cosmic-purple/10"
-                    : "glass-card"
-                )}
-              >
-                {tier.featured && (
-                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-gradient-to-r from-cosmic-purple to-gold px-4 py-1 text-xs font-semibold text-white">
-                    Most Popular
-                  </span>
-                )}
-
-                <h3 className="text-xl font-bold">{tier.name}</h3>
-                <div className="mt-3 flex items-baseline gap-1">
-                  <span className="text-3xl font-bold">{tier.price}</span>
-                  {tier.period && (
-                    <span className="text-sm text-muted-foreground">
-                      {tier.period}
-                    </span>
-                  )}
-                </div>
-                {tier.annualNote && (
-                  <p className="mt-1 text-xs text-cosmic-purple-light">
-                    {tier.annualNote}
-                  </p>
-                )}
-                <p className="mt-2 text-sm text-muted-foreground">
-                  {tier.description}
-                </p>
-
-                <ul className="mt-6 flex-1 space-y-3">
-                  {tier.features.map((feature) => (
-                    <li key={feature} className="flex items-start gap-2 text-sm">
-                      <Check className="mt-0.5 h-4 w-4 shrink-0 text-cosmic-purple-light" />
-                      <span>{feature}</span>
-                    </li>
-                  ))}
-                </ul>
-
-                <Button
-                  asChild
-                  className={cn(
-                    "mt-6 w-full rounded-full font-semibold",
-                    tier.featured
-                      ? "bg-gradient-to-r from-cosmic-purple to-gold text-white hover:brightness-110"
-                      : ""
-                  )}
-                  variant={tier.featured ? "default" : "outline"}
-                >
-                  <Link href={tier.href}>{tier.cta}</Link>
-                </Button>
-              </motion.div>
-            ))}
-          </motion.div>
         </div>
       </section>
 

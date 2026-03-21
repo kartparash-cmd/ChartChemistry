@@ -428,16 +428,14 @@ export function BirthDataForm({
         <Input
           id={`birthDate-${label}`}
           name={`cc_dob_${label.replace(/\s/g, "_")}`}
-          type={birthDate ? "date" : "text"}
-          placeholder="Select date of birth"
+          type="date"
           value={birthDate}
-          onFocus={(e) => { e.currentTarget.type = "date"; }}
-          onBlur={(e) => { if (!e.currentTarget.value) e.currentTarget.type = "text"; }}
           onChange={(e) => setBirthDate(e.target.value)}
           max={new Date().toISOString().split("T")[0]}
+          required
           autoComplete="one-time-code"
           data-form-type="other"
-          className="h-11 bg-background/50 text-base [color-scheme:dark]"
+          className="h-11 bg-background/50 text-base [color-scheme:dark] [&:not(:focus):invalid]:text-muted-foreground"
         />
       </div>
 
@@ -491,15 +489,13 @@ export function BirthDataForm({
           <Input
             id={`birthTime-${label}`}
             name={`cc_time_${label.replace(/\s/g, "_")}`}
-            type={birthTime ? "time" : "text"}
-            placeholder="Select birth time"
+            type="time"
             value={birthTime}
-            onFocus={(e) => { e.currentTarget.type = "time"; }}
-            onBlur={(e) => { if (!e.currentTarget.value) e.currentTarget.type = "text"; }}
             onChange={(e) => setBirthTime(e.target.value)}
+            required
             autoComplete="one-time-code"
             data-form-type="other"
-            className="h-11 bg-background/50 text-base [color-scheme:dark]"
+            className="h-11 bg-background/50 text-base [color-scheme:dark] [&:not(:focus):invalid]:text-muted-foreground"
           />
         )}
       </div>

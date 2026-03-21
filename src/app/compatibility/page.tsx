@@ -764,7 +764,7 @@ function ZodiacHub() {
       </p>
 
       {/* Sign filter bar */}
-      <div className="flex flex-wrap justify-center gap-2 mb-10 max-w-2xl mx-auto">
+      <div className="flex overflow-x-auto gap-2 mb-10 max-w-2xl mx-auto pb-2 sm:flex-wrap sm:justify-center sm:overflow-visible">
         {ZODIAC_SIGNS.map((sign) => {
           const isActive = selectedSign === sign;
           const element = ZODIAC_ELEMENTS[sign];
@@ -773,7 +773,7 @@ function ZodiacHub() {
               key={sign}
               onClick={() => setSelectedSign(isActive ? null : sign)}
               className={cn(
-                "flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-all border",
+                "flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-all border",
                 ELEMENT_HOVER[element],
                 isActive
                   ? `bg-gradient-to-r ${ELEMENT_COLORS[element]} ${ELEMENT_TEXT[element]} border-current shadow-lg`

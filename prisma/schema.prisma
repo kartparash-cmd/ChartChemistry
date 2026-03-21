@@ -162,15 +162,20 @@ enum ReportTier {
 }
 
 model ChatSession {
-  id        String   @id @default(cuid())
+  id        String    @id @default(cuid())
   userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   reportId  String?
+  title     String?
+  pinned    Boolean   @default(false)
+  archived  Boolean   @default(false)
+  deletedAt DateTime?
   messages  Json
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 
   @@index([userId])
+  @@index([userId, deletedAt])
 }
 
 enum TicketStatus {

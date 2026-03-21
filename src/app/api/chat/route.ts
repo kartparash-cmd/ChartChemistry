@@ -17,7 +17,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { chatWithAstrologer, buildChatContext, getClient, CLAUDE_MODEL } from "@/lib/claude";
+import { chatWithAstrologer, buildChatContext, getClient, CLAUDE_MODEL, generateChatTitle } from "@/lib/claude";
 import { createRateLimiter, getClientIp } from "@/lib/rate-limit";
 import type { ChatMessage, ChatRequest } from "@/types/astrology";
 import type { Prisma } from "@/generated/prisma/client";
@@ -126,6 +126,8 @@ export async function GET(request: NextRequest) {
       where: {
         userId: session.user.id,
         reportId: reportId ?? null,
+        deletedAt: null,
+        archived: false,
       },
       orderBy: { updatedAt: "desc" },
     });
@@ -288,7 +290,7 @@ export async function POST(request: Request) {
 
     if (chatSessionId) {
       const existingSession = await prisma.chatSession.findUnique({
-        where: { id: chatSessionId },
+        where: { id: chatSessionId, deletedAt: null },
       });
 
       if (!existingSession) {
@@ -425,6 +427,26 @@ export async function POST(request: Request) {
         .catch((err) => {
           console.error("[POST /api/chat] Summary generation failed:", err);
         });
+    }
+
+    // Auto-generate title after first exchange (fire-and-forget)
+    if (chatSessionId && conversationHistory.length <= 3) {
+      const chatMessages = conversationHistory.filter(
+        (e: any) => !e._type
+      ) as ChatMessage[];
+      if (chatMessages.length >= 2) {
+        generateChatTitle(chatMessages)
+          .then(async (title) => {
+            if (!title || !chatSessionId) return;
+            await prisma.chatSession.update({
+              where: { id: chatSessionId, title: null },
+              data: { title },
+            });
+          })
+          .catch((err) => {
+            console.error("[POST /api/chat] Title generation failed:", err);
+          });
+      }
     }
 
     // --- 9. Return response ---

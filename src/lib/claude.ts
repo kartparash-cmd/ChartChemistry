@@ -1137,6 +1137,35 @@ export async function generateRelationshipInsights(
   };
 }
 
+/**
+ * Generate a short title for a chat session based on the first few messages.
+ * Uses OpenAI GPT-4.1 Nano for cost efficiency.
+ */
+export async function generateChatTitle(messages: ChatMessage[]): Promise<string> {
+  // Take first 4 messages max
+  const context = messages.slice(0, 4)
+    .map(m => `${m.role}: ${m.content}`)
+    .join("\n");
+
+  const prompt = "Generate a short, descriptive title (3-7 words) for this astrology chat conversation. Return ONLY the title text, no quotes or punctuation.";
+
+  try {
+    const response = await getOpenAIClient().chat.completions.create({
+      model: OPENAI_MODEL,
+      max_tokens: 30,
+      messages: [
+        { role: "system", content: prompt },
+        { role: "user", content: context },
+      ],
+    });
+    return response.choices[0]?.message?.content?.trim() || "New conversation";
+  } catch {
+    // Fallback: use first user message truncated
+    const firstUser = messages.find(m => m.role === "user");
+    return firstUser ? firstUser.content.substring(0, 40) : "New conversation";
+  }
+}
+
 // Re-export prompts for testing or direct use
 export const SYSTEM_PROMPTS = {
   free: FREE_REPORT_PROMPT,

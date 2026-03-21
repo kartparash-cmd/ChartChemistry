@@ -18,7 +18,6 @@ import {
   Lightbulb,
   RotateCcw,
   History,
-  Plus,
   Copy,
   Check,
 } from "lucide-react";
@@ -30,8 +29,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { ChatSidebar } from "@/components/chat-sidebar";
 import { cn } from "@/lib/utils";
 import { trackEvent } from "@/lib/analytics";
+import type { SessionSummary } from "@/types/astrology";
 
 interface Message {
   id: string;
@@ -302,6 +303,9 @@ function ChatPageContent() {
   const [suggestionsOpen, setSuggestionsOpen] = useState(true);
   const [isRestoringSession, setIsRestoringSession] = useState(false);
   const [lastFailedMessage, setLastFailedMessage] = useState<string | null>(null);
+  const [sessions, setSessions] = useState<SessionSummary[]>([]);
+  const [loadingSessions, setLoadingSessions] = useState(true);
+  const [sidebarFilter, setSidebarFilter] = useState<"all" | "pinned" | "archived">("all");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -496,6 +500,86 @@ function ChatPageContent() {
   }, [status, reportId]);
 
   // -------------------------------------------------------------------
+  // Fetch chat sessions (sidebar)
+  // -------------------------------------------------------------------
+
+  const fetchSessions = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/chat/sessions?filter=${sidebarFilter}`);
+      if (res.ok) {
+        const data = await res.json();
+        setSessions(data.sessions || []);
+      }
+    } catch {
+      // Silently fail
+    } finally {
+      setLoadingSessions(false);
+    }
+  }, [sidebarFilter]);
+
+  useEffect(() => {
+    if (session?.user) fetchSessions();
+  }, [session, fetchSessions]);
+
+  // -------------------------------------------------------------------
+  // Session mutation handlers
+  // -------------------------------------------------------------------
+
+  const handleRenameSession = async (id: string, title: string) => {
+    await fetch(`/api/chat/sessions/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title }),
+    });
+    fetchSessions();
+  };
+
+  const handlePinSession = async (id: string, pinned: boolean) => {
+    await fetch(`/api/chat/sessions/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ pinned }),
+    });
+    fetchSessions();
+  };
+
+  const handleArchiveSession = async (id: string) => {
+    await fetch(`/api/chat/sessions/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ archived: true }),
+    });
+    if (id === sessionId) handleNewConversation();
+    fetchSessions();
+  };
+
+  const handleDeleteSession = async (id: string) => {
+    await fetch(`/api/chat/sessions/${id}`, { method: "DELETE" });
+    if (id === sessionId) handleNewConversation();
+    fetchSessions();
+  };
+
+  const handleDeleteAllSessions = async () => {
+    await fetch("/api/chat/sessions", { method: "DELETE" });
+    handleNewConversation();
+    fetchSessions();
+  };
+
+  const handleSelectSession = async (id: string) => {
+    try {
+      const res = await fetch(`/api/chat?sessionId=${id}`);
+      if (res.ok) {
+        const data = await res.json();
+        setSessionId(id);
+        setMessages(data.messages || []);
+        if (data.reportId) setSelectedReportId(data.reportId);
+      }
+    } catch {
+      // Failed to load session
+    }
+  };
+
+  // -------------------------------------------------------------------
   // Auto-scroll
   // -------------------------------------------------------------------
 
@@ -554,6 +638,7 @@ function ChatPageContent() {
         };
         setMessages((prev) => [...prev, aiMessage]);
         setLastFailedMessage(null);
+        fetchSessions();
       } else {
         setLastFailedMessage(content.trim());
         const errorMessage: Message = {
@@ -699,86 +784,69 @@ function ChatPageContent() {
         >
           <span className="flex items-center gap-2">
             <MessageCircle className="h-4 w-4 text-cosmic-purple dark:text-cosmic-purple-light" />
-            Relationship Context
+            Chat History
           </span>
           <ChevronDown className={cn("h-4 w-4 transition-transform", sidebarOpen && "rotate-180")} />
         </button>
 
-        <div className={cn("px-4 pb-4 lg:block", sidebarOpen ? "block" : "hidden lg:block")}>
-          {/* Sidebar header */}
-          <div className="hidden lg:flex items-center justify-between mb-4 pt-4">
-            <div className="flex items-center gap-2">
-              <MessageCircle className="h-4 w-4 text-cosmic-purple dark:text-cosmic-purple-light" />
-              <h2 className="text-sm font-semibold">Context</h2>
-            </div>
-            {hasUserMessage && (
-              <button
-                onClick={handleNewConversation}
-                className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
-                title="New conversation"
-              >
-                <Plus className="h-3.5 w-3.5" />
-                New
-              </button>
-            )}
-          </div>
+        <div className={cn("lg:block", sidebarOpen ? "block" : "hidden lg:block")}>
+          <ChatSidebar
+            sessions={sessions}
+            activeSessionId={sessionId}
+            onSelectSession={handleSelectSession}
+            onNewChat={handleNewConversation}
+            onRenameSession={handleRenameSession}
+            onPinSession={handlePinSession}
+            onArchiveSession={handleArchiveSession}
+            onDeleteSession={handleDeleteSession}
+            onDeleteAll={handleDeleteAllSessions}
+            filter={sidebarFilter}
+            onFilterChange={setSidebarFilter}
+            isLoading={loadingSessions}
+          />
 
           {/* Report selector */}
-          {loadingReports ? (
-            <div className="flex items-center justify-center py-4">
-              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-            </div>
-          ) : reports.length > 0 ? (
-            <Select
-              value={selectedReportId}
-              onValueChange={(v) => {
-                setSelectedReportId(v);
-                setSessionId(undefined);
-              }}
-            >
-              <SelectTrigger className="w-full bg-background dark:bg-white/5 border-border dark:border-white/10">
-                <SelectValue placeholder="Select a relationship..." />
-              </SelectTrigger>
-              <SelectContent>
-                {reports.map((report) => (
-                  <SelectItem key={report.id} value={report.id}>
-                    {report.person1Name} & {report.person2Name} ({report.overallScore}%)
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          ) : (
-            <div className="rounded-lg border border-border dark:border-white/5 bg-background dark:bg-white/[0.02] p-3 text-center">
-              <p className="text-xs text-muted-foreground">
-                No compatibility reports yet.
-              </p>
-              <Button
-                asChild
-                variant="link"
-                size="sm"
-                className="text-cosmic-purple dark:text-cosmic-purple-light text-xs px-0 h-auto mt-1"
+          <div className="px-4 pb-4 border-t border-border dark:border-white/10 pt-3">
+            <p className="text-xs font-medium text-muted-foreground mb-2">Relationship Context</p>
+            {loadingReports ? (
+              <div className="flex items-center justify-center py-4">
+                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+              </div>
+            ) : reports.length > 0 ? (
+              <Select
+                value={selectedReportId}
+                onValueChange={(v) => {
+                  setSelectedReportId(v);
+                  setSessionId(undefined);
+                }}
               >
-                <Link href="/compatibility">Create one</Link>
-              </Button>
-            </div>
-          )}
-
-          <p className="text-xs text-muted-foreground mt-3">
-            Select a relationship for context-aware answers, or ask general astrology questions.
-          </p>
-
-          {/* Mobile new conversation */}
-          {hasUserMessage && (
-            <Button
-              variant="outline"
-              size="sm"
-              className="mt-3 w-full border-border dark:border-white/10 text-xs lg:hidden"
-              onClick={handleNewConversation}
-            >
-              <RotateCcw className="mr-1.5 h-3 w-3" />
-              New Conversation
-            </Button>
-          )}
+                <SelectTrigger className="w-full bg-background dark:bg-white/5 border-border dark:border-white/10">
+                  <SelectValue placeholder="Select a relationship..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {reports.map((report) => (
+                    <SelectItem key={report.id} value={report.id}>
+                      {report.person1Name} & {report.person2Name} ({report.overallScore}%)
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : (
+              <div className="rounded-lg border border-border dark:border-white/5 bg-background dark:bg-white/[0.02] p-3 text-center">
+                <p className="text-xs text-muted-foreground">
+                  No compatibility reports yet.
+                </p>
+                <Button
+                  asChild
+                  variant="link"
+                  size="sm"
+                  className="text-cosmic-purple dark:text-cosmic-purple-light text-xs px-0 h-auto mt-1"
+                >
+                  <Link href="/compatibility">Create one</Link>
+                </Button>
+              </div>
+            )}
+          </div>
         </div>
       </aside>
 

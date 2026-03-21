@@ -265,6 +265,20 @@ export interface ChatMessage {
 export interface ChatResponse {
   reply: string;
   sessionId: string;
+  title?: string | null;
+}
+
+/** Summary of a chat session for the sidebar list. */
+export interface SessionSummary {
+  id: string;
+  title: string | null;
+  pinned: boolean;
+  archived: boolean;
+  reportId: string | null;
+  createdAt: string;
+  updatedAt: string;
+  messageCount: number;
+  lastMessage: string | null;
 }
 
 /** Request body for POST /api/profile. */

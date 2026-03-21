@@ -420,11 +420,11 @@ export default function ChartPage() {
     })) || [];
 
   const wheelAspects: Aspect[] =
-    chartData?.aspects?.map((a) => ({
-      planet1: a.planet1,
-      planet2: a.planet2,
-      type: a.type,
-      orb: a.orb,
+    chartData?.aspects?.map((a: Record<string, unknown>) => ({
+      planet1: String(a.planet1 || ""),
+      planet2: String(a.planet2 || ""),
+      type: String(a.aspect || a.type || ""),
+      orb: Number(a.orb || 0),
     })) || [];
 
   return (
@@ -829,13 +829,15 @@ export default function ChartPage() {
                 </thead>
                 <tbody>
                   {chartData.aspects.map((aspect, i) => {
+                    const a = aspect as Record<string, unknown>;
+                    const aspectKind = String(a.aspect || a.type || "");
                     const aspectLabel =
-                      ASPECT_LABELS[aspect.type] || aspect.type;
+                      ASPECT_LABELS[aspectKind] || aspectKind;
                     const elementDesc = `${aspect.planet1} ${aspectLabel} ${aspect.planet2} (orb ${aspect.orb.toFixed(1)}\u00B0)`;
                     const isHarmonious =
-                      aspect.type === "trine" ||
-                      aspect.type === "sextile" ||
-                      aspect.type === "conjunction";
+                      aspectKind === "trine" ||
+                      aspectKind === "sextile" ||
+                      aspectKind === "conjunction";
 
                     return (
                       <tr

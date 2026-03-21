@@ -135,18 +135,10 @@ export function RelationshipCheckIn({
 
         <div className="p-6">
           <DialogHeader className="mb-6">
-            <div className="flex items-center justify-between">
-              <DialogTitle className="font-heading text-lg flex items-center gap-2">
-                <Heart className="h-5 w-5 text-pink-400" />
-                Relationship Check-In
-              </DialogTitle>
-              <button
-                onClick={handleClose}
-                className="rounded-full p-1 text-muted-foreground hover:text-white transition-colors"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
+            <DialogTitle className="font-heading text-lg flex items-center gap-2">
+              <Heart className="h-5 w-5 text-pink-400" />
+              Relationship Check-In
+            </DialogTitle>
             {!completed && (
               <p className="text-xs text-muted-foreground mt-1">
                 Step {step} of {TOTAL_STEPS}

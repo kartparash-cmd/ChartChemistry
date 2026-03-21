@@ -749,9 +749,47 @@ function DashboardContent() {
 
       {/* Main Content */}
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+        <div className="space-y-8">
+          {/* Stats Row — horizontal across the top */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <StatCard
+              icon={<TrendingUp className="h-5 w-5 text-cosmic-purple-light" />}
+              label="Total Comparisons"
+              value={String(data?.stats.totalReports || 0)}
+              color="bg-cosmic-purple/10"
+              shouldAnimate={shouldAnimate}
+            />
+            <StatCard
+              icon={<Award className="h-5 w-5 text-gold" />}
+              label="Highest Match"
+              value={data?.stats.highestScore ? `${data.stats.highestScore}%` : "N/A"}
+              color="bg-gold/10"
+              shouldAnimate={shouldAnimate}
+            />
+            <StatCard
+              icon={<Crown className="h-5 w-5 text-cosmic-purple-light" />}
+              label="Account Plan"
+              value={planLabel}
+              color="bg-cosmic-purple/10"
+              shouldAnimate={shouldAnimate}
+            />
+            {streak > 0 && (
+              <div className="rounded-xl border border-orange-500/20 bg-gradient-to-br from-orange-500/[0.08] to-transparent p-4 backdrop-blur-sm">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-orange-500/10">
+                    <Flame className="h-5 w-5 text-orange-400" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Daily Streak</p>
+                    <p className="text-lg font-semibold text-orange-400">Day {streak}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* Main Area */}
-          <div className="lg:col-span-3">
+          <div>
             <Tabs value={activeTab} onValueChange={(newTab) => {
               setActiveTab(newTab);
               router.replace(`/dashboard?tab=${newTab}`, { scroll: false });
@@ -1176,75 +1214,8 @@ function DashboardContent() {
             </Tabs>
           </div>
 
-          {/* Stats Sidebar */}
-          <div className="lg:col-span-1 space-y-4">
-            <h3 className="font-heading text-lg font-semibold mb-4">
-              Your Stats
-            </h3>
-            <StatCard
-              icon={<TrendingUp className="h-5 w-5 text-cosmic-purple-light" />}
-              label="Total Comparisons"
-              value={String(data?.stats.totalReports || 0)}
-              color="bg-cosmic-purple/10"
-              shouldAnimate={shouldAnimate}
-            />
-            <StatCard
-              icon={<Award className="h-5 w-5 text-gold" />}
-              label="Highest Match"
-              value={
-                data?.stats.highestScore
-                  ? `${data.stats.highestScore}%`
-                  : "N/A"
-              }
-              color="bg-gold/10"
-              shouldAnimate={shouldAnimate}
-            />
-            <StatCard
-              icon={<Crown className="h-5 w-5 text-cosmic-purple-light" />}
-              label="Account Plan"
-              value={planLabel}
-              color="bg-cosmic-purple/10"
-              shouldAnimate={shouldAnimate}
-            />
-
-            {/* Daily Check-in Streak */}
-            {streak > 0 && (
-              <motion.div
-                whileHover={shouldAnimate ? { y: -2, scale: 1.01 } : {}}
-                className="rounded-xl border border-orange-500/20 bg-gradient-to-br from-orange-500/[0.08] to-transparent p-4 backdrop-blur-sm"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-orange-500/10">
-                    <Flame className="h-5 w-5 text-orange-400" />
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground">Daily Streak</p>
-                    <p className="text-lg font-semibold text-orange-400">
-                      Day {streak}
-                    </p>
-                  </div>
-                </div>
-                {getStreakMilestoneBadge(streak) && (
-                  <div className="mt-3">
-                    <Badge
-                      variant="outline"
-                      className={cn(
-                        "text-xs",
-                        streak >= 100
-                          ? "border-gold/40 bg-gold/10 text-gold"
-                          : streak >= 30
-                            ? "border-cosmic-purple/30 bg-cosmic-purple/10 text-cosmic-purple-light"
-                            : "border-orange-500/30 bg-orange-500/10 text-orange-400"
-                      )}
-                    >
-                      <Award className="mr-1 h-3 w-3" />
-                      {getStreakMilestoneBadge(streak)}
-                    </Badge>
-                  </div>
-                )}
-              </motion.div>
-            )}
-
+          {/* Quick Actions Row — horizontal below tabs */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Achievements */}
             {achievements.length > 0 && (
               <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4 backdrop-blur-sm">
@@ -1257,18 +1228,13 @@ function DashboardContent() {
                     const def = ACHIEVEMENTS[a.achievementType];
                     if (!def) return null;
                     return (
-                      <div
-                        key={a.achievementType}
-                        className="flex items-center gap-3 rounded-lg border border-white/5 bg-white/[0.02] p-2.5"
-                      >
+                      <div key={a.achievementType} className="flex items-center gap-3 rounded-lg border border-white/5 bg-white/[0.02] p-2.5">
                         <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gold/10 text-gold">
                           {ACHIEVEMENT_ICONS[def.icon] || <Star className="h-4 w-4" />}
                         </div>
                         <div className="min-w-0">
                           <p className="text-xs font-medium truncate">{def.name}</p>
-                          <p className="text-xs text-muted-foreground truncate">
-                            {def.description}
-                          </p>
+                          <p className="text-xs text-muted-foreground truncate">{def.description}</p>
                         </div>
                       </div>
                     );
@@ -1277,90 +1243,65 @@ function DashboardContent() {
               </div>
             )}
 
-            {/* Daily Horoscope Quick Link */}
-            <motion.div
-              whileHover={shouldAnimate ? { scale: 1.02 } : {}}
-              className="rounded-xl border border-gold/20 bg-gradient-to-br from-gold/[0.06] to-transparent p-4"
-            >
+            {/* Daily Horoscope */}
+            <div className="rounded-xl border border-gold/20 bg-gradient-to-br from-gold/[0.06] to-transparent p-4">
               <div className="flex items-center gap-2 mb-2">
                 <Sun className="h-4 w-4 text-gold" />
                 <h4 className="font-heading text-sm font-semibold">Daily Horoscope</h4>
               </div>
               {hasProfiles ? (
                 <>
-                  <p className="text-xs text-muted-foreground mb-3">
-                    Your personalized cosmic reading for today
-                  </p>
+                  <p className="text-xs text-muted-foreground mb-3">Your personalized cosmic reading for today</p>
                   <Button asChild size="sm" variant="outline" className="w-full border-gold/20 text-gold hover:bg-gold/10">
                     <Link href="/horoscope">
                       <Lightbulb className="mr-2 h-3 w-3" />
-                      Read Today&apos;s Horoscope
+                      Read Horoscope
                     </Link>
                   </Button>
                 </>
               ) : (
                 <p className="text-xs text-muted-foreground">
-                  <Link
-                    href="/dashboard/profiles"
-                    className="underline hover:no-underline text-gold/80 hover:text-gold"
-                  >
-                    Create a birth profile
-                  </Link>{" "}
-                  to unlock your daily horoscope
+                  <Link href="/dashboard/profiles" className="underline hover:no-underline text-gold/80 hover:text-gold">Create a birth profile</Link> to unlock
                 </p>
               )}
-            </motion.div>
+            </div>
 
-            {/* Monthly Check-In */}
-            {data?.stats.plan !== "FREE" && (
-              <motion.div
-                whileHover={shouldAnimate ? { scale: 1.02 } : {}}
-                className="rounded-xl border border-pink-500/20 bg-gradient-to-br from-pink-500/[0.06] to-transparent p-4"
-              >
-                <div className="flex items-center gap-2 mb-2">
-                  <Heart className="h-5 w-5 text-pink-400" />
-                  <h4 className="font-heading text-sm font-semibold">Relationship Check-In</h4>
-                </div>
-                <p className="text-xs text-muted-foreground mb-3">How&apos;s your relationship journey going? Take a quick monthly check-in.</p>
-                <Button size="sm" onClick={() => setShowCheckIn(true)} className="w-full bg-pink-500/10 border border-pink-500/20 text-pink-400 hover:bg-pink-500/20">
-                  Start Check-In
-                </Button>
-              </motion.div>
-            )}
-
-            {/* Transit Alerts */}
-            <motion.div
-              whileHover={shouldAnimate ? { scale: 1.02 } : {}}
-              className="rounded-xl border border-cosmic-purple/20 bg-gradient-to-br from-cosmic-purple/[0.06] to-transparent p-4"
-            >
+            {/* Active Transits */}
+            <div className="rounded-xl border border-cosmic-purple/20 bg-gradient-to-br from-cosmic-purple/[0.06] to-transparent p-4">
               <div className="flex items-center gap-2 mb-2">
                 <Orbit className="h-4 w-4 text-cosmic-purple-light" />
                 <h4 className="font-heading text-sm font-semibold">Active Transits</h4>
               </div>
               {hasProfiles ? (
                 <>
-                  <p className="text-xs text-muted-foreground mb-3">
-                    Planetary influences on your chart today
-                  </p>
+                  <p className="text-xs text-muted-foreground mb-3">Planetary influences on your chart today</p>
                   <Button asChild size="sm" variant="outline" className="w-full border-cosmic-purple/20 text-cosmic-purple-light hover:bg-cosmic-purple/10">
                     <Link href="/transits">
                       <Orbit className="mr-2 h-3 w-3" />
-                      View Active Transits
+                      View Transits
                     </Link>
                   </Button>
                 </>
               ) : (
                 <p className="text-xs text-muted-foreground">
-                  <Link
-                    href="/dashboard/profiles"
-                    className="underline hover:no-underline text-cosmic-purple-light/80 hover:text-cosmic-purple-light"
-                  >
-                    Create a birth profile
-                  </Link>{" "}
-                  to unlock transit alerts
+                  <Link href="/dashboard/profiles" className="underline hover:no-underline text-cosmic-purple-light/80 hover:text-cosmic-purple-light">Create a birth profile</Link> to unlock
                 </p>
               )}
-            </motion.div>
+            </div>
+
+            {/* Relationship Check-In */}
+            {data?.stats.plan !== "FREE" && (
+              <div className="rounded-xl border border-pink-500/20 bg-gradient-to-br from-pink-500/[0.06] to-transparent p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <Heart className="h-5 w-5 text-pink-400" />
+                  <h4 className="font-heading text-sm font-semibold">Check-In</h4>
+                </div>
+                <p className="text-xs text-muted-foreground mb-3">Monthly relationship health check</p>
+                <Button size="sm" onClick={() => setShowCheckIn(true)} className="w-full bg-pink-500/10 border border-pink-500/20 text-pink-400 hover:bg-pink-500/20">
+                  Start Check-In
+                </Button>
+              </div>
+            )}
 
             {/* Invite Friends Referral Card */}
             {referralData && (

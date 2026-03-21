@@ -63,7 +63,8 @@ export const ModelName = {
   TicketReply: 'TicketReply',
   MarieMemory: 'MarieMemory',
   UserAchievement: 'UserAchievement',
-  RelationshipCheckIn: 'RelationshipCheckIn'
+  RelationshipCheckIn: 'RelationshipCheckIn',
+  MarieAnalytics: 'MarieAnalytics'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -279,6 +280,23 @@ export const RelationshipCheckInScalarFieldEnum = {
 } as const
 
 export type RelationshipCheckInScalarFieldEnum = (typeof RelationshipCheckInScalarFieldEnum)[keyof typeof RelationshipCheckInScalarFieldEnum]
+
+
+export const MarieAnalyticsScalarFieldEnum = {
+  id: 'id',
+  topic: 'topic',
+  sentiment: 'sentiment',
+  questionType: 'questionType',
+  hasReport: 'hasReport',
+  hasMemories: 'hasMemories',
+  messageLength: 'messageLength',
+  responseLength: 'responseLength',
+  dayOfWeek: 'dayOfWeek',
+  hourOfDay: 'hourOfDay',
+  createdAt: 'createdAt'
+} as const
+
+export type MarieAnalyticsScalarFieldEnum = (typeof MarieAnalyticsScalarFieldEnum)[keyof typeof MarieAnalyticsScalarFieldEnum]
 
 
 export const SortOrder = {

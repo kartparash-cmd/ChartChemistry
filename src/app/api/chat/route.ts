@@ -17,7 +17,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { chatWithAstrologer, buildChatContext, generateChatTitle, extractMemories } from "@/lib/claude";
+import { chatWithAstrologer, buildChatContext, generateChatTitle, extractMemories, classifyConversation } from "@/lib/claude";
 import { getOpenAIClient, OPENAI_MODEL } from "@/lib/openai";
 import { createRateLimiter, getClientIp } from "@/lib/rate-limit";
 import { sanitizeInput } from "@/lib/sanitize";
@@ -537,7 +537,20 @@ export async function POST(request: Request) {
       }
     }
 
-    // --- 8b. Extract long-term memories (fire-and-forget) ---
+    // --- 8b. Anonymized analytics (fire-and-forget, no PII) ---
+    try {
+      const analytics = classifyConversation(
+        userMessage,
+        aiReply,
+        !!enhancedChartContext,
+        memories.length > 0
+      );
+      prisma.marieAnalytics.create({ data: analytics }).catch(() => {});
+    } catch {
+      // Non-blocking
+    }
+
+    // --- 8c. Extract long-term memories (fire-and-forget) ---
     extractMemories(
       conversationHistory.slice(-4),
       memories.map((m) => ({ key: m.key, value: m.value }))

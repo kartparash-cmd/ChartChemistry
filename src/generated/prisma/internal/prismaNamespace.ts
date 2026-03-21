@@ -396,7 +396,8 @@ export const ModelName = {
   TicketReply: 'TicketReply',
   MarieMemory: 'MarieMemory',
   UserAchievement: 'UserAchievement',
-  RelationshipCheckIn: 'RelationshipCheckIn'
+  RelationshipCheckIn: 'RelationshipCheckIn',
+  MarieAnalytics: 'MarieAnalytics'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -412,7 +413,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "user" | "account" | "session" | "verificationToken" | "passwordResetToken" | "birthProfile" | "compatibilityReport" | "chatSession" | "supportTicket" | "ticketReply" | "marieMemory" | "userAchievement" | "relationshipCheckIn"
+    modelProps: "user" | "account" | "session" | "verificationToken" | "passwordResetToken" | "birthProfile" | "compatibilityReport" | "chatSession" | "supportTicket" | "ticketReply" | "marieMemory" | "userAchievement" | "relationshipCheckIn" | "marieAnalytics"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -1378,6 +1379,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    MarieAnalytics: {
+      payload: Prisma.$MarieAnalyticsPayload<ExtArgs>
+      fields: Prisma.MarieAnalyticsFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.MarieAnalyticsFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MarieAnalyticsPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.MarieAnalyticsFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MarieAnalyticsPayload>
+        }
+        findFirst: {
+          args: Prisma.MarieAnalyticsFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MarieAnalyticsPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.MarieAnalyticsFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MarieAnalyticsPayload>
+        }
+        findMany: {
+          args: Prisma.MarieAnalyticsFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MarieAnalyticsPayload>[]
+        }
+        create: {
+          args: Prisma.MarieAnalyticsCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MarieAnalyticsPayload>
+        }
+        createMany: {
+          args: Prisma.MarieAnalyticsCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.MarieAnalyticsCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MarieAnalyticsPayload>[]
+        }
+        delete: {
+          args: Prisma.MarieAnalyticsDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MarieAnalyticsPayload>
+        }
+        update: {
+          args: Prisma.MarieAnalyticsUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MarieAnalyticsPayload>
+        }
+        deleteMany: {
+          args: Prisma.MarieAnalyticsDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.MarieAnalyticsUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.MarieAnalyticsUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MarieAnalyticsPayload>[]
+        }
+        upsert: {
+          args: Prisma.MarieAnalyticsUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MarieAnalyticsPayload>
+        }
+        aggregate: {
+          args: Prisma.MarieAnalyticsAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateMarieAnalytics>
+        }
+        groupBy: {
+          args: Prisma.MarieAnalyticsGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.MarieAnalyticsGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.MarieAnalyticsCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.MarieAnalyticsCountAggregateOutputType> | number
+        }
+      }
+    }
   }
 } & {
   other: {
@@ -1614,6 +1689,23 @@ export const RelationshipCheckInScalarFieldEnum = {
 } as const
 
 export type RelationshipCheckInScalarFieldEnum = (typeof RelationshipCheckInScalarFieldEnum)[keyof typeof RelationshipCheckInScalarFieldEnum]
+
+
+export const MarieAnalyticsScalarFieldEnum = {
+  id: 'id',
+  topic: 'topic',
+  sentiment: 'sentiment',
+  questionType: 'questionType',
+  hasReport: 'hasReport',
+  hasMemories: 'hasMemories',
+  messageLength: 'messageLength',
+  responseLength: 'responseLength',
+  dayOfWeek: 'dayOfWeek',
+  hourOfDay: 'hourOfDay',
+  createdAt: 'createdAt'
+} as const
+
+export type MarieAnalyticsScalarFieldEnum = (typeof MarieAnalyticsScalarFieldEnum)[keyof typeof MarieAnalyticsScalarFieldEnum]
 
 
 export const SortOrder = {
@@ -1910,6 +2002,7 @@ export type GlobalOmitConfig = {
   marieMemory?: Prisma.MarieMemoryOmit
   userAchievement?: Prisma.UserAchievementOmit
   relationshipCheckIn?: Prisma.RelationshipCheckInOmit
+  marieAnalytics?: Prisma.MarieAnalyticsOmit
 }
 
 /* Types for Logging */

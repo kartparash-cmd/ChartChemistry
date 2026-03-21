@@ -1249,6 +1249,69 @@ export async function extractMemories(
   return [];
 }
 
+// ============================================================
+// Anonymized conversation analytics
+// ============================================================
+
+/**
+ * Classify a conversation exchange into anonymized metadata.
+ * No PII is stored — only topic, sentiment, question type, and aggregate stats.
+ */
+export function classifyConversation(
+  userMessage: string,
+  aiResponse: string,
+  hasReport: boolean,
+  hasMemories: boolean
+): {
+  topic: string;
+  sentiment: string;
+  questionType: string;
+  hasReport: boolean;
+  hasMemories: boolean;
+  messageLength: number;
+  responseLength: number;
+  dayOfWeek: number;
+  hourOfDay: number;
+} {
+  const msg = userMessage.toLowerCase();
+  const now = new Date();
+
+  // Classify topic
+  let topic = "general";
+  if (msg.match(/compat|relationship|partner|couple|love|dating|marriage/)) topic = "relationship";
+  else if (msg.match(/chart|sign|planet|house|aspect|moon|sun|venus|mars|mercury|rising/)) topic = "chart_education";
+  else if (msg.match(/transit|timing|when|week|today|month|retrograde/)) topic = "timing";
+  else if (msg.match(/argue|fight|conflict|disagree|frustrated|angry|problem/)) topic = "conflict";
+  else if (msg.match(/career|money|health|work|job|finance/)) topic = "wellness";
+
+  // Classify sentiment from AI response
+  let sentiment = "neutral";
+  const resp = aiResponse.toLowerCase();
+  if (resp.match(/wonderful|great|fantastic|beautiful|strong|harmonious|blessed/)) sentiment = "positive";
+  else if (resp.match(/challenge|difficult|tension|careful|mindful|watch out|friction/)) sentiment = "negative";
+
+  // Classify question type
+  let questionType = "general";
+  if (msg.startsWith("how")) questionType = "how";
+  else if (msg.startsWith("why")) questionType = "why";
+  else if (msg.startsWith("what")) questionType = "what";
+  else if (msg.match(/explain|tell me about|teach/)) questionType = "explain";
+  else if (msg.match(/should|advice|recommend|suggest|help/)) questionType = "advice";
+  else if (msg.match(/check.?in|how.*going|update/)) questionType = "checkin";
+
+  return {
+    topic,
+    sentiment,
+    questionType,
+    hasReport,
+    hasMemories,
+    messageLength: userMessage.length,
+    responseLength: aiResponse.length,
+    dayOfWeek: now.getDay(),
+    hourOfDay: now.getHours(),
+  };
+}
+
 // Re-export prompts for testing or direct use
 export const SYSTEM_PROMPTS = {
   free: FREE_REPORT_PROMPT,

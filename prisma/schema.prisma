@@ -251,3 +251,20 @@ model RelationshipCheckIn {
   @@index([userId])
   @@index([userId, createdAt])
 }
+
+model MarieAnalytics {
+  id            String   @id @default(cuid())
+  topic         String   // e.g. "relationship", "chart_education", "timing", "conflict", "general"
+  sentiment     String   // "positive", "neutral", "negative"
+  questionType  String   // "how", "why", "what", "explain", "advice", "checkin"
+  hasReport     Boolean  // whether user had a report loaded
+  hasMemories   Boolean  // whether user had existing memories
+  messageLength Int      // user message char count
+  responseLength Int     // AI response char count
+  dayOfWeek     Int      // 0-6
+  hourOfDay     Int      // 0-23
+  createdAt     DateTime @default(now())
+
+  @@index([topic])
+  @@index([createdAt])
+}

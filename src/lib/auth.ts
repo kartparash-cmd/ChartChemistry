@@ -46,7 +46,7 @@ export const authOptions: NextAuthOptions = {
         }
 
         const user = await prisma.user.findUnique({
-          where: { email: credentials.email },
+          where: { email: credentials.email.toLowerCase().trim() },
         });
 
         if (!user || !user.password) {
@@ -60,6 +60,10 @@ export const authOptions: NextAuthOptions = {
 
         if (!isValid) {
           throw new Error("Invalid email or password");
+        }
+
+        if (!user.emailVerified) {
+          throw new Error("Please verify your email address before signing in. Check your inbox for the verification link.");
         }
 
         return {

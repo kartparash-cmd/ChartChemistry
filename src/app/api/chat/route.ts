@@ -114,17 +114,27 @@ export async function GET(request: NextRequest) {
     }
 
     const reportId = request.nextUrl.searchParams.get("reportId") || undefined;
+    const sessionId = request.nextUrl.searchParams.get("sessionId");
 
-    // Find the most recent chat session for this user, optionally scoped to a report
-    const chatSession = await prisma.chatSession.findFirst({
-      where: {
-        userId: session.user.id,
-        reportId: reportId ?? null,
-        deletedAt: null,
-        archived: false,
-      },
-      orderBy: { updatedAt: "desc" },
-    });
+    // If a specific sessionId is provided, load that session directly
+    // Otherwise, find the most recent chat session for this user
+    const chatSession = sessionId
+      ? await prisma.chatSession.findUnique({
+          where: {
+            id: sessionId,
+            userId: session.user.id,
+            deletedAt: null,
+          },
+        })
+      : await prisma.chatSession.findFirst({
+          where: {
+            userId: session.user.id,
+            reportId: reportId ?? null,
+            deletedAt: null,
+            archived: false,
+          },
+          orderBy: { updatedAt: "desc" },
+        });
 
     if (!chatSession) {
       return NextResponse.json({ messages: [], sessionId: null, sessionDate: null });

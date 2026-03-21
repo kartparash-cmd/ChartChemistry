@@ -52,6 +52,16 @@ function validatePersonInput(
     };
   }
 
+  // Validate date is real and within range
+  const dateObj = new Date(p.birthDate as string);
+  if (isNaN(dateObj.getTime())) {
+    return { valid: false, error: `${label}.birthDate is not a valid date` };
+  }
+  const year = dateObj.getFullYear();
+  if (year < 1800 || year > new Date().getFullYear()) {
+    return { valid: false, error: `${label}.birthDate must be between 1800 and the current year` };
+  }
+
   if (
     p.birthTime !== undefined &&
     p.birthTime !== null &&
@@ -198,6 +208,8 @@ export async function POST(request: Request) {
     // --- Sanitize person names ---
     person1.name = sanitizeInput(person1.name);
     person2.name = sanitizeInput(person2.name);
+    if (person1.name.length > 100) person1.name = person1.name.substring(0, 100);
+    if (person2.name.length > 100) person2.name = person2.name.substring(0, 100);
 
     // --- Check that person1 and person2 are not the same person ---
     if (person1.name === person2.name && person1.birthDate === person2.birthDate && person1.birthCity === person2.birthCity) {

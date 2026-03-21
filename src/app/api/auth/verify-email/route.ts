@@ -35,19 +35,20 @@ export async function GET(request: Request) {
       );
     }
 
-    await prisma.user.update({
-      where: { email: verificationToken.identifier },
-      data: { emailVerified: new Date() },
-    });
-
-    await prisma.verificationToken.delete({
-      where: {
-        identifier_token: {
-          identifier: verificationToken.identifier,
-          token: verificationToken.token,
+    await prisma.$transaction([
+      prisma.user.update({
+        where: { email: verificationToken.identifier },
+        data: { emailVerified: new Date() },
+      }),
+      prisma.verificationToken.delete({
+        where: {
+          identifier_token: {
+            identifier: verificationToken.identifier,
+            token: verificationToken.token,
+          },
         },
-      },
-    });
+      }),
+    ]);
 
     return NextResponse.json({ message: "Email verified successfully!" });
   } catch {

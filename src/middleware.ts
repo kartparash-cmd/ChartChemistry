@@ -33,6 +33,8 @@ const protectedApi = [
   "/api/chart/explain",
   "/api/report",
   "/api/support",
+  "/api/horoscope",
+  "/api/wellness",
 ];
 
 // Admin-only routes

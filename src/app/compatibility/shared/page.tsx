@@ -32,12 +32,13 @@ function SharedResults() {
   const signA = searchParams.get("as") || "";
   const nameB = searchParams.get("b") || "Person 2";
   const signB = searchParams.get("bs") || "";
-  const overall = Number(searchParams.get("o")) || 0;
-  const emotional = Number(searchParams.get("e")) || 0;
-  const chemistry = Number(searchParams.get("ch")) || 0;
-  const communication = Number(searchParams.get("co")) || 0;
-  const stability = Number(searchParams.get("st")) || 0;
-  const harmony = Number(searchParams.get("h")) || 0;
+  const clamp = (n: number) => Math.max(0, Math.min(100, n));
+  const overall = clamp(Number(searchParams.get("o")) || 0);
+  const emotional = clamp(Number(searchParams.get("e")) || 0);
+  const chemistry = clamp(Number(searchParams.get("ch")) || 0);
+  const communication = clamp(Number(searchParams.get("co")) || 0);
+  const stability = clamp(Number(searchParams.get("st")) || 0);
+  const harmony = clamp(Number(searchParams.get("h")) || 0);
 
   // If no score data, redirect to compatibility tool
   if (!overall && !searchParams.get("o")) {
@@ -149,6 +150,9 @@ function SharedResults() {
               <ScoreBar label={dim.label} score={dim.score} delay={0.7 + i * 0.1} />
             </div>
           ))}
+          <p className="text-center text-xs text-muted-foreground/50 mt-2">
+            Shared result — verify at chartchemistry.com/compatibility
+          </p>
         </motion.div>
 
         {/* CTA */}

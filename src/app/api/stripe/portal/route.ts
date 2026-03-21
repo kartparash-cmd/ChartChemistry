@@ -12,7 +12,7 @@ import { authOptions } from "@/lib/auth";
 import { stripe } from "@/lib/stripe";
 import { prisma } from "@/lib/prisma";
 
-export async function POST() {
+export async function POST(request: Request) {
   try {
     const session = await getServerSession(authOptions);
 
@@ -37,7 +37,7 @@ export async function POST() {
 
     const portalSession = await stripe.billingPortal.sessions.create({
       customer: user.stripeCustomerId,
-      return_url: `${process.env.NEXTAUTH_URL}/dashboard`,
+      return_url: `${process.env.NEXTAUTH_URL || request.headers.get("origin") || "https://chartchemistry.com"}/dashboard`,
     });
 
     return NextResponse.json({ url: portalSession.url });

@@ -80,18 +80,27 @@ export async function POST(request: Request) {
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
         const userId = session.metadata?.userId;
-        const plan = session.metadata?.plan;
 
-        if (!userId || !plan) {
+        if (!userId) {
           console.error(JSON.stringify({ event: "webhook_error", type: event.type, error: "Missing metadata in checkout session", sessionId: session.id, timestamp: new Date().toISOString() }));
           break;
+        }
+
+        // Verify plan against actual price paid
+        const lineItems = await stripe.checkout.sessions.listLineItems(session.id);
+        const priceId = lineItems.data[0]?.price?.id;
+        let plan: "PREMIUM" | "ANNUAL" = "PREMIUM";
+        if (priceId === PLANS.ANNUAL.priceId) {
+          plan = "ANNUAL";
+        } else if (priceId === PLANS.PREMIUM.priceId) {
+          plan = "PREMIUM";
         }
 
         // Update user plan
         await prisma.user.update({
           where: { id: userId },
           data: {
-            plan: plan as "PREMIUM" | "ANNUAL",
+            plan,
             stripeCustomerId: session.customer as string,
           },
         });
@@ -124,7 +133,7 @@ export async function POST(request: Request) {
         }
 
         // If the subscription is no longer active, downgrade to FREE
-        if (subscription.status === "canceled" || subscription.status === "unpaid") {
+        if (subscription.status === "canceled" || subscription.status === "unpaid" || subscription.status === "past_due") {
           await prisma.user.update({
             where: { id: user.id },
             data: { plan: "FREE" },

@@ -203,7 +203,7 @@ function SuggestionCard({
           {/* Contextual relationship hint */}
           {isRelationships && (
             <Link
-              href="/connections"
+              href="/dashboard"
               aria-label="See how today's energy affects your connections"
               className="group/link mb-4 flex items-center gap-1.5 text-xs text-rose-400/80 hover:text-rose-400 transition-colors"
             >

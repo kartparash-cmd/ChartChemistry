@@ -39,6 +39,7 @@ interface Message {
   role: "user" | "assistant";
   content: string;
   timestamp: Date;
+  isError?: boolean;
 }
 
 /** Serializable shape stored in localStorage (Date -> ISO string) */
@@ -208,9 +209,13 @@ function CopyButton({ text }: { text: string }) {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = async () => {
-    await navigator.clipboard.writeText(text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Clipboard not available
+    }
   };
 
   return (
@@ -355,7 +360,8 @@ function ChatPageContent() {
     const hasRealContent = messages.some((m) => m.id !== "welcome");
     if (hasRealContent) {
       try {
-        localStorage.setItem(storageKey, serializeMessages(messages));
+        const persistable = messages.filter((m: any) => !m.isError);
+        localStorage.setItem(storageKey, serializeMessages(persistable));
       } catch {
         // localStorage full or unavailable
       }
@@ -603,8 +609,18 @@ function ChatPageContent() {
       if (res.ok) {
         const data = await res.json();
         setSessionId(id);
-        setMessages(data.messages || []);
+        const loadedMessages = (data.messages || [])
+          .filter((m: any) => !m._type)
+          .map((m: any) => ({
+            id: `${m.role}-loaded-${Math.random().toString(36).slice(2)}`,
+            role: m.role,
+            content: m.content,
+            timestamp: new Date(m.timestamp || Date.now()),
+          }));
+        setMessages([buildWelcomeMessage(), ...loadedMessages]);
         if (data.reportId) setSelectedReportId(data.reportId);
+        setIsRestoredSession(true);
+        setSuggestionsOpen(false);
       }
     } catch {
       // Failed to load session
@@ -713,6 +729,7 @@ function ChatPageContent() {
           role: "assistant",
           content: errorText,
           timestamp: new Date(),
+          isError: true,
         };
         setMessages((prev) => [...prev, errorMessage]);
       }
@@ -723,6 +740,7 @@ function ChatPageContent() {
         role: "assistant",
         content: "Check your internet connection and try again.",
         timestamp: new Date(),
+        isError: true,
       };
       setMessages((prev) => [...prev, aiMessage]);
     } finally {
@@ -1086,6 +1104,7 @@ function ChatPageContent() {
                 onKeyDown={handleKeyDown}
                 placeholder="Ask Marie anything..."
                 aria-label="Type your message to Marie"
+                maxLength={2000}
                 rows={1}
                 className="flex-1 resize-none bg-transparent px-4 py-3.5 text-sm placeholder:text-muted-foreground/50 focus:outline-none"
                 style={{ minHeight: "52px", maxHeight: "160px" }}
@@ -1095,6 +1114,11 @@ function ChatPageContent() {
                   target.style.height = `${Math.min(target.scrollHeight, 160)}px`;
                 }}
               />
+              {input.length > 1800 && (
+                <span className={cn("absolute bottom-14 right-4 text-xs", input.length > 1950 ? "text-red-400" : "text-muted-foreground")}>
+                  {input.length}/2000
+                </span>
+              )}
               <div className="flex items-center pr-2 pb-2">
                 <Button
                   type="submit"

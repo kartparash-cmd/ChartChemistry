@@ -420,6 +420,7 @@ export default function QuickMatchClient() {
                         type="date"
                         value={dateA}
                         onChange={(e) => setDateA(e.target.value)}
+                        max={new Date().toISOString().split("T")[0]}
                         className="mt-1 bg-white/5 border-white/10 text-white [color-scheme:dark]"
                       />
                     </div>
@@ -459,6 +460,7 @@ export default function QuickMatchClient() {
                         type="date"
                         value={dateB}
                         onChange={(e) => setDateB(e.target.value)}
+                        max={new Date().toISOString().split("T")[0]}
                         className="mt-1 bg-white/5 border-white/10 text-white [color-scheme:dark]"
                       />
                     </div>

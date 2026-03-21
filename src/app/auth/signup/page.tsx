@@ -53,7 +53,7 @@ function SignUpContent() {
       const res = await fetch("/api/auth/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password, ...(referralCode ? { referralCode } : {}) }),
+        body: JSON.stringify({ name, email, password, ageConfirmed, ...(referralCode ? { referralCode } : {}) }),
       });
 
       const data = await res.json();

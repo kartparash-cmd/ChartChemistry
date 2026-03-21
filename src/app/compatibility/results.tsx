@@ -215,8 +215,8 @@ export function CompatibilityResults({
   useEffect(() => {
     if (hasShownCelebration.current || prefersReducedMotion) return;
     hasShownCelebration.current = true;
-    setShowCelebration(true);
-  }, [prefersReducedMotion]);
+    if (isHighScore) setShowCelebration(true);
+  }, [prefersReducedMotion, isHighScore]);
 
   // Track report ID (from initial prop or after generating a full report)
   const [reportId, setReportId] = useState<string | null>(initialReportId ?? null);
@@ -457,7 +457,7 @@ export function CompatibilityResults({
     <div className={cn("mx-auto max-w-3xl space-y-10", className)}>
       {/* Confetti celebration on first result or high scores */}
       {!prefersReducedMotion && (
-        <Confetti trigger={showCelebration || isHighScore} />
+        <Confetti trigger={showCelebration} />
       )}
 
       {/* Names & Signs */}

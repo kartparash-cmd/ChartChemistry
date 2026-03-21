@@ -351,14 +351,6 @@ export function Navigation() {
                         </div>
                       </div>
                       <Link
-                        href="/dashboard"
-                        onClick={() => setMobileOpen(false)}
-                        className="flex items-center gap-2 rounded-lg px-4 py-3 text-sm transition-colors hover:bg-muted text-muted-foreground hover:text-foreground"
-                      >
-                        <LayoutDashboard className="h-4 w-4" />
-                        Dashboard
-                      </Link>
-                      <Link
                         href="/cosmic-identity"
                         onClick={() => setMobileOpen(false)}
                         className="flex items-center gap-2 rounded-lg px-4 py-3 text-sm transition-colors hover:bg-muted text-muted-foreground hover:text-foreground"

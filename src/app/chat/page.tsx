@@ -348,9 +348,7 @@ function ChatPageContent() {
   // localStorage helpers (scoped to selectedReportId)
   // -------------------------------------------------------------------
 
-  const storageKey = selectedReportId
-    ? `${STORAGE_KEY_PREFIX}${selectedReportId}`
-    : `${STORAGE_KEY_PREFIX}__general`;
+  const storageKey = `${STORAGE_KEY_PREFIX}${session?.user?.id || "anon"}_${selectedReportId || "__general"}`;
 
   useEffect(() => {
     if (!isPremium) return;

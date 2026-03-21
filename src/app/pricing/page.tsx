@@ -448,7 +448,7 @@ function PricingContent() {
                   <th className="px-4 py-4 text-center text-sm font-medium text-cosmic-purple-light">
                     <span>Premium</span>
                     <span className="block text-xs font-normal text-emerald-400 mt-0.5">
-                      Annual: $6.67/mo
+                      {billing === "annual" ? "That's $6.67/mo" : "$9.99/mo"}
                     </span>
                   </th>
                 </tr>

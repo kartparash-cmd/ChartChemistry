@@ -435,6 +435,9 @@ export default function Home() {
               </motion.div>
             ))}
           </motion.div>
+          <p className="mt-6 text-center text-xs text-muted-foreground/50">
+            Names and signs are illustrative. Testimonials reflect typical user experiences.
+          </p>
         </div>
       </section>
 

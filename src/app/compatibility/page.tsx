@@ -60,7 +60,18 @@ export default function CompatibilityPage() {
   const [error, setError] = useState<string>("");
   const [remainingChecks, setRemainingChecks] = useState<number | null>(null);
   const [showRateLimitModal, setShowRateLimitModal] = useState(false);
-  const [savedProfiles, setSavedProfiles] = useState<any[]>([]);
+  interface SavedProfile {
+    id: string;
+    name: string;
+    birthDate: string;
+    birthTime: string | null;
+    birthCity: string;
+    birthCountry: string;
+    latitude: number | null;
+    longitude: number | null;
+    timezone: string | null;
+  }
+  const [savedProfiles, setSavedProfiles] = useState<SavedProfile[]>([]);
   const [formKeyA, setFormKeyA] = useState(0);
   const [formKeyB, setFormKeyB] = useState(0);
   const [initialChecksLoaded, setInitialChecksLoaded] = useState(false);
@@ -297,7 +308,7 @@ export default function CompatibilityPage() {
                         defaultValue=""
                         onChange={(e) => {
                           const profile = savedProfiles.find(
-                            (p: any) => p.id === e.target.value
+                            (p: SavedProfile) => p.id === e.target.value
                           );
                           if (profile) {
                             setPersonA({
@@ -317,7 +328,7 @@ export default function CompatibilityPage() {
                         <option value="" disabled>
                           Use a saved profile...
                         </option>
-                        {savedProfiles.map((p: any) => (
+                        {savedProfiles.map((p: SavedProfile) => (
                           <option key={p.id} value={p.id}>
                             {p.name}
                           </option>
@@ -347,7 +358,7 @@ export default function CompatibilityPage() {
                         defaultValue=""
                         onChange={(e) => {
                           const profile = savedProfiles.find(
-                            (p: any) => p.id === e.target.value
+                            (p: SavedProfile) => p.id === e.target.value
                           );
                           if (profile) {
                             setPersonB({
@@ -367,7 +378,7 @@ export default function CompatibilityPage() {
                         <option value="" disabled>
                           Use a saved profile...
                         </option>
-                        {savedProfiles.map((p: any) => (
+                        {savedProfiles.map((p: SavedProfile) => (
                           <option key={p.id} value={p.id}>
                             {p.name}
                           </option>

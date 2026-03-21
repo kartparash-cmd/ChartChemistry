@@ -17,7 +17,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { chatWithAstrologer, buildChatContext, getClient, CLAUDE_MODEL, generateChatTitle, extractMemories } from "@/lib/claude";
+import { chatWithAstrologer, buildChatContext, generateChatTitle, extractMemories } from "@/lib/claude";
+import { getOpenAIClient, OPENAI_MODEL } from "@/lib/openai";
 import { createRateLimiter, getClientIp } from "@/lib/rate-limit";
 import { sanitizeInput } from "@/lib/sanitize";
 import type { ChatMessage, ChatRequest } from "@/types/astrology";
@@ -59,23 +60,15 @@ async function generateConversationSummary(
     .map((m) => `${m.role === "user" ? "User" : "Astrologer"}: ${m.content}`)
     .join("\n\n");
 
-  const response = await getClient().messages.create({
-    model: CLAUDE_MODEL,
+  const response = await getOpenAIClient().chat.completions.create({
+    model: OPENAI_MODEL,
     max_tokens: 512,
-    system:
-      "You are a helpful assistant. Summarize the following astrology chat conversation into a brief paragraph (3-5 sentences). " +
-      "Capture the key topics discussed, any specific astrological aspects or placements mentioned, the user's main concerns or questions, " +
-      "and any advice given. This summary will be used as context for future conversations.",
     messages: [
-      {
-        role: "user",
-        content: `Please summarize this conversation:\n\n${transcript}`,
-      },
+      { role: "system", content: "You are a helpful assistant. Summarize the following astrology chat conversation into a brief paragraph (3-5 sentences). Capture the key topics discussed, any specific astrological aspects mentioned, and the main advice or insights given. This summary will be used to maintain context in future conversations." },
+      { role: "user", content: transcript },
     ],
   });
-
-  const textBlock = response.content.find((block) => block.type === "text");
-  return textBlock ? textBlock.text.trim() : "";
+  return response.choices[0]?.message?.content?.trim() || "";
 }
 
 /**

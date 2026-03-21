@@ -36,6 +36,7 @@ import {
   Copy,
   Check,
   Pencil,
+  Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -361,7 +362,9 @@ function DashboardContent() {
   const [editingProfile, setEditingProfile] = useState(false);
   const [editName, setEditName] = useState("");
   const [editBirthTime, setEditBirthTime] = useState("");
+  const [editCity, setEditCity] = useState("");
   const [editSaving, setEditSaving] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState(false);
 
   // Determine greeting: first-visit detection + time-of-day
   useEffect(() => {
@@ -839,31 +842,53 @@ function DashboardContent() {
                           <div className="flex items-center justify-between mb-4">
                             <div>
                               {editingProfile ? (
-                                <div className="space-y-2">
-                                  <input
-                                    value={editName}
-                                    onChange={(e) => setEditName(e.target.value)}
-                                    className="h-9 rounded-lg border border-white/10 bg-white/5 px-3 text-sm font-semibold"
-                                    placeholder="Name"
-                                  />
-                                  <input
-                                    type="time"
-                                    value={editBirthTime}
-                                    onChange={(e) => setEditBirthTime(e.target.value)}
-                                    className="h-9 rounded-lg border border-white/10 bg-white/5 px-3 text-sm [color-scheme:dark]"
-                                    placeholder="Birth time"
-                                  />
+                                <div className="space-y-3">
+                                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                                    <div>
+                                      <label className="text-[10px] text-muted-foreground mb-1 block">Name</label>
+                                      <input
+                                        value={editName}
+                                        onChange={(e) => setEditName(e.target.value)}
+                                        className="h-9 w-full rounded-lg border border-white/10 bg-white/5 px-3 text-sm text-base"
+                                        placeholder="Name"
+                                      />
+                                    </div>
+                                    <div>
+                                      <label className="text-[10px] text-muted-foreground mb-1 block">Birth Time</label>
+                                      <input
+                                        type="time"
+                                        value={editBirthTime}
+                                        onChange={(e) => setEditBirthTime(e.target.value)}
+                                        className="h-9 w-full rounded-lg border border-white/10 bg-white/5 px-3 text-sm text-base [color-scheme:dark]"
+                                      />
+                                    </div>
+                                    <div>
+                                      <label className="text-[10px] text-muted-foreground mb-1 block">Birth City</label>
+                                      <input
+                                        value={editCity}
+                                        onChange={(e) => setEditCity(e.target.value)}
+                                        className="h-9 w-full rounded-lg border border-white/10 bg-white/5 px-3 text-sm text-base"
+                                        placeholder="City"
+                                      />
+                                    </div>
+                                  </div>
                                   <div className="flex gap-2">
                                     <Button size="sm" disabled={editSaving} onClick={async () => {
                                       setEditSaving(true);
                                       try {
-                                        await fetch(`/api/profile/${data.profile!.id}`, {
-                                          method: "PATCH",
+                                        const res = await fetch(`/api/profile/${data.profile!.id}`, {
+                                          method: "PUT",
                                           headers: { "Content-Type": "application/json" },
-                                          body: JSON.stringify({ name: editName, ...(editBirthTime ? { birthTime: editBirthTime } : {}) }),
+                                          body: JSON.stringify({
+                                            name: editName,
+                                            ...(editBirthTime ? { birthTime: editBirthTime } : {}),
+                                            ...(editCity ? { birthCity: editCity } : {}),
+                                          }),
                                         });
-                                        setEditingProfile(false);
-                                        router.refresh();
+                                        if (res.ok) {
+                                          setEditingProfile(false);
+                                          window.location.reload();
+                                        }
                                       } catch {} finally { setEditSaving(false); }
                                     }} className="bg-cosmic-purple text-white text-xs">
                                       {editSaving ? "Saving..." : "Save"}
@@ -890,14 +915,41 @@ function DashboardContent() {
                                     size="sm"
                                     variant="ghost"
                                     className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
+                                    title="Edit profile"
                                     onClick={() => {
                                       setEditName(data.profile!.name);
                                       setEditBirthTime(data.profile!.birthTime || "");
+                                      setEditCity(data.profile!.birthCity || "");
                                       setEditingProfile(true);
                                     }}
                                   >
                                     <Pencil className="h-3.5 w-3.5" />
                                   </Button>
+                                  {!data.profile.isOwner && (
+                                    deleteConfirm ? (
+                                      <div className="flex items-center gap-1">
+                                        <Button size="sm" variant="destructive" className="text-xs h-8" onClick={async () => {
+                                          await fetch(`/api/profile/${data.profile!.id}`, { method: "DELETE" });
+                                          window.location.reload();
+                                        }}>
+                                          Confirm
+                                        </Button>
+                                        <Button size="sm" variant="ghost" className="text-xs h-8" onClick={() => setDeleteConfirm(false)}>
+                                          No
+                                        </Button>
+                                      </div>
+                                    ) : (
+                                      <Button
+                                        size="sm"
+                                        variant="ghost"
+                                        className="h-8 w-8 p-0 text-muted-foreground hover:text-red-400"
+                                        title="Delete profile"
+                                        onClick={() => setDeleteConfirm(true)}
+                                      >
+                                        <Trash2 className="h-3.5 w-3.5" />
+                                      </Button>
+                                    )
+                                  )}
                                   <Button asChild variant="outline" size="sm" className="border-white/10">
                                     <Link href={`/chart/${data.profile.id}`}>
                                       View Full Chart

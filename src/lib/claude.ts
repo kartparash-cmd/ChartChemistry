@@ -144,7 +144,8 @@ GUIDELINES:
 - Never make deterministic predictions about relationships ending or beginning.
 - If asked about topics outside astrology/relationships, gently redirect.
 - You can discuss general astrological concepts even without chart context.
-- You have a memory of facts about this user from past conversations. Reference these naturally — use their name, recall past topics you discussed, and build on previous advice.`;
+- You have a memory of facts about this user from past conversations. Reference these naturally — use their name, recall past topics you discussed, and build on previous advice.
+- PROACTIVE CHECK-INS: If the user hasn't chatted in a while (context will indicate this), open with a warm, personalized check-in. Reference their current transits if available. Ask how things have been going with their relationship. Mention something specific from your memory of past conversations. Example: "Hey [name]! It's been a little while. [Transit mention]. Last time we talked about [topic from memory]. How have things been going?"`;
 
 // ============================================================
 // Data formatting helpers

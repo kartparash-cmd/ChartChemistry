@@ -53,6 +53,7 @@ import { AccountManagement } from "@/components/account-management";
 import { ACHIEVEMENTS } from "@/lib/achievement-defs";
 import { getBannerEvents, formatShortDate } from "@/lib/cosmic-events";
 import { OnboardingWizard } from "@/components/onboarding-wizard";
+import { RelationshipCheckIn } from "@/components/relationship-checkin";
 
 // Map achievement icon names to Lucide components
 const ACHIEVEMENT_ICONS: Record<string, React.ReactNode> = {
@@ -355,6 +356,7 @@ function DashboardContent() {
     rewardClaimed: boolean;
   } | null>(null);
   const [referralCopied, setReferralCopied] = useState(false);
+  const [showCheckIn, setShowCheckIn] = useState(false);
 
   // Determine greeting: first-visit detection + time-of-day
   useEffect(() => {
@@ -581,6 +583,13 @@ function DashboardContent() {
       <OnboardingWizard />
       {/* Confetti overlay */}
       <Confetti trigger={showConfetti} />
+
+      {/* Relationship Check-In Modal */}
+      <RelationshipCheckIn
+        isOpen={showCheckIn}
+        onClose={() => setShowCheckIn(false)}
+        onComplete={() => {}}
+      />
 
       {/* Header */}
       <section className="border-b border-white/10 bg-gradient-to-b from-cosmic-purple/5 to-transparent">
@@ -1301,6 +1310,23 @@ function DashboardContent() {
                 </p>
               )}
             </motion.div>
+
+            {/* Monthly Check-In */}
+            {data?.stats.plan !== "FREE" && (
+              <motion.div
+                whileHover={shouldAnimate ? { scale: 1.02 } : {}}
+                className="rounded-xl border border-pink-500/20 bg-gradient-to-br from-pink-500/[0.06] to-transparent p-4"
+              >
+                <div className="flex items-center gap-2 mb-2">
+                  <Heart className="h-5 w-5 text-pink-400" />
+                  <h4 className="font-heading text-sm font-semibold">Relationship Check-In</h4>
+                </div>
+                <p className="text-xs text-muted-foreground mb-3">How&apos;s your relationship journey going? Take a quick monthly check-in.</p>
+                <Button size="sm" onClick={() => setShowCheckIn(true)} className="w-full bg-pink-500/10 border border-pink-500/20 text-pink-400 hover:bg-pink-500/20">
+                  Start Check-In
+                </Button>
+              </motion.div>
+            )}
 
             {/* Transit Alerts */}
             <motion.div

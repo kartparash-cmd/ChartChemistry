@@ -353,6 +353,7 @@ export type UserWhereInput = {
   ticketReplies?: Prisma.TicketReplyListRelationFilter
   achievements?: Prisma.UserAchievementListRelationFilter
   marieMemories?: Prisma.MarieMemoryListRelationFilter
+  relationshipCheckIns?: Prisma.RelationshipCheckInListRelationFilter
 }
 
 export type UserOrderByWithRelationInput = {
@@ -386,6 +387,7 @@ export type UserOrderByWithRelationInput = {
   ticketReplies?: Prisma.TicketReplyOrderByRelationAggregateInput
   achievements?: Prisma.UserAchievementOrderByRelationAggregateInput
   marieMemories?: Prisma.MarieMemoryOrderByRelationAggregateInput
+  relationshipCheckIns?: Prisma.RelationshipCheckInOrderByRelationAggregateInput
 }
 
 export type UserWhereUniqueInput = Prisma.AtLeast<{
@@ -422,6 +424,7 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
   ticketReplies?: Prisma.TicketReplyListRelationFilter
   achievements?: Prisma.UserAchievementListRelationFilter
   marieMemories?: Prisma.MarieMemoryListRelationFilter
+  relationshipCheckIns?: Prisma.RelationshipCheckInListRelationFilter
 }, "id" | "email" | "referralCode">
 
 export type UserOrderByWithAggregationInput = {
@@ -511,6 +514,7 @@ export type UserCreateInput = {
   ticketReplies?: Prisma.TicketReplyCreateNestedManyWithoutUserInput
   achievements?: Prisma.UserAchievementCreateNestedManyWithoutUserInput
   marieMemories?: Prisma.MarieMemoryCreateNestedManyWithoutUserInput
+  relationshipCheckIns?: Prisma.RelationshipCheckInCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateInput = {
@@ -544,6 +548,7 @@ export type UserUncheckedCreateInput = {
   ticketReplies?: Prisma.TicketReplyUncheckedCreateNestedManyWithoutUserInput
   achievements?: Prisma.UserAchievementUncheckedCreateNestedManyWithoutUserInput
   marieMemories?: Prisma.MarieMemoryUncheckedCreateNestedManyWithoutUserInput
+  relationshipCheckIns?: Prisma.RelationshipCheckInUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserUpdateInput = {
@@ -577,6 +582,7 @@ export type UserUpdateInput = {
   ticketReplies?: Prisma.TicketReplyUpdateManyWithoutUserNestedInput
   achievements?: Prisma.UserAchievementUpdateManyWithoutUserNestedInput
   marieMemories?: Prisma.MarieMemoryUpdateManyWithoutUserNestedInput
+  relationshipCheckIns?: Prisma.RelationshipCheckInUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateInput = {
@@ -610,6 +616,7 @@ export type UserUncheckedUpdateInput = {
   ticketReplies?: Prisma.TicketReplyUncheckedUpdateManyWithoutUserNestedInput
   achievements?: Prisma.UserAchievementUncheckedUpdateManyWithoutUserNestedInput
   marieMemories?: Prisma.MarieMemoryUncheckedUpdateManyWithoutUserNestedInput
+  relationshipCheckIns?: Prisma.RelationshipCheckInUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateManyInput = {
@@ -931,6 +938,20 @@ export type UserUpdateOneRequiredWithoutAchievementsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutAchievementsInput, Prisma.UserUpdateWithoutAchievementsInput>, Prisma.UserUncheckedUpdateWithoutAchievementsInput>
 }
 
+export type UserCreateNestedOneWithoutRelationshipCheckInsInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutRelationshipCheckInsInput, Prisma.UserUncheckedCreateWithoutRelationshipCheckInsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutRelationshipCheckInsInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserUpdateOneRequiredWithoutRelationshipCheckInsNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutRelationshipCheckInsInput, Prisma.UserUncheckedCreateWithoutRelationshipCheckInsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutRelationshipCheckInsInput
+  upsert?: Prisma.UserUpsertWithoutRelationshipCheckInsInput
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutRelationshipCheckInsInput, Prisma.UserUpdateWithoutRelationshipCheckInsInput>, Prisma.UserUncheckedUpdateWithoutRelationshipCheckInsInput>
+}
+
 export type UserCreateWithoutAccountsInput = {
   id?: string
   email: string
@@ -961,6 +982,7 @@ export type UserCreateWithoutAccountsInput = {
   ticketReplies?: Prisma.TicketReplyCreateNestedManyWithoutUserInput
   achievements?: Prisma.UserAchievementCreateNestedManyWithoutUserInput
   marieMemories?: Prisma.MarieMemoryCreateNestedManyWithoutUserInput
+  relationshipCheckIns?: Prisma.RelationshipCheckInCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutAccountsInput = {
@@ -993,6 +1015,7 @@ export type UserUncheckedCreateWithoutAccountsInput = {
   ticketReplies?: Prisma.TicketReplyUncheckedCreateNestedManyWithoutUserInput
   achievements?: Prisma.UserAchievementUncheckedCreateNestedManyWithoutUserInput
   marieMemories?: Prisma.MarieMemoryUncheckedCreateNestedManyWithoutUserInput
+  relationshipCheckIns?: Prisma.RelationshipCheckInUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutAccountsInput = {
@@ -1041,6 +1064,7 @@ export type UserUpdateWithoutAccountsInput = {
   ticketReplies?: Prisma.TicketReplyUpdateManyWithoutUserNestedInput
   achievements?: Prisma.UserAchievementUpdateManyWithoutUserNestedInput
   marieMemories?: Prisma.MarieMemoryUpdateManyWithoutUserNestedInput
+  relationshipCheckIns?: Prisma.RelationshipCheckInUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutAccountsInput = {
@@ -1073,6 +1097,7 @@ export type UserUncheckedUpdateWithoutAccountsInput = {
   ticketReplies?: Prisma.TicketReplyUncheckedUpdateManyWithoutUserNestedInput
   achievements?: Prisma.UserAchievementUncheckedUpdateManyWithoutUserNestedInput
   marieMemories?: Prisma.MarieMemoryUncheckedUpdateManyWithoutUserNestedInput
+  relationshipCheckIns?: Prisma.RelationshipCheckInUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutSessionsInput = {
@@ -1105,6 +1130,7 @@ export type UserCreateWithoutSessionsInput = {
   ticketReplies?: Prisma.TicketReplyCreateNestedManyWithoutUserInput
   achievements?: Prisma.UserAchievementCreateNestedManyWithoutUserInput
   marieMemories?: Prisma.MarieMemoryCreateNestedManyWithoutUserInput
+  relationshipCheckIns?: Prisma.RelationshipCheckInCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutSessionsInput = {
@@ -1137,6 +1163,7 @@ export type UserUncheckedCreateWithoutSessionsInput = {
   ticketReplies?: Prisma.TicketReplyUncheckedCreateNestedManyWithoutUserInput
   achievements?: Prisma.UserAchievementUncheckedCreateNestedManyWithoutUserInput
   marieMemories?: Prisma.MarieMemoryUncheckedCreateNestedManyWithoutUserInput
+  relationshipCheckIns?: Prisma.RelationshipCheckInUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutSessionsInput = {
@@ -1185,6 +1212,7 @@ export type UserUpdateWithoutSessionsInput = {
   ticketReplies?: Prisma.TicketReplyUpdateManyWithoutUserNestedInput
   achievements?: Prisma.UserAchievementUpdateManyWithoutUserNestedInput
   marieMemories?: Prisma.MarieMemoryUpdateManyWithoutUserNestedInput
+  relationshipCheckIns?: Prisma.RelationshipCheckInUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutSessionsInput = {
@@ -1217,6 +1245,7 @@ export type UserUncheckedUpdateWithoutSessionsInput = {
   ticketReplies?: Prisma.TicketReplyUncheckedUpdateManyWithoutUserNestedInput
   achievements?: Prisma.UserAchievementUncheckedUpdateManyWithoutUserNestedInput
   marieMemories?: Prisma.MarieMemoryUncheckedUpdateManyWithoutUserNestedInput
+  relationshipCheckIns?: Prisma.RelationshipCheckInUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutBirthProfilesInput = {
@@ -1249,6 +1278,7 @@ export type UserCreateWithoutBirthProfilesInput = {
   ticketReplies?: Prisma.TicketReplyCreateNestedManyWithoutUserInput
   achievements?: Prisma.UserAchievementCreateNestedManyWithoutUserInput
   marieMemories?: Prisma.MarieMemoryCreateNestedManyWithoutUserInput
+  relationshipCheckIns?: Prisma.RelationshipCheckInCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutBirthProfilesInput = {
@@ -1281,6 +1311,7 @@ export type UserUncheckedCreateWithoutBirthProfilesInput = {
   ticketReplies?: Prisma.TicketReplyUncheckedCreateNestedManyWithoutUserInput
   achievements?: Prisma.UserAchievementUncheckedCreateNestedManyWithoutUserInput
   marieMemories?: Prisma.MarieMemoryUncheckedCreateNestedManyWithoutUserInput
+  relationshipCheckIns?: Prisma.RelationshipCheckInUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutBirthProfilesInput = {
@@ -1329,6 +1360,7 @@ export type UserUpdateWithoutBirthProfilesInput = {
   ticketReplies?: Prisma.TicketReplyUpdateManyWithoutUserNestedInput
   achievements?: Prisma.UserAchievementUpdateManyWithoutUserNestedInput
   marieMemories?: Prisma.MarieMemoryUpdateManyWithoutUserNestedInput
+  relationshipCheckIns?: Prisma.RelationshipCheckInUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutBirthProfilesInput = {
@@ -1361,6 +1393,7 @@ export type UserUncheckedUpdateWithoutBirthProfilesInput = {
   ticketReplies?: Prisma.TicketReplyUncheckedUpdateManyWithoutUserNestedInput
   achievements?: Prisma.UserAchievementUncheckedUpdateManyWithoutUserNestedInput
   marieMemories?: Prisma.MarieMemoryUncheckedUpdateManyWithoutUserNestedInput
+  relationshipCheckIns?: Prisma.RelationshipCheckInUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutReportsInput = {
@@ -1393,6 +1426,7 @@ export type UserCreateWithoutReportsInput = {
   ticketReplies?: Prisma.TicketReplyCreateNestedManyWithoutUserInput
   achievements?: Prisma.UserAchievementCreateNestedManyWithoutUserInput
   marieMemories?: Prisma.MarieMemoryCreateNestedManyWithoutUserInput
+  relationshipCheckIns?: Prisma.RelationshipCheckInCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutReportsInput = {
@@ -1425,6 +1459,7 @@ export type UserUncheckedCreateWithoutReportsInput = {
   ticketReplies?: Prisma.TicketReplyUncheckedCreateNestedManyWithoutUserInput
   achievements?: Prisma.UserAchievementUncheckedCreateNestedManyWithoutUserInput
   marieMemories?: Prisma.MarieMemoryUncheckedCreateNestedManyWithoutUserInput
+  relationshipCheckIns?: Prisma.RelationshipCheckInUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutReportsInput = {
@@ -1473,6 +1508,7 @@ export type UserUpdateWithoutReportsInput = {
   ticketReplies?: Prisma.TicketReplyUpdateManyWithoutUserNestedInput
   achievements?: Prisma.UserAchievementUpdateManyWithoutUserNestedInput
   marieMemories?: Prisma.MarieMemoryUpdateManyWithoutUserNestedInput
+  relationshipCheckIns?: Prisma.RelationshipCheckInUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutReportsInput = {
@@ -1505,6 +1541,7 @@ export type UserUncheckedUpdateWithoutReportsInput = {
   ticketReplies?: Prisma.TicketReplyUncheckedUpdateManyWithoutUserNestedInput
   achievements?: Prisma.UserAchievementUncheckedUpdateManyWithoutUserNestedInput
   marieMemories?: Prisma.MarieMemoryUncheckedUpdateManyWithoutUserNestedInput
+  relationshipCheckIns?: Prisma.RelationshipCheckInUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutChatSessionsInput = {
@@ -1537,6 +1574,7 @@ export type UserCreateWithoutChatSessionsInput = {
   ticketReplies?: Prisma.TicketReplyCreateNestedManyWithoutUserInput
   achievements?: Prisma.UserAchievementCreateNestedManyWithoutUserInput
   marieMemories?: Prisma.MarieMemoryCreateNestedManyWithoutUserInput
+  relationshipCheckIns?: Prisma.RelationshipCheckInCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutChatSessionsInput = {
@@ -1569,6 +1607,7 @@ export type UserUncheckedCreateWithoutChatSessionsInput = {
   ticketReplies?: Prisma.TicketReplyUncheckedCreateNestedManyWithoutUserInput
   achievements?: Prisma.UserAchievementUncheckedCreateNestedManyWithoutUserInput
   marieMemories?: Prisma.MarieMemoryUncheckedCreateNestedManyWithoutUserInput
+  relationshipCheckIns?: Prisma.RelationshipCheckInUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutChatSessionsInput = {
@@ -1617,6 +1656,7 @@ export type UserUpdateWithoutChatSessionsInput = {
   ticketReplies?: Prisma.TicketReplyUpdateManyWithoutUserNestedInput
   achievements?: Prisma.UserAchievementUpdateManyWithoutUserNestedInput
   marieMemories?: Prisma.MarieMemoryUpdateManyWithoutUserNestedInput
+  relationshipCheckIns?: Prisma.RelationshipCheckInUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutChatSessionsInput = {
@@ -1649,6 +1689,7 @@ export type UserUncheckedUpdateWithoutChatSessionsInput = {
   ticketReplies?: Prisma.TicketReplyUncheckedUpdateManyWithoutUserNestedInput
   achievements?: Prisma.UserAchievementUncheckedUpdateManyWithoutUserNestedInput
   marieMemories?: Prisma.MarieMemoryUncheckedUpdateManyWithoutUserNestedInput
+  relationshipCheckIns?: Prisma.RelationshipCheckInUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutSupportTicketsInput = {
@@ -1681,6 +1722,7 @@ export type UserCreateWithoutSupportTicketsInput = {
   ticketReplies?: Prisma.TicketReplyCreateNestedManyWithoutUserInput
   achievements?: Prisma.UserAchievementCreateNestedManyWithoutUserInput
   marieMemories?: Prisma.MarieMemoryCreateNestedManyWithoutUserInput
+  relationshipCheckIns?: Prisma.RelationshipCheckInCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutSupportTicketsInput = {
@@ -1713,6 +1755,7 @@ export type UserUncheckedCreateWithoutSupportTicketsInput = {
   ticketReplies?: Prisma.TicketReplyUncheckedCreateNestedManyWithoutUserInput
   achievements?: Prisma.UserAchievementUncheckedCreateNestedManyWithoutUserInput
   marieMemories?: Prisma.MarieMemoryUncheckedCreateNestedManyWithoutUserInput
+  relationshipCheckIns?: Prisma.RelationshipCheckInUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutSupportTicketsInput = {
@@ -1761,6 +1804,7 @@ export type UserUpdateWithoutSupportTicketsInput = {
   ticketReplies?: Prisma.TicketReplyUpdateManyWithoutUserNestedInput
   achievements?: Prisma.UserAchievementUpdateManyWithoutUserNestedInput
   marieMemories?: Prisma.MarieMemoryUpdateManyWithoutUserNestedInput
+  relationshipCheckIns?: Prisma.RelationshipCheckInUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutSupportTicketsInput = {
@@ -1793,6 +1837,7 @@ export type UserUncheckedUpdateWithoutSupportTicketsInput = {
   ticketReplies?: Prisma.TicketReplyUncheckedUpdateManyWithoutUserNestedInput
   achievements?: Prisma.UserAchievementUncheckedUpdateManyWithoutUserNestedInput
   marieMemories?: Prisma.MarieMemoryUncheckedUpdateManyWithoutUserNestedInput
+  relationshipCheckIns?: Prisma.RelationshipCheckInUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutTicketRepliesInput = {
@@ -1825,6 +1870,7 @@ export type UserCreateWithoutTicketRepliesInput = {
   supportTickets?: Prisma.SupportTicketCreateNestedManyWithoutUserInput
   achievements?: Prisma.UserAchievementCreateNestedManyWithoutUserInput
   marieMemories?: Prisma.MarieMemoryCreateNestedManyWithoutUserInput
+  relationshipCheckIns?: Prisma.RelationshipCheckInCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutTicketRepliesInput = {
@@ -1857,6 +1903,7 @@ export type UserUncheckedCreateWithoutTicketRepliesInput = {
   supportTickets?: Prisma.SupportTicketUncheckedCreateNestedManyWithoutUserInput
   achievements?: Prisma.UserAchievementUncheckedCreateNestedManyWithoutUserInput
   marieMemories?: Prisma.MarieMemoryUncheckedCreateNestedManyWithoutUserInput
+  relationshipCheckIns?: Prisma.RelationshipCheckInUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutTicketRepliesInput = {
@@ -1905,6 +1952,7 @@ export type UserUpdateWithoutTicketRepliesInput = {
   supportTickets?: Prisma.SupportTicketUpdateManyWithoutUserNestedInput
   achievements?: Prisma.UserAchievementUpdateManyWithoutUserNestedInput
   marieMemories?: Prisma.MarieMemoryUpdateManyWithoutUserNestedInput
+  relationshipCheckIns?: Prisma.RelationshipCheckInUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutTicketRepliesInput = {
@@ -1937,6 +1985,7 @@ export type UserUncheckedUpdateWithoutTicketRepliesInput = {
   supportTickets?: Prisma.SupportTicketUncheckedUpdateManyWithoutUserNestedInput
   achievements?: Prisma.UserAchievementUncheckedUpdateManyWithoutUserNestedInput
   marieMemories?: Prisma.MarieMemoryUncheckedUpdateManyWithoutUserNestedInput
+  relationshipCheckIns?: Prisma.RelationshipCheckInUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutMarieMemoriesInput = {
@@ -1969,6 +2018,7 @@ export type UserCreateWithoutMarieMemoriesInput = {
   supportTickets?: Prisma.SupportTicketCreateNestedManyWithoutUserInput
   ticketReplies?: Prisma.TicketReplyCreateNestedManyWithoutUserInput
   achievements?: Prisma.UserAchievementCreateNestedManyWithoutUserInput
+  relationshipCheckIns?: Prisma.RelationshipCheckInCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutMarieMemoriesInput = {
@@ -2001,6 +2051,7 @@ export type UserUncheckedCreateWithoutMarieMemoriesInput = {
   supportTickets?: Prisma.SupportTicketUncheckedCreateNestedManyWithoutUserInput
   ticketReplies?: Prisma.TicketReplyUncheckedCreateNestedManyWithoutUserInput
   achievements?: Prisma.UserAchievementUncheckedCreateNestedManyWithoutUserInput
+  relationshipCheckIns?: Prisma.RelationshipCheckInUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutMarieMemoriesInput = {
@@ -2049,6 +2100,7 @@ export type UserUpdateWithoutMarieMemoriesInput = {
   supportTickets?: Prisma.SupportTicketUpdateManyWithoutUserNestedInput
   ticketReplies?: Prisma.TicketReplyUpdateManyWithoutUserNestedInput
   achievements?: Prisma.UserAchievementUpdateManyWithoutUserNestedInput
+  relationshipCheckIns?: Prisma.RelationshipCheckInUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutMarieMemoriesInput = {
@@ -2081,6 +2133,7 @@ export type UserUncheckedUpdateWithoutMarieMemoriesInput = {
   supportTickets?: Prisma.SupportTicketUncheckedUpdateManyWithoutUserNestedInput
   ticketReplies?: Prisma.TicketReplyUncheckedUpdateManyWithoutUserNestedInput
   achievements?: Prisma.UserAchievementUncheckedUpdateManyWithoutUserNestedInput
+  relationshipCheckIns?: Prisma.RelationshipCheckInUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutAchievementsInput = {
@@ -2113,6 +2166,7 @@ export type UserCreateWithoutAchievementsInput = {
   supportTickets?: Prisma.SupportTicketCreateNestedManyWithoutUserInput
   ticketReplies?: Prisma.TicketReplyCreateNestedManyWithoutUserInput
   marieMemories?: Prisma.MarieMemoryCreateNestedManyWithoutUserInput
+  relationshipCheckIns?: Prisma.RelationshipCheckInCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutAchievementsInput = {
@@ -2145,6 +2199,7 @@ export type UserUncheckedCreateWithoutAchievementsInput = {
   supportTickets?: Prisma.SupportTicketUncheckedCreateNestedManyWithoutUserInput
   ticketReplies?: Prisma.TicketReplyUncheckedCreateNestedManyWithoutUserInput
   marieMemories?: Prisma.MarieMemoryUncheckedCreateNestedManyWithoutUserInput
+  relationshipCheckIns?: Prisma.RelationshipCheckInUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutAchievementsInput = {
@@ -2193,6 +2248,7 @@ export type UserUpdateWithoutAchievementsInput = {
   supportTickets?: Prisma.SupportTicketUpdateManyWithoutUserNestedInput
   ticketReplies?: Prisma.TicketReplyUpdateManyWithoutUserNestedInput
   marieMemories?: Prisma.MarieMemoryUpdateManyWithoutUserNestedInput
+  relationshipCheckIns?: Prisma.RelationshipCheckInUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutAchievementsInput = {
@@ -2225,6 +2281,155 @@ export type UserUncheckedUpdateWithoutAchievementsInput = {
   supportTickets?: Prisma.SupportTicketUncheckedUpdateManyWithoutUserNestedInput
   ticketReplies?: Prisma.TicketReplyUncheckedUpdateManyWithoutUserNestedInput
   marieMemories?: Prisma.MarieMemoryUncheckedUpdateManyWithoutUserNestedInput
+  relationshipCheckIns?: Prisma.RelationshipCheckInUncheckedUpdateManyWithoutUserNestedInput
+}
+
+export type UserCreateWithoutRelationshipCheckInsInput = {
+  id?: string
+  email: string
+  name?: string | null
+  image?: string | null
+  password?: string | null
+  emailVerified?: Date | string | null
+  plan?: $Enums.Plan
+  role?: $Enums.Role
+  stripeCustomerId?: string | null
+  streakCount?: number
+  lastCheckinDate?: Date | string | null
+  referralCode?: string | null
+  referredBy?: string | null
+  referralCount?: number
+  referralRewardClaimed?: boolean
+  emailDigest?: boolean
+  emailMarketing?: boolean
+  pushEnabled?: boolean
+  pushSubscription?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  accounts?: Prisma.AccountCreateNestedManyWithoutUserInput
+  sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
+  birthProfiles?: Prisma.BirthProfileCreateNestedManyWithoutUserInput
+  reports?: Prisma.CompatibilityReportCreateNestedManyWithoutUserInput
+  chatSessions?: Prisma.ChatSessionCreateNestedManyWithoutUserInput
+  supportTickets?: Prisma.SupportTicketCreateNestedManyWithoutUserInput
+  ticketReplies?: Prisma.TicketReplyCreateNestedManyWithoutUserInput
+  achievements?: Prisma.UserAchievementCreateNestedManyWithoutUserInput
+  marieMemories?: Prisma.MarieMemoryCreateNestedManyWithoutUserInput
+}
+
+export type UserUncheckedCreateWithoutRelationshipCheckInsInput = {
+  id?: string
+  email: string
+  name?: string | null
+  image?: string | null
+  password?: string | null
+  emailVerified?: Date | string | null
+  plan?: $Enums.Plan
+  role?: $Enums.Role
+  stripeCustomerId?: string | null
+  streakCount?: number
+  lastCheckinDate?: Date | string | null
+  referralCode?: string | null
+  referredBy?: string | null
+  referralCount?: number
+  referralRewardClaimed?: boolean
+  emailDigest?: boolean
+  emailMarketing?: boolean
+  pushEnabled?: boolean
+  pushSubscription?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput
+  sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
+  birthProfiles?: Prisma.BirthProfileUncheckedCreateNestedManyWithoutUserInput
+  reports?: Prisma.CompatibilityReportUncheckedCreateNestedManyWithoutUserInput
+  chatSessions?: Prisma.ChatSessionUncheckedCreateNestedManyWithoutUserInput
+  supportTickets?: Prisma.SupportTicketUncheckedCreateNestedManyWithoutUserInput
+  ticketReplies?: Prisma.TicketReplyUncheckedCreateNestedManyWithoutUserInput
+  achievements?: Prisma.UserAchievementUncheckedCreateNestedManyWithoutUserInput
+  marieMemories?: Prisma.MarieMemoryUncheckedCreateNestedManyWithoutUserInput
+}
+
+export type UserCreateOrConnectWithoutRelationshipCheckInsInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutRelationshipCheckInsInput, Prisma.UserUncheckedCreateWithoutRelationshipCheckInsInput>
+}
+
+export type UserUpsertWithoutRelationshipCheckInsInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutRelationshipCheckInsInput, Prisma.UserUncheckedUpdateWithoutRelationshipCheckInsInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutRelationshipCheckInsInput, Prisma.UserUncheckedCreateWithoutRelationshipCheckInsInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutRelationshipCheckInsInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutRelationshipCheckInsInput, Prisma.UserUncheckedUpdateWithoutRelationshipCheckInsInput>
+}
+
+export type UserUpdateWithoutRelationshipCheckInsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  password?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  emailVerified?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  plan?: Prisma.EnumPlanFieldUpdateOperationsInput | $Enums.Plan
+  role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  stripeCustomerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  streakCount?: Prisma.IntFieldUpdateOperationsInput | number
+  lastCheckinDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  referralCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  referredBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  referralCount?: Prisma.IntFieldUpdateOperationsInput | number
+  referralRewardClaimed?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  emailDigest?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  emailMarketing?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  pushEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  pushSubscription?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput
+  sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
+  birthProfiles?: Prisma.BirthProfileUpdateManyWithoutUserNestedInput
+  reports?: Prisma.CompatibilityReportUpdateManyWithoutUserNestedInput
+  chatSessions?: Prisma.ChatSessionUpdateManyWithoutUserNestedInput
+  supportTickets?: Prisma.SupportTicketUpdateManyWithoutUserNestedInput
+  ticketReplies?: Prisma.TicketReplyUpdateManyWithoutUserNestedInput
+  achievements?: Prisma.UserAchievementUpdateManyWithoutUserNestedInput
+  marieMemories?: Prisma.MarieMemoryUpdateManyWithoutUserNestedInput
+}
+
+export type UserUncheckedUpdateWithoutRelationshipCheckInsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  password?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  emailVerified?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  plan?: Prisma.EnumPlanFieldUpdateOperationsInput | $Enums.Plan
+  role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  stripeCustomerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  streakCount?: Prisma.IntFieldUpdateOperationsInput | number
+  lastCheckinDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  referralCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  referredBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  referralCount?: Prisma.IntFieldUpdateOperationsInput | number
+  referralRewardClaimed?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  emailDigest?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  emailMarketing?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  pushEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  pushSubscription?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput
+  sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
+  birthProfiles?: Prisma.BirthProfileUncheckedUpdateManyWithoutUserNestedInput
+  reports?: Prisma.CompatibilityReportUncheckedUpdateManyWithoutUserNestedInput
+  chatSessions?: Prisma.ChatSessionUncheckedUpdateManyWithoutUserNestedInput
+  supportTickets?: Prisma.SupportTicketUncheckedUpdateManyWithoutUserNestedInput
+  ticketReplies?: Prisma.TicketReplyUncheckedUpdateManyWithoutUserNestedInput
+  achievements?: Prisma.UserAchievementUncheckedUpdateManyWithoutUserNestedInput
+  marieMemories?: Prisma.MarieMemoryUncheckedUpdateManyWithoutUserNestedInput
 }
 
 
@@ -2242,6 +2447,7 @@ export type UserCountOutputType = {
   ticketReplies: number
   achievements: number
   marieMemories: number
+  relationshipCheckIns: number
 }
 
 export type UserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -2254,6 +2460,7 @@ export type UserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.I
   ticketReplies?: boolean | UserCountOutputTypeCountTicketRepliesArgs
   achievements?: boolean | UserCountOutputTypeCountAchievementsArgs
   marieMemories?: boolean | UserCountOutputTypeCountMarieMemoriesArgs
+  relationshipCheckIns?: boolean | UserCountOutputTypeCountRelationshipCheckInsArgs
 }
 
 /**
@@ -2329,6 +2536,13 @@ export type UserCountOutputTypeCountMarieMemoriesArgs<ExtArgs extends runtime.Ty
   where?: Prisma.MarieMemoryWhereInput
 }
 
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountRelationshipCheckInsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.RelationshipCheckInWhereInput
+}
+
 
 export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -2361,6 +2575,7 @@ export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   ticketReplies?: boolean | Prisma.User$ticketRepliesArgs<ExtArgs>
   achievements?: boolean | Prisma.User$achievementsArgs<ExtArgs>
   marieMemories?: boolean | Prisma.User$marieMemoriesArgs<ExtArgs>
+  relationshipCheckIns?: boolean | Prisma.User$relationshipCheckInsArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["user"]>
 
@@ -2447,6 +2662,7 @@ export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   ticketReplies?: boolean | Prisma.User$ticketRepliesArgs<ExtArgs>
   achievements?: boolean | Prisma.User$achievementsArgs<ExtArgs>
   marieMemories?: boolean | Prisma.User$marieMemoriesArgs<ExtArgs>
+  relationshipCheckIns?: boolean | Prisma.User$relationshipCheckInsArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type UserIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
@@ -2464,6 +2680,7 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     ticketReplies: Prisma.$TicketReplyPayload<ExtArgs>[]
     achievements: Prisma.$UserAchievementPayload<ExtArgs>[]
     marieMemories: Prisma.$MarieMemoryPayload<ExtArgs>[]
+    relationshipCheckIns: Prisma.$RelationshipCheckInPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -2890,6 +3107,7 @@ export interface Prisma__UserClient<T, Null = never, ExtArgs extends runtime.Typ
   ticketReplies<T extends Prisma.User$ticketRepliesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$ticketRepliesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$TicketReplyPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   achievements<T extends Prisma.User$achievementsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$achievementsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$UserAchievementPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   marieMemories<T extends Prisma.User$marieMemoriesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$marieMemoriesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$MarieMemoryPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  relationshipCheckIns<T extends Prisma.User$relationshipCheckInsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$relationshipCheckInsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$RelationshipCheckInPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -3541,6 +3759,30 @@ export type User$marieMemoriesArgs<ExtArgs extends runtime.Types.Extensions.Inte
   take?: number
   skip?: number
   distinct?: Prisma.MarieMemoryScalarFieldEnum | Prisma.MarieMemoryScalarFieldEnum[]
+}
+
+/**
+ * User.relationshipCheckIns
+ */
+export type User$relationshipCheckInsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the RelationshipCheckIn
+   */
+  select?: Prisma.RelationshipCheckInSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the RelationshipCheckIn
+   */
+  omit?: Prisma.RelationshipCheckInOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.RelationshipCheckInInclude<ExtArgs> | null
+  where?: Prisma.RelationshipCheckInWhereInput
+  orderBy?: Prisma.RelationshipCheckInOrderByWithRelationInput | Prisma.RelationshipCheckInOrderByWithRelationInput[]
+  cursor?: Prisma.RelationshipCheckInWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.RelationshipCheckInScalarFieldEnum | Prisma.RelationshipCheckInScalarFieldEnum[]
 }
 
 /**

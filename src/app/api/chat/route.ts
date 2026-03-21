@@ -370,7 +370,25 @@ export async function POST(request: Request) {
         : memoryBlock;
     }
 
-    // --- 5d. Fetch current transits for first message in a session ---
+    // --- 5d. Check if user has been away (7+ days since last chat) ---
+    if (conversationHistory.length <= 1) {
+      const lastSession = await prisma.chatSession.findFirst({
+        where: { userId: session.user.id, deletedAt: null },
+        orderBy: { updatedAt: "desc" },
+        select: { updatedAt: true },
+      });
+      if (lastSession) {
+        const daysSinceLastChat = Math.floor((Date.now() - lastSession.updatedAt.getTime()) / (1000 * 60 * 60 * 24));
+        if (daysSinceLastChat >= 7) {
+          const returnBlock = `\n\nUSER RETURN CONTEXT: This user hasn't chatted in ${daysSinceLastChat} days. Proactively check in with them — ask how things have been, reference their transits and any memories you have. Be warm and show you noticed they've been away.`;
+          enhancedChartContext = enhancedChartContext
+            ? enhancedChartContext + returnBlock
+            : returnBlock;
+        }
+      }
+    }
+
+    // --- 5e. Fetch current transits for first message in a session ---
     // Gives Marie context to proactively mention relevant cosmic events
     if (conversationHistory.length <= 1) {
       try {

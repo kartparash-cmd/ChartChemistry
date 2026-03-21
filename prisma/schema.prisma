@@ -39,6 +39,7 @@ model User {
   ticketReplies  TicketReply[]
   achievements   UserAchievement[]
   marieMemories  MarieMemory[]
+  relationshipCheckIns RelationshipCheckIn[]
 
   @@index([stripeCustomerId])
 }
@@ -234,4 +235,19 @@ model UserAchievement {
 
   @@unique([userId, achievementType])
   @@index([userId])
+}
+
+model RelationshipCheckIn {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  connectionScore Int      // 1-5
+  conflictNote    String?  @db.Text
+  positiveNote    String?  @db.Text
+  growthGoal      String?  @db.Text
+  overallMood     String   // e.g. "hopeful", "stressed", "connected", "distant"
+  createdAt       DateTime @default(now())
+
+  @@index([userId])
+  @@index([userId, createdAt])
 }

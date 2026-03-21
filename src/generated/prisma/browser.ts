@@ -77,3 +77,8 @@ export type MarieMemory = Prisma.MarieMemoryModel
  * 
  */
 export type UserAchievement = Prisma.UserAchievementModel
+/**
+ * Model RelationshipCheckIn
+ * 
+ */
+export type RelationshipCheckIn = Prisma.RelationshipCheckInModel

@@ -346,6 +346,108 @@ export default function Home() {
         </div>
       </section>
 
+      {/* ========================= MEET MARIE ========================= */}
+      <section className="relative px-4 py-24">
+        <div className="mx-auto max-w-5xl">
+          <motion.div
+            className="text-center"
+            initial={shouldReduceMotion ? "visible" : "hidden"}
+            whileInView="visible"
+            viewport={{ once: true, margin: "-100px" }}
+            variants={fadeInUp}
+            transition={{ duration: 0.5 }}
+          >
+            <h2 className="text-3xl font-bold sm:text-4xl">
+              Meet <span className="cosmic-text">Marie</span>
+            </h2>
+            <p className="mt-3 text-muted-foreground">
+              Your personal AI astrologer who remembers you
+            </p>
+          </motion.div>
+
+          <motion.div
+            className="mt-14 glass-card rounded-2xl p-8 sm:p-10"
+            initial={shouldReduceMotion ? "visible" : "hidden"}
+            whileInView="visible"
+            viewport={{ once: true, margin: "-100px" }}
+            variants={fadeInUp}
+            transition={{ duration: 0.5, delay: 0.2 }}
+          >
+            <div className="grid gap-8 md:grid-cols-2 items-center">
+              <div className="space-y-6">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-cosmic-purple/20">
+                    <Sparkles className="h-6 w-6 text-cosmic-purple-light" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold">Marie</h3>
+                    <p className="text-sm text-muted-foreground">Personal Astrologer</p>
+                  </div>
+                </div>
+                <p className="text-muted-foreground leading-relaxed">
+                  Marie isn&apos;t a generic chatbot. She remembers your name, your partner, your concerns, and your chart.
+                  She adapts to your mood &mdash; supportive when you&apos;re worried, playful when you&apos;re curious.
+                  The longer you talk, the better she knows you.
+                </p>
+                <ul className="space-y-3">
+                  <li className="flex items-start gap-2 text-sm">
+                    <Check className="mt-0.5 h-4 w-4 shrink-0 text-cosmic-purple-light" />
+                    <span>Remembers your relationship journey across sessions</span>
+                  </li>
+                  <li className="flex items-start gap-2 text-sm">
+                    <Check className="mt-0.5 h-4 w-4 shrink-0 text-cosmic-purple-light" />
+                    <span>Proactive check-ins when current transits affect your chart</span>
+                  </li>
+                  <li className="flex items-start gap-2 text-sm">
+                    <Check className="mt-0.5 h-4 w-4 shrink-0 text-cosmic-purple-light" />
+                    <span>Explains any part of your compatibility report in plain language</span>
+                  </li>
+                  <li className="flex items-start gap-2 text-sm">
+                    <Check className="mt-0.5 h-4 w-4 shrink-0 text-cosmic-purple-light" />
+                    <span>Teaches you astrology step by step, personalized to your chart</span>
+                  </li>
+                </ul>
+              </div>
+              <TiltCard className="glass-card rounded-xl p-5 space-y-4 border border-white/10">
+                <div className="flex items-start gap-3">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-cosmic-purple/20">
+                    <Sparkles className="h-4 w-4 text-cosmic-purple-light" />
+                  </div>
+                  <div className="rounded-xl rounded-tl-none bg-white/[0.03] p-3">
+                    <p className="text-sm text-muted-foreground italic">
+                      &ldquo;Hey Kay! Mercury is entering your 7th house this week &mdash; great energy for heart-to-heart conversations.
+                      Last time we talked about your Venus square. Have you noticed any shifts with your partner?&rdquo;
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3 justify-end">
+                  <div className="rounded-xl rounded-tr-none bg-cosmic-purple/10 p-3">
+                    <p className="text-sm">
+                      Actually yes! We had a really good talk this weekend about our future plans.
+                    </p>
+                  </div>
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/10 text-xs font-semibold">
+                    KP
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-cosmic-purple/20">
+                    <Sparkles className="h-4 w-4 text-cosmic-purple-light" />
+                  </div>
+                  <div className="rounded-xl rounded-tl-none bg-white/[0.03] p-3">
+                    <p className="text-sm text-muted-foreground italic">
+                      &ldquo;That&apos;s wonderful! That aligns perfectly with the Venus-Jupiter trine in your synastry &mdash;
+                      when you both lean into open communication, your natural harmony really shines...&rdquo;
+                    </p>
+                  </div>
+                </div>
+                <p className="text-center text-xs text-muted-foreground/50 pt-2">Example conversation</p>
+              </TiltCard>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
       {/* ========================= SOCIAL PROOF ========================= */}
       <section className="relative px-4 py-24">
         <div className="mx-auto max-w-5xl">

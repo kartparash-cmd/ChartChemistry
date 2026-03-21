@@ -395,7 +395,8 @@ export const ModelName = {
   SupportTicket: 'SupportTicket',
   TicketReply: 'TicketReply',
   MarieMemory: 'MarieMemory',
-  UserAchievement: 'UserAchievement'
+  UserAchievement: 'UserAchievement',
+  RelationshipCheckIn: 'RelationshipCheckIn'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -411,7 +412,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "user" | "account" | "session" | "verificationToken" | "passwordResetToken" | "birthProfile" | "compatibilityReport" | "chatSession" | "supportTicket" | "ticketReply" | "marieMemory" | "userAchievement"
+    modelProps: "user" | "account" | "session" | "verificationToken" | "passwordResetToken" | "birthProfile" | "compatibilityReport" | "chatSession" | "supportTicket" | "ticketReply" | "marieMemory" | "userAchievement" | "relationshipCheckIn"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -1303,6 +1304,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    RelationshipCheckIn: {
+      payload: Prisma.$RelationshipCheckInPayload<ExtArgs>
+      fields: Prisma.RelationshipCheckInFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.RelationshipCheckInFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RelationshipCheckInPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.RelationshipCheckInFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RelationshipCheckInPayload>
+        }
+        findFirst: {
+          args: Prisma.RelationshipCheckInFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RelationshipCheckInPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.RelationshipCheckInFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RelationshipCheckInPayload>
+        }
+        findMany: {
+          args: Prisma.RelationshipCheckInFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RelationshipCheckInPayload>[]
+        }
+        create: {
+          args: Prisma.RelationshipCheckInCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RelationshipCheckInPayload>
+        }
+        createMany: {
+          args: Prisma.RelationshipCheckInCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.RelationshipCheckInCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RelationshipCheckInPayload>[]
+        }
+        delete: {
+          args: Prisma.RelationshipCheckInDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RelationshipCheckInPayload>
+        }
+        update: {
+          args: Prisma.RelationshipCheckInUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RelationshipCheckInPayload>
+        }
+        deleteMany: {
+          args: Prisma.RelationshipCheckInDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.RelationshipCheckInUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.RelationshipCheckInUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RelationshipCheckInPayload>[]
+        }
+        upsert: {
+          args: Prisma.RelationshipCheckInUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RelationshipCheckInPayload>
+        }
+        aggregate: {
+          args: Prisma.RelationshipCheckInAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateRelationshipCheckIn>
+        }
+        groupBy: {
+          args: Prisma.RelationshipCheckInGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.RelationshipCheckInGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.RelationshipCheckInCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.RelationshipCheckInCountAggregateOutputType> | number
+        }
+      }
+    }
   }
 } & {
   other: {
@@ -1525,6 +1600,20 @@ export const UserAchievementScalarFieldEnum = {
 } as const
 
 export type UserAchievementScalarFieldEnum = (typeof UserAchievementScalarFieldEnum)[keyof typeof UserAchievementScalarFieldEnum]
+
+
+export const RelationshipCheckInScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  connectionScore: 'connectionScore',
+  conflictNote: 'conflictNote',
+  positiveNote: 'positiveNote',
+  growthGoal: 'growthGoal',
+  overallMood: 'overallMood',
+  createdAt: 'createdAt'
+} as const
+
+export type RelationshipCheckInScalarFieldEnum = (typeof RelationshipCheckInScalarFieldEnum)[keyof typeof RelationshipCheckInScalarFieldEnum]
 
 
 export const SortOrder = {
@@ -1820,6 +1909,7 @@ export type GlobalOmitConfig = {
   ticketReply?: Prisma.TicketReplyOmit
   marieMemory?: Prisma.MarieMemoryOmit
   userAchievement?: Prisma.UserAchievementOmit
+  relationshipCheckIn?: Prisma.RelationshipCheckInOmit
 }
 
 /* Types for Logging */

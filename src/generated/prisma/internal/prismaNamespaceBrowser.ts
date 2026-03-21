@@ -62,7 +62,8 @@ export const ModelName = {
   SupportTicket: 'SupportTicket',
   TicketReply: 'TicketReply',
   MarieMemory: 'MarieMemory',
-  UserAchievement: 'UserAchievement'
+  UserAchievement: 'UserAchievement',
+  RelationshipCheckIn: 'RelationshipCheckIn'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -264,6 +265,20 @@ export const UserAchievementScalarFieldEnum = {
 } as const
 
 export type UserAchievementScalarFieldEnum = (typeof UserAchievementScalarFieldEnum)[keyof typeof UserAchievementScalarFieldEnum]
+
+
+export const RelationshipCheckInScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  connectionScore: 'connectionScore',
+  conflictNote: 'conflictNote',
+  positiveNote: 'positiveNote',
+  growthGoal: 'growthGoal',
+  overallMood: 'overallMood',
+  createdAt: 'createdAt'
+} as const
+
+export type RelationshipCheckInScalarFieldEnum = (typeof RelationshipCheckInScalarFieldEnum)[keyof typeof RelationshipCheckInScalarFieldEnum]
 
 
 export const SortOrder = {

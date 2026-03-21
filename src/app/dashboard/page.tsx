@@ -1215,7 +1215,7 @@ function DashboardContent() {
           </div>
 
           {/* Quick Actions Row — horizontal below tabs */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
             {/* Achievements */}
             {achievements.length > 0 && (
               <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4 backdrop-blur-sm">
@@ -1303,26 +1303,18 @@ function DashboardContent() {
               </div>
             )}
 
-            {/* Invite Friends Referral Card */}
+            {/* Invite Friends — compact, fits in the grid */}
             {referralData && (
-              <motion.div
-                whileHover={shouldAnimate ? { scale: 1.02 } : {}}
-                className="rounded-xl border border-emerald-500/20 bg-gradient-to-br from-emerald-500/[0.06] to-transparent p-4"
-              >
-                <div className="flex items-center gap-2 mb-3">
+              <div className="rounded-xl border border-emerald-500/20 bg-gradient-to-br from-emerald-500/[0.06] to-transparent p-4">
+                <div className="flex items-center gap-2 mb-2">
                   <Gift className="h-4 w-4 text-emerald-400" />
                   <h4 className="font-heading text-sm font-semibold">Invite Friends</h4>
                 </div>
 
                 {referralData.rewardClaimed ? (
-                  <div className="text-center py-2">
-                    <p className="text-xs text-emerald-400 font-medium">
-                      Reward claimed! Enjoy your free Premium month.
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {referralData.referralCount} friend{referralData.referralCount !== 1 ? "s" : ""} invited
-                    </p>
-                  </div>
+                  <p className="text-xs text-emerald-400 font-medium">
+                    Reward claimed! {referralData.referralCount} friend{referralData.referralCount !== 1 ? "s" : ""} invited
+                  </p>
                 ) : referralData.eligible ? (
                   <div className="text-center py-2">
                     <p className="text-xs text-emerald-400 font-medium mb-2">
@@ -1379,7 +1371,7 @@ function DashboardContent() {
                     </Button>
                   </div>
                 </div>
-              </motion.div>
+              </div>
             )}
 
             {data?.stats.plan === "FREE" && (

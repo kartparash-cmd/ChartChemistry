@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/button";
 import { StarField } from "@/components/star-field";
 import { TiltCard } from "@/components/tilt-card";
 import { cn } from "@/lib/utils";
+import { trackEvent } from "@/lib/analytics";
 
 /* -------------------------------------------------------------------------- */
 /*  Animation variants                                                        */
@@ -230,7 +231,7 @@ export default function Home() {
               size="lg"
               className="mt-4 h-14 rounded-full bg-gradient-to-r from-cosmic-purple to-gold px-8 text-base font-semibold text-white shadow-lg transition-all hover:shadow-cosmic-purple/40 hover:shadow-xl hover:brightness-110 focus-visible:ring-2 focus-visible:ring-cosmic-purple-light focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             >
-              <Link href="/compatibility">
+              <Link href="/compatibility" onClick={() => trackEvent("cta_click", { location: "hero" })}>
                 Check Your Compatibility &mdash; Free
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Link>

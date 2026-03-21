@@ -407,6 +407,7 @@ export default function CompatibilityPage() {
                   size="lg"
                   disabled={!bothValid}
                   onClick={handleSubmit}
+                  aria-describedby={!bothValid ? "compat-disabled-hint" : undefined}
                   className={cn(
                     "h-14 rounded-full px-10 text-base font-semibold shadow-lg transition-all",
                     bothValid
@@ -418,7 +419,7 @@ export default function CompatibilityPage() {
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
                 {!personAReady || !personBReady ? (
-                  <p className="mt-2 text-center text-xs text-muted-foreground">
+                  <p id="compat-disabled-hint" className="mt-2 text-center text-xs text-muted-foreground">
                     {!personAReady && !personBReady
                       ? "Fill in both forms above to check compatibility."
                       : !personAReady
@@ -509,6 +510,7 @@ export default function CompatibilityPage() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={fade}
+              aria-live="polite"
             >
               <CompatibilityResults
                 result={result}

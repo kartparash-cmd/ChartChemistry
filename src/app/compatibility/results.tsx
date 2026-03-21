@@ -30,6 +30,7 @@ import { CompatibilityRadarChart } from "@/components/radar-chart";
 import { ScoreBar } from "@/components/score-bar";
 import { Confetti } from "@/components/confetti";
 import { cn } from "@/lib/utils";
+import { trackEvent } from "@/lib/analytics";
 import { getPercentile } from "@/lib/percentile";
 import type { BirthData } from "@/components/birth-data-form";
 
@@ -287,6 +288,7 @@ export function CompatibilityResults({
   }, [result]);
 
   const handleShare = async () => {
+    trackEvent("share_click", { method: "native" });
     const text = getShareText();
     const url = getShareUrl();
 
@@ -316,12 +318,14 @@ export function CompatibilityResults({
   };
 
   const handleShareWhatsApp = () => {
+    trackEvent("share_click", { method: "whatsapp" });
     const text = getShareText();
     const url = getShareUrl();
     window.open(`https://wa.me/?text=${encodeURIComponent(`${text}\n${url}`)}`, "_blank");
   };
 
   const handleShareTwitter = () => {
+    trackEvent("share_click", { method: "twitter" });
     const text = getShareText();
     const url = getShareUrl();
     window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`, "_blank");

@@ -225,7 +225,7 @@ export function ChatSidebar({
       </div>
 
       {/* Session list */}
-      <div className="flex-1 overflow-y-auto px-2 pb-2 scrollbar-thin scrollbar-thumb-white/10">
+      <div className="flex-1 overflow-y-auto px-2 pb-2 scrollbar-thin scrollbar-thumb-white/10" role="list">
         {isLoading ? (
           <div className="flex items-center justify-center py-8">
             <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
@@ -255,12 +255,14 @@ export function ChatSidebar({
                 return (
                   <div
                     key={session.id}
+                    role="listitem"
                     className={cn(
                       "group relative flex cursor-pointer items-start gap-2 rounded-lg px-2 py-2 transition-colors",
                       isActive
                         ? "border-l-2 border-cosmic-purple bg-cosmic-purple/10"
                         : "border-l-2 border-transparent hover:bg-white/5"
                     )}
+                    aria-selected={session.id === activeSessionId}
                     onClick={() => {
                       if (!isRenaming) onSelectSession(session.id);
                     }}
@@ -320,6 +322,7 @@ export function ChatSidebar({
                             e.stopPropagation();
                             setMenuOpenId(isMenuOpen ? null : session.id);
                           }}
+                          aria-label={`Actions for ${session.title || "conversation"}`}
                           className={cn(
                             "flex h-6 w-6 items-center justify-center rounded-md transition-colors",
                             isMenuOpen

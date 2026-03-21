@@ -75,6 +75,9 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark" suppressHydrationWarning>
       <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href="https://analytics.ownerly.xyz" />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
@@ -115,7 +118,7 @@ export default function RootLayout({
           Skip to main content
         </a>
         <BreathingBackground />
-        <StarField starCount={60} cosmic className="fixed inset-0 z-0 opacity-30 pointer-events-none" />
+        <StarField starCount={60} cosmic className="fixed inset-0 z-0 opacity-40 pointer-events-none" />
         <ConstellationLines />
         <CursorGlow />
         <ThemeProvider>

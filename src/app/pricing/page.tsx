@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
@@ -19,6 +19,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { trackEvent } from "@/lib/analytics";
 
 type BillingPeriod = "monthly" | "annual";
 
@@ -147,7 +148,13 @@ function PricingContent() {
   const [toastVisible, setToastVisible] = useState(false);
   const [loadingTier, setLoadingTier] = useState<string | null>(null);
 
+  useEffect(() => {
+    trackEvent("pricing_view");
+  }, []);
+
   const handleCta = async (tierName: string) => {
+    trackEvent("checkout_click", { plan: tierName === "Free" ? "free" : billing });
+
     if (tierName === "Free") {
       if (session) {
         router.push("/dashboard");

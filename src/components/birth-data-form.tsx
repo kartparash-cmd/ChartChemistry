@@ -418,7 +418,7 @@ export function BirthDataForm({
           onChange={(e) => setName(e.target.value)}
           autoComplete="one-time-code"
           data-form-type="other"
-          className="h-11 bg-background/50"
+          className="h-11 bg-background/50 text-base"
         />
       </div>
 
@@ -437,7 +437,7 @@ export function BirthDataForm({
           max={new Date().toISOString().split("T")[0]}
           autoComplete="one-time-code"
           data-form-type="other"
-          className="h-11 bg-background/50 [color-scheme:dark]"
+          className="h-11 bg-background/50 text-base [color-scheme:dark]"
         />
       </div>
 
@@ -499,7 +499,7 @@ export function BirthDataForm({
             onChange={(e) => setBirthTime(e.target.value)}
             autoComplete="one-time-code"
             data-form-type="other"
-            className="h-11 bg-background/50 [color-scheme:dark]"
+            className="h-11 bg-background/50 text-base [color-scheme:dark]"
           />
         )}
       </div>
@@ -535,7 +535,7 @@ export function BirthDataForm({
             autoComplete="one-time-code"
             data-form-type="other"
             className={cn(
-              "h-11 bg-background/50 pr-8",
+              "h-11 bg-background/50 text-base pr-8",
               selectedCoords && "border-green-500/50"
             )}
           />
@@ -552,7 +552,7 @@ export function BirthDataForm({
               id={`city-listbox-${label}`}
               role="listbox"
               aria-live="polite"
-              className="absolute z-50 mt-1 w-full rounded-lg border border-border bg-popover shadow-lg max-h-48 overflow-y-auto"
+              className="absolute z-50 mt-1 w-full rounded-lg border border-border bg-popover shadow-lg max-h-[200px] overflow-y-auto"
             >
               {citySuggestions.map((result, i) => (
                 <button

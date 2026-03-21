@@ -433,7 +433,7 @@ export function Navigation() {
                   href={item.href}
                   aria-current={isActive ? "page" : undefined}
                   className={cn(
-                    "flex flex-1 flex-col items-center justify-center gap-1 transition-colors",
+                    "relative flex flex-1 flex-col items-center justify-center gap-1 transition-colors",
                     isActive
                       ? "text-cosmic-purple dark:text-cosmic-purple-light"
                       : "text-muted-foreground"
@@ -446,6 +446,7 @@ export function Navigation() {
                     )}
                   </span>
                   <span className="text-xs leading-none">{item.label}</span>
+                  {isActive && <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 h-1 w-1 rounded-full bg-cosmic-purple-light" />}
                 </Link>
               );
             })}

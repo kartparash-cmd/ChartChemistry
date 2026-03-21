@@ -2,7 +2,7 @@
 
 import { ErrorFallback } from "@/components/error-fallback";
 
-export default function GlobalError({
+export default function CompatibilityError({
   error,
   reset,
 }: {

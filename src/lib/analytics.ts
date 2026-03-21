@@ -9,17 +9,25 @@ type EventName =
   | "signup_complete"
   | "signin"
   | "profile_create"
+  | "profile_complete"
   | "compatibility_check"
   | "report_view"
+  | "report_generate"
   | "report_share"
   | "upgrade_click"
   | "upgrade_complete"
+  | "checkout_click"
+  | "checkout_complete"
   | "chat_start"
+  | "chat_open"
   | "chat_message"
   | "quick_match"
-  | "onboarding_complete"
-  | "install_prompt_shown"
-  | "install_accepted";
+  | "share_click"
+  | "share_complete"
+  | "pricing_view"
+  | "cta_click"
+  | "error_shown"
+  | "onboarding_complete";
 
 interface EventData {
   [key: string]: string | number | boolean;

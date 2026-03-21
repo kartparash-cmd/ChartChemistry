@@ -475,6 +475,12 @@ function ChatPageContent() {
   // -------------------------------------------------------------------
 
   useEffect(() => {
+    if (session?.user && isPremium) {
+      trackEvent("chat_open");
+    }
+  }, [session, isPremium]);
+
+  useEffect(() => {
     if (status === "unauthenticated") {
       router.push("/auth/signin");
     }
@@ -688,10 +694,24 @@ function ChatPageContent() {
         fetchSessions();
       } else {
         setLastFailedMessage(content.trim());
+        let errorText: string;
+        switch (res.status) {
+          case 429:
+            errorText = "You've reached the hourly message limit. Try again in a few minutes.";
+            break;
+          case 403:
+            errorText = "This feature requires a Premium plan.";
+            break;
+          case 503:
+            errorText = "Marie is taking a cosmic break. Please try again in a moment.";
+            break;
+          default:
+            errorText = "Something went wrong. Please try again.";
+        }
         const errorMessage: Message = {
           id: `error-${Date.now()}`,
           role: "assistant",
-          content: "Sorry, I couldn't process your request. Please try again.",
+          content: errorText,
           timestamp: new Date(),
         };
         setMessages((prev) => [...prev, errorMessage]);
@@ -701,7 +721,7 @@ function ChatPageContent() {
       const aiMessage: Message = {
         id: `ai-${Date.now()}`,
         role: "assistant",
-        content: "Connection lost. Your message could not be delivered.",
+        content: "Check your internet connection and try again.",
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, aiMessage]);
@@ -902,7 +922,7 @@ function ChatPageContent() {
         <h1 className="sr-only">Marie Chat</h1>
 
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto" aria-live="polite" aria-relevant="additions">
+        <div className="flex-1 overflow-y-auto" role="log" aria-live="polite" aria-relevant="additions">
           {/* Session restore loading */}
           {isRestoringSession && (
             <div className="flex justify-center py-8">

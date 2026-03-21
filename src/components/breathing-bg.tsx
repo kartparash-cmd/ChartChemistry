@@ -20,14 +20,14 @@ export function BreathingBackground() {
     if (prefersReducedMotion) return;
 
     const colors = [
-      [222, 47, 7],   // navy (base)
-      [265, 35, 10],  // purple tint
-      [240, 40, 9],   // indigo
-      [200, 45, 8],   // deep teal
+      [222, 50, 5],   // navy (base)
+      [265, 30, 14],  // purple tint
+      [240, 40, 10],  // indigo
+      [200, 50, 8],   // deep teal
     ];
 
     let start: number | null = null;
-    const cycleDuration = 25000;
+    const cycleDuration = 15000;
     let raf: number;
 
     const animate = (time: number) => {
@@ -48,6 +48,8 @@ export function BreathingBackground() {
 
       if (ref.current) {
         ref.current.style.backgroundColor = `hsl(${h}, ${s}%, ${l}%)`;
+        const pulseOpacity = 0.03 + 0.02 * Math.sin(elapsed / cycleDuration * Math.PI * 2);
+        ref.current.style.backgroundImage = `radial-gradient(ellipse at 50% 50%, hsla(${h}, ${s}%, ${l + 8}%, ${pulseOpacity}), transparent 70%)`;
       }
 
       raf = requestAnimationFrame(animate);

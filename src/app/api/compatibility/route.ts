@@ -291,13 +291,20 @@ export async function POST(request: Request) {
           error: "Calculation service unavailable",
           message:
             "Our astrology calculation service is temporarily unavailable. Please try again in a moment.",
+          retryable: true,
+          code: "ASTRO_SERVICE_DOWN",
         },
         { status: 503 }
       );
     }
 
     return NextResponse.json(
-      { error: "Internal server error" },
+      {
+        error: "Internal server error",
+        message: "Something went wrong on our end. Please try again.",
+        retryable: true,
+        code: "INTERNAL_ERROR",
+      },
       { status: 500 }
     );
   }

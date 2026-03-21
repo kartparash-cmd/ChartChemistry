@@ -51,7 +51,7 @@ export async function POST(request: Request) {
 
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
   if (!webhookSecret) {
-    console.error("[Stripe Webhook] STRIPE_WEBHOOK_SECRET is not set");
+    console.error(JSON.stringify({ event: "webhook_error", error: "STRIPE_WEBHOOK_SECRET is not set", timestamp: new Date().toISOString() }));
     return NextResponse.json(
       { error: "Webhook secret not configured" },
       { status: 500 }
@@ -62,7 +62,8 @@ export async function POST(request: Request) {
   try {
     event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
   } catch (err) {
-    console.error("[Stripe Webhook] Signature verification failed:", err);
+    const errMsg = err instanceof Error ? err.message : String(err);
+    console.error(JSON.stringify({ event: "webhook_error", error: "Signature verification failed", detail: errMsg, timestamp: new Date().toISOString() }));
     return NextResponse.json(
       { error: "Webhook signature verification failed" },
       { status: 400 }
@@ -82,7 +83,7 @@ export async function POST(request: Request) {
         const plan = session.metadata?.plan;
 
         if (!userId || !plan) {
-          console.error("[Stripe Webhook] Missing metadata in checkout session:", session.id);
+          console.error(JSON.stringify({ event: "webhook_error", type: event.type, error: "Missing metadata in checkout session", sessionId: session.id, timestamp: new Date().toISOString() }));
           break;
         }
 
@@ -95,7 +96,7 @@ export async function POST(request: Request) {
           },
         });
 
-        console.log(`[Stripe Webhook] User ${userId} upgraded to ${plan}`);
+        console.log(JSON.stringify({ event: "webhook_processed", type: event.type, userId, plan, timestamp: new Date().toISOString() }));
 
         // Send receipt email
         const updatedUser = await prisma.user.findUnique({
@@ -118,7 +119,7 @@ export async function POST(request: Request) {
         });
 
         if (!user) {
-          console.error(`[Stripe Webhook] No user found for Stripe customer ${customerId}`);
+          console.error(JSON.stringify({ event: "webhook_error", type: event.type, error: "No user found for Stripe customer", customerId, timestamp: new Date().toISOString() }));
           break;
         }
 
@@ -128,7 +129,7 @@ export async function POST(request: Request) {
             where: { id: user.id },
             data: { plan: "FREE" },
           });
-          console.log(`[Stripe Webhook] User ${user.id} downgraded to FREE (subscription status: ${subscription.status})`);
+          console.log(JSON.stringify({ event: "webhook_processed", type: event.type, userId: user.id, plan: "FREE", reason: subscription.status, timestamp: new Date().toISOString() }));
           break;
         }
 
@@ -142,9 +143,9 @@ export async function POST(request: Request) {
                 where: { id: user.id },
                 data: { plan: newPlan },
               });
-              console.log(`[Stripe Webhook] User ${user.id} plan updated to ${newPlan} (subscription.updated)`);
+              console.log(JSON.stringify({ event: "webhook_processed", type: event.type, userId: user.id, plan: newPlan, timestamp: new Date().toISOString() }));
             } else {
-              console.warn(`[Stripe Webhook] Unknown price ID ${priceId} for user ${user.id}`);
+              console.warn(JSON.stringify({ event: "webhook_warning", type: event.type, error: "Unknown price ID", priceId, userId: user.id, timestamp: new Date().toISOString() }));
             }
           }
         }
@@ -166,7 +167,7 @@ export async function POST(request: Request) {
             where: { id: user.id },
             data: { plan: "FREE" },
           });
-          console.log(`[Stripe Webhook] User ${user.id} downgraded to FREE (subscription cancelled)`);
+          console.log(JSON.stringify({ event: "webhook_processed", type: event.type, userId: user.id, plan: "FREE", reason: "subscription_deleted", timestamp: new Date().toISOString() }));
         }
         break;
       }
@@ -181,15 +182,12 @@ export async function POST(request: Request) {
 
         if (user) {
           // Log the payment failure for monitoring / alerting
-          console.warn(
-            `[Stripe Webhook] Payment failed for user ${user.id} (email: ${user.email}), ` +
-            `invoice ${invoice.id}, attempt ${invoice.attempt_count}`
-          );
+          console.warn(JSON.stringify({ event: "webhook_warning", type: event.type, userId: user.id, email: user.email, invoiceId: invoice.id, attemptCount: invoice.attempt_count, timestamp: new Date().toISOString() }));
 
           // Send dunning email
           sendPaymentFailedEmail(user.email, invoice.attempt_count ?? 1).catch(() => {});
         } else {
-          console.warn(`[Stripe Webhook] Payment failed for unknown customer ${customerId}, invoice ${invoice.id}`);
+          console.warn(JSON.stringify({ event: "webhook_warning", type: event.type, error: "Payment failed for unknown customer", customerId, invoiceId: invoice.id, timestamp: new Date().toISOString() }));
         }
 
         break;
@@ -197,10 +195,25 @@ export async function POST(request: Request) {
 
       default:
         // Unhandled event type — log and acknowledge
-        console.log(`[Stripe Webhook] Unhandled event type: ${event.type}`);
+        console.log(JSON.stringify({ event: "webhook_received", type: event.type, status: "unhandled", timestamp: new Date().toISOString() }));
     }
   } catch (error) {
-    console.error(`[Stripe Webhook] Error handling ${event.type}:`, error);
+    const errMsg = error instanceof Error ? error.message : String(error);
+
+    // Prisma "not found" errors should return 200 — retrying won't help
+    const isPrismaNotFound =
+      error instanceof Error &&
+      error.name === "PrismaClientKnownRequestError" &&
+      "code" in error &&
+      (error as { code: string }).code === "P2025";
+
+    if (isPrismaNotFound) {
+      console.warn(JSON.stringify({ event: "webhook_warning", type: event.type, error: "Record not found", detail: errMsg, timestamp: new Date().toISOString() }));
+      markProcessed(event.id);
+      return NextResponse.json({ received: true });
+    }
+
+    console.error(JSON.stringify({ event: "webhook_error", type: event.type, error: errMsg, timestamp: new Date().toISOString() }));
     return NextResponse.json(
       { error: "Webhook handler failed" },
       { status: 500 }

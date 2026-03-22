@@ -88,7 +88,7 @@ export default function RootLayout({
                 name: "ChartChemistry",
                 url: "https://chartchemistry.com",
                 description: "AI-powered astrology compatibility analysis using full synastry charts, composite analysis, and house overlays.",
-                logo: "https://chartchemistry.com/og-image.png",
+                logo: "https://chartchemistry.com/logo.png",
               },
               {
                 "@context": "https://schema.org",

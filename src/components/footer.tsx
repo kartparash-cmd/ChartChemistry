@@ -30,7 +30,7 @@ export function Footer() {
                 className="inline-flex items-center gap-2 py-2 mb-2"
                 aria-label="ChartChemistry home"
               >
-                <Sparkles className="h-5 w-5 text-cosmic-purple-light" aria-hidden="true" />
+                <img src="/logo.png" alt="ChartChemistry" className="h-8 w-auto" aria-hidden="true" />
                 <span className="font-heading text-lg font-bold cosmic-text">
                   ChartChemistry
                 </span>

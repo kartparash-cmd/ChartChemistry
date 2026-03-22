@@ -88,8 +88,8 @@ export function Navigation() {
         <nav aria-label="Main navigation" className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2 group">
-            <Sparkles className="h-5 w-5 text-cosmic-purple-light transition-transform group-hover:rotate-12" />
-            <span className="font-heading text-xl font-bold cosmic-text">
+            <img src="/logo.png" alt="ChartChemistry" className="h-8 w-auto transition-transform group-hover:scale-105" />
+            <span className="font-heading text-xl font-bold cosmic-text hidden sm:inline">
               ChartChemistry
             </span>
           </Link>
@@ -289,7 +289,7 @@ export function Navigation() {
               >
                 <SheetHeader>
                   <SheetTitle className="flex items-center gap-2">
-                    <Sparkles className="h-4 w-4 text-cosmic-purple-light" />
+                    <img src="/logo.png" alt="ChartChemistry" className="h-6 w-auto" />
                     <span className="cosmic-text font-heading">ChartChemistry</span>
                   </SheetTitle>
                 </SheetHeader>

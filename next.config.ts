@@ -39,10 +39,12 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default withSentryConfig(nextConfig, {
-  org: "chartchemistry",
-  project: "chartchemistry",
-  silent: true,
-  widenClientFileUpload: true,
-  disableLogger: true,
-});
+// Only wrap with Sentry if DSN is configured
+export default process.env.NEXT_PUBLIC_SENTRY_DSN
+  ? withSentryConfig(nextConfig, {
+      org: "chartchemistry",
+      project: "chartchemistry",
+      silent: true,
+      widenClientFileUpload: true,
+    })
+  : nextConfig;

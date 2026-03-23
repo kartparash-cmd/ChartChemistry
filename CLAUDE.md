@@ -62,7 +62,7 @@ src/
 │   ├── auth/               # signin + signup + verify-email pages
 │   ├── blog/               # Blog with [slug] pages (server components, JSON-LD)
 │   ├── calendar/           # Monthly cosmic events calendar
-│   ├── chart/[id]/         # Natal chart viewer
+│   ├── chart/[id]/         # Natal chart viewer (animated wheel, tabbed planets/aspects/houses, element colors)
 │   ├── chat/               # Marie chat page (streaming SSE, ChatGPT-style UI)
 │   ├── compatibility/      # Compatibility tool + [signs]/ programmatic SEO (78 pages, ISR)
 │   ├── dashboard/          # User dashboard (profiles, reports, settings, Marie memories)
@@ -166,6 +166,9 @@ ASTRO_SERVICE_URL         # http://localhost:8000 in dev
 - Tailwind v4 — styles in `src/app/globals.css` with custom design tokens (cosmic-purple, navy, gold, cream)
 - Custom CSS utility classes: `.cosmic-gradient`, `.cosmic-text`, `.glass-card`
 - Custom animations: shimmer, float, pulse-glow, star-twinkle, orbit, fade-in, slide-up
+- Chart wheel SVG animations: ring draw-in (2.5s), planet pop-in (staggered), aspect line draw, glow pulse, shimmer ring, hover highlight
+- Background canvas: stars + constellations + shooting stars + recognizable planets (Saturn w/ rings, Jupiter w/ bands, Mars, Neptune) + spiral galaxies
+- Cursor glow: toggleable via Dashboard Settings > Visual Preferences (localStorage `cursor-glow-disabled`)
 - Passwords hashed with bcryptjs (12 salt rounds)
 - Astro-service endpoints prefixed with `/api/` (natal-chart, synastry, composite, transits)
 - Input sanitization via `src/lib/sanitize.ts` on all user-facing API routes

@@ -40,7 +40,7 @@ export async function POST(request: Request) {
 
     // --- Rate limiting: 10 requests per hour per user ---
     const rateLimitKey = session.user.id || getClientIp(request);
-    const rateLimitResult = explainRateLimiter.check(rateLimitKey);
+    const rateLimitResult = await explainRateLimiter.check(rateLimitKey);
 
     if (!rateLimitResult.allowed) {
       return NextResponse.json(

@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, Heart, ArrowRight, Share2, Copy, RotateCcw, Check } from "lucide-react";
+import { Sparkles, Heart, ArrowRight, Share2, Copy, RotateCcw, Check, Lock, Smartphone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -117,6 +117,38 @@ function getBlurb(sign1: string, sign2: string, score: number): string {
   return `${sign1} and ${sign2} are a complex match. Different wavelengths can create friction — but also magnetic attraction. The key is patience.`;
 }
 
+const ELEMENT_TRAITS: Record<string, { strengths: string; challenge: string; tip: string }> = {
+  "Fire+Fire": { strengths: "Explosive passion, shared ambition, and fearless energy. You push each other to be bolder.", challenge: "Two fires can burn too hot — ego clashes and impulsive decisions need watching.", tip: "Take turns leading. Channel competitive energy into shared goals, not power struggles." },
+  "Earth+Earth": { strengths: "Rock-solid stability, shared values around security, and deep loyalty. You build something lasting.", challenge: "Routines can become ruts. Stubbornness on both sides makes compromise harder.", tip: "Schedule novelty intentionally. Surprise each other — you both secretly crave it." },
+  "Air+Air": { strengths: "Intellectual fireworks, endless conversation, and social synergy. You never bore each other mentally.", challenge: "All talk, no grounding. Emotions can get intellectualized rather than truly felt.", tip: "Practice being present with feelings, not just ideas. Ground your connection with physical activities." },
+  "Water+Water": { strengths: "Profound emotional depth, intuitive understanding, and soul-level empathy. You feel each other without words.", challenge: "Emotional flooding is real. Moods can amplify rather than balance, leading to codependency.", tip: "Maintain individual identities. When emotions run high, take space before reacting." },
+  "Fire+Air": { strengths: "Air fans Fire's flames — you inspire and energize each other. Creative, social, and fun.", challenge: "Fire can overwhelm Air's need for space; Air can seem detached to passionate Fire.", tip: "Fire: listen before reacting. Air: show enthusiasm, not just analysis. Meet in the middle." },
+  "Air+Fire": { strengths: "Air fans Fire's flames — you inspire and energize each other. Creative, social, and fun.", challenge: "Fire can overwhelm Air's need for space; Air can seem detached to passionate Fire.", tip: "Fire: listen before reacting. Air: show enthusiasm, not just analysis. Meet in the middle." },
+  "Earth+Water": { strengths: "Water nourishes Earth, Earth gives Water structure. A naturally supportive, nurturing bond.", challenge: "Earth may find Water too emotional; Water may find Earth too rigid or unfeeling.", tip: "Earth: validate feelings before offering solutions. Water: appreciate acts of service as love." },
+  "Water+Earth": { strengths: "Water nourishes Earth, Earth gives Water structure. A naturally supportive, nurturing bond.", challenge: "Earth may find Water too emotional; Water may find Earth too rigid or unfeeling.", tip: "Earth: validate feelings before offering solutions. Water: appreciate acts of service as love." },
+  "Fire+Water": { strengths: "Steam! Intense attraction, transformative energy, and deep passion when it works.", challenge: "Fire's directness can scald Water's sensitivity. Water's emotions can douse Fire's enthusiasm.", tip: "Practice radical patience. Fire: soften your delivery. Water: speak up before resentment builds." },
+  "Water+Fire": { strengths: "Steam! Intense attraction, transformative energy, and deep passion when it works.", challenge: "Fire's directness can scald Water's sensitivity. Water's emotions can douse Fire's enthusiasm.", tip: "Practice radical patience. Fire: soften your delivery. Water: speak up before resentment builds." },
+  "Fire+Earth": { strengths: "Fire brings excitement, Earth brings stability. Together you balance vision with execution.", challenge: "Fire finds Earth too slow; Earth finds Fire reckless. Different paces create friction.", tip: "Respect each other's rhythm. Fire: follow through. Earth: take a leap sometimes." },
+  "Earth+Fire": { strengths: "Fire brings excitement, Earth brings stability. Together you balance vision with execution.", challenge: "Fire finds Earth too slow; Earth finds Fire reckless. Different paces create friction.", tip: "Respect each other's rhythm. Fire: follow through. Earth: take a leap sometimes." },
+  "Air+Water": { strengths: "Air helps Water articulate feelings; Water deepens Air's emotional intelligence. A growth pairing.", challenge: "Air can seem cold to emotional Water. Water's intensity may feel overwhelming to logical Air.", tip: "Air: check in emotionally, not just intellectually. Water: give Air room to process." },
+  "Water+Air": { strengths: "Air helps Water articulate feelings; Water deepens Air's emotional intelligence. A growth pairing.", challenge: "Air can seem cold to emotional Water. Water's intensity may feel overwhelming to logical Air.", tip: "Air: check in emotionally, not just intellectually. Water: give Air room to process." },
+  "Air+Earth": { strengths: "Air brings fresh perspectives, Earth provides follow-through. Ideas meet implementation.", challenge: "Air may seem flighty to grounded Earth. Earth may feel heavy to free-spirited Air.", tip: "Air: show consistency in small ways. Earth: stay open to spontaneity and new ideas." },
+  "Earth+Air": { strengths: "Air brings fresh perspectives, Earth provides follow-through. Ideas meet implementation.", challenge: "Air may seem flighty to grounded Earth. Earth may feel heavy to free-spirited Air.", tip: "Air: show consistency in small ways. Earth: stay open to spontaneity and new ideas." },
+};
+
+function getElementAnalysis(sign1: string, sign2: string): { strengths: string; challenge: string; tip: string; combo: string } {
+  const el1 = SIGN_ELEMENTS[sign1];
+  const el2 = SIGN_ELEMENTS[sign2];
+  const key = `${el1}+${el2}`;
+  const traits = ELEMENT_TRAITS[key] || ELEMENT_TRAITS["Fire+Fire"];
+  return { ...traits, combo: el1 === el2 ? `${el1} + ${el1}` : `${el1} + ${el2}` };
+}
+
+function getShareStorageKey(dateA: string, dateB: string): string {
+  const sorted = [dateA, dateB].sort();
+  return `qm_shared_${sorted[0]}_${sorted[1]}`;
+}
+
 /* ─── Component ─────────────────────────────────────────────────────────── */
 
 const SITE_URL = "https://chartchemistry.com";
@@ -151,6 +183,26 @@ export default function QuickMatchClient() {
   const [animating, setAnimating] = useState(false);
   const [hasShared, setHasShared] = useState(false);
 
+  // Check localStorage for persisted share status
+  useEffect(() => {
+    if (dateA && dateB) {
+      try {
+        const stored = localStorage.getItem(getShareStorageKey(dateA, dateB));
+        if (stored === "true") setHasShared(true);
+      } catch { /* localStorage unavailable */ }
+    }
+  }, [dateA, dateB]);
+
+  const markShared = useCallback((method: string) => {
+    setHasShared(true);
+    if (dateA && dateB) {
+      try {
+        localStorage.setItem(getShareStorageKey(dateA, dateB), "true");
+      } catch { /* localStorage unavailable */ }
+    }
+    trackEvent("share_complete", { method, source: "quick-match" });
+  }, [dateA, dateB]);
+
   const canCheck = dateA && dateB;
 
   function check() {
@@ -167,6 +219,7 @@ export default function QuickMatchClient() {
 
   function reset() {
     setResult(null);
+    setHasShared(false);
     setNameA(""); setDateA("");
     setNameB(""); setDateB("");
   }
@@ -194,13 +247,15 @@ export default function QuickMatchClient() {
     const url = buildShareUrl();
 
     if (navigator.share) {
-      navigator.share({ title: "Zodiac Compatibility", text, url }).catch(() => {});
-    } else {
-      navigator.clipboard.writeText(`${text}\n${url}`);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2500);
+      navigator.share({ title: "Zodiac Compatibility", text, url })
+        .then(() => markShared("native"))
+        .catch(() => { /* user cancelled */ });
+      return;
     }
-    setHasShared(true);
+    navigator.clipboard.writeText(`${text}\n${url}`);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2500);
+    markShared("copy");
   }
 
   function shareToWhatsApp() {
@@ -208,7 +263,7 @@ export default function QuickMatchClient() {
     const text = buildShareText();
     const url = buildShareUrl();
     window.open(`https://wa.me/?text=${encodeURIComponent(`${text}\n${url}`)}`, "_blank");
-    setHasShared(true);
+    markShared("whatsapp");
   }
 
   function shareToTwitter() {
@@ -216,7 +271,15 @@ export default function QuickMatchClient() {
     const text = buildShareText();
     const url = buildShareUrl();
     window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`, "_blank");
-    setHasShared(true);
+    markShared("twitter");
+  }
+
+  function shareToSMS() {
+    if (!result) return;
+    const text = buildShareText();
+    const url = buildShareUrl();
+    window.open(`sms:?&body=${encodeURIComponent(`${text}\n${url}`)}`, "_self");
+    markShared("sms");
   }
 
   const verdict = result ? getVerdict(result.score) : null;
@@ -320,7 +383,7 @@ export default function QuickMatchClient() {
 
               {/* Share buttons */}
               <div className="space-y-3">
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   <Button
                     onClick={shareToWhatsApp}
                     className="bg-[#25D366] hover:bg-[#20bd5a] text-white text-xs"
@@ -332,6 +395,13 @@ export default function QuickMatchClient() {
                     className="bg-[#1DA1F2] hover:bg-[#1a8cd8] text-white text-xs"
                   >
                     Twitter / X
+                  </Button>
+                  <Button
+                    onClick={shareToSMS}
+                    className="bg-[#34C759] hover:bg-[#2db84e] text-white text-xs"
+                  >
+                    <Smartphone className="w-3.5 h-3.5 mr-1" />
+                    Text
                   </Button>
                   <Button
                     onClick={shareResult}
@@ -352,23 +422,113 @@ export default function QuickMatchClient() {
                 </Button>
               </div>
 
-              {!hasShared && (
-                <p className="text-xs text-white/40 text-center">
-                  Share your results to unlock the detailed breakdown!
-                </p>
-              )}
+              {/* Element Analysis — Share-gated */}
+              {(() => {
+                const analysis = getElementAnalysis(result.signA, result.signB);
+                const elementContent = (
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="w-8 h-8 rounded-full bg-cosmic-purple/20 flex items-center justify-center">
+                        <span className="text-sm">{SIGN_EMOJIS[result.signA]}</span>
+                      </div>
+                      <span className="text-white/40 text-xs font-bold uppercase tracking-widest">{analysis.combo}</span>
+                      <div className="w-8 h-8 rounded-full bg-gold/20 flex items-center justify-center">
+                        <span className="text-sm">{SIGN_EMOJIS[result.signB]}</span>
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold text-green-400 uppercase tracking-wider mb-1">Strengths</p>
+                      <p className="text-white/70 text-sm leading-relaxed">{analysis.strengths}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold text-orange-400 uppercase tracking-wider mb-1">Watch Out For</p>
+                      <p className="text-white/70 text-sm leading-relaxed">{analysis.challenge}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold text-cosmic-purple-light uppercase tracking-wider mb-1">Pro Tip</p>
+                      <p className="text-white/70 text-sm leading-relaxed">{analysis.tip}</p>
+                    </div>
+                  </div>
+                );
+
+                return (
+                  <div className="relative">
+                    <div
+                      className={cn(
+                        "glass-card rounded-2xl p-6 border border-white/10 transition-all duration-700 ease-out",
+                        !hasShared && "select-none"
+                      )}
+                      style={!hasShared ? { filter: "blur(8px)" } : undefined}
+                    >
+                      <h3 className="font-heading text-lg font-bold text-white mb-4">
+                        Element Analysis
+                      </h3>
+                      {elementContent}
+                    </div>
+
+                    {/* Share overlay */}
+                    <AnimatePresence>
+                      {!hasShared && (
+                        <motion.div
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          exit={{ opacity: 0, scale: 0.95 }}
+                          transition={{ duration: 0.4 }}
+                          className="absolute inset-0 flex items-center justify-center"
+                        >
+                          <div className="glass-card rounded-2xl p-6 sm:p-8 text-center border border-cosmic-purple/40 max-w-sm mx-4 shadow-2xl shadow-cosmic-purple/20">
+                            <div className="w-12 h-12 rounded-full bg-cosmic-purple/20 border border-cosmic-purple/30 flex items-center justify-center mx-auto mb-4">
+                              <Lock className="w-5 h-5 text-cosmic-purple-light" />
+                            </div>
+                            <h3 className="font-heading text-lg font-bold text-white mb-2">
+                              Share to unlock your element analysis
+                            </h3>
+                            <p className="text-white/50 text-sm mb-5">
+                              See your strengths, challenges, and a personalized tip for this pairing.
+                            </p>
+                            <div className="grid grid-cols-3 gap-2">
+                              <Button
+                                onClick={shareToWhatsApp}
+                                className="bg-[#25D366] hover:bg-[#20bd5a] text-white text-xs"
+                              >
+                                WhatsApp
+                              </Button>
+                              <Button
+                                onClick={shareToTwitter}
+                                className="bg-[#1DA1F2] hover:bg-[#1a8cd8] text-white text-xs"
+                              >
+                                Twitter / X
+                              </Button>
+                              <Button
+                                onClick={shareResult}
+                                variant="outline"
+                                className="border-white/20 text-white hover:bg-white/10 text-xs"
+                              >
+                                {copied ? <Check className="w-3.5 h-3.5 mr-1" /> : <Share2 className="w-3.5 h-3.5 mr-1" />}
+                                {copied ? "Copied!" : "Share"}
+                              </Button>
+                            </div>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                );
+              })()}
 
               {/* CTA to full report */}
               <div className="glass-card rounded-2xl p-6 text-center border border-cosmic-purple/30">
                 <Sparkles className="w-5 h-5 text-gold mx-auto mb-3" />
                 <h3 className="font-heading text-lg font-bold text-white mb-2">
-                  Want the full picture?
+                  {hasShared ? "Want the FULL compatibility report with birth times?" : "Want the full picture?"}
                 </h3>
                 <p className="text-white/50 text-sm mb-4 max-w-sm mx-auto">
-                  Get a detailed 7-section compatibility report powered by real natal chart calculations — not just sun signs.
+                  {hasShared
+                    ? "Sun signs are just the start. Get a detailed 7-section natal chart analysis with Moon, Venus, Mars placements and more."
+                    : "Get a detailed 7-section compatibility report powered by real natal chart calculations — not just sun signs."}
                 </p>
                 <Button asChild className="bg-cosmic-purple hover:bg-cosmic-purple-dark text-white">
-                  <Link href="/compatibility">
+                  <Link href={dateA && dateB ? `/compatibility?prefillDateA=${encodeURIComponent(dateA)}&prefillDateB=${encodeURIComponent(dateB)}${nameA ? `&prefillNameA=${encodeURIComponent(nameA)}` : ""}${nameB ? `&prefillNameB=${encodeURIComponent(nameB)}` : ""}` : "/compatibility"}>
                     Full Compatibility Analysis <ArrowRight className="w-4 h-4 ml-2" />
                   </Link>
                 </Button>

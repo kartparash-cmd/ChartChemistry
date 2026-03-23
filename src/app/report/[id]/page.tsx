@@ -803,6 +803,7 @@ export default function ReportPage() {
     if (report.shareToken) {
       const shareUrl = `${window.location.origin}/report/${reportId}?token=${report.shareToken}`;
       await copyToClipboard(shareUrl);
+      trackEvent("report_share", { method: "link" });
       return;
     }
 
@@ -818,6 +819,7 @@ export default function ReportPage() {
         setReport((prev) => prev ? { ...prev, shareToken: json.shareToken } : prev);
         const shareUrl = `${window.location.origin}/report/${reportId}?token=${json.shareToken}`;
         await copyToClipboard(shareUrl);
+        trackEvent("report_share", { method: "link" });
       } else {
         console.error("Failed to generate share link");
       }
@@ -865,6 +867,7 @@ export default function ReportPage() {
       });
       const json = await res.json();
       if (res.ok) {
+        trackEvent("report_share", { method: "email" });
         setPartnerShareResult({
           success: true,
           message: `Report shared with ${json.sharedWith?.email || partnerEmail}!`,

@@ -1,7 +1,7 @@
 import { ImageResponse } from "next/og";
 
 export const runtime = "edge";
-export const alt = "Chart Chemistry — AI-Powered Astrology";
+export const alt = "ChartChemistry — AI-Powered Astrology";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -44,7 +44,7 @@ export default async function Image() {
               color: "transparent",
             }}
           >
-            Chart Chemistry
+            ChartChemistry
           </div>
         </div>
         <div

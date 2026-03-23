@@ -2,33 +2,41 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { healthCheck, getAstroServiceStatus } from "@/lib/astro-client";
 
-interface ServiceStatus {
-  status: "ok" | "error" | "unconfigured";
-  latencyMs?: number;
+interface ServiceStatusWithLatency {
+  status: "ok" | "error" | "circuit_open";
+  latency_ms: number;
+}
+
+interface ServiceConfigStatus {
+  status: "configured" | "missing";
 }
 
 interface HealthResponse {
-  status: "ok" | "degraded" | "down";
-  services: {
-    database: ServiceStatus;
-    astroService: ServiceStatus;
-    email: ServiceStatus;
-    redis: ServiceStatus;
-    claude: ServiceStatus;
-  };
+  status: "healthy" | "degraded" | "unhealthy";
   timestamp: string;
+  services: {
+    database: ServiceStatusWithLatency;
+    astro_service: ServiceStatusWithLatency | { status: "circuit_open" };
+    anthropic: ServiceConfigStatus;
+    openai: ServiceConfigStatus;
+    stripe: ServiceConfigStatus;
+    resend: ServiceConfigStatus;
+    redis: ServiceConfigStatus;
+  };
 }
 
 /**
  * Check astro-service health with a dedicated 5-second timeout,
  * also considering the circuit breaker state.
  */
-async function checkAstroService(): Promise<ServiceStatus> {
+async function checkAstroService(): Promise<
+  ServiceStatusWithLatency | { status: "circuit_open" }
+> {
   const circuitStatus = getAstroServiceStatus();
 
-  // If the circuit is open, report error immediately without making a call.
+  // If the circuit is open, report immediately without making a call.
   if (circuitStatus.circuitState === "open") {
-    return { status: "error", latencyMs: 0 };
+    return { status: "circuit_open" };
   }
 
   const start = Date.now();
@@ -36,9 +44,6 @@ async function checkAstroService(): Promise<ServiceStatus> {
   const timeoutId = setTimeout(() => controller.abort(), 5_000);
 
   try {
-    // healthCheck() uses the module-level request() which already has
-    // circuit breaker logic, but we add an extra 5s race here for the
-    // health endpoint specifically.
     await Promise.race([
       healthCheck(),
       new Promise<never>((_, reject) => {
@@ -48,77 +53,87 @@ async function checkAstroService(): Promise<ServiceStatus> {
       }),
     ]);
     clearTimeout(timeoutId);
-    return { status: "ok", latencyMs: Date.now() - start };
+    return { status: "ok", latency_ms: Date.now() - start };
   } catch {
     clearTimeout(timeoutId);
-    return { status: "error", latencyMs: Date.now() - start };
+    return { status: "error", latency_ms: Date.now() - start };
   }
 }
 
 /**
  * Check database connectivity by running a trivial query.
  */
-async function checkDatabase(): Promise<ServiceStatus> {
+async function checkDatabase(): Promise<ServiceStatusWithLatency> {
   const start = Date.now();
   try {
     await prisma.$queryRaw`SELECT 1`;
-    return { status: "ok", latencyMs: Date.now() - start };
+    return { status: "ok", latency_ms: Date.now() - start };
   } catch {
-    return { status: "error", latencyMs: Date.now() - start };
+    return { status: "error", latency_ms: Date.now() - start };
   }
+}
+
+function checkEnvVar(name: string): ServiceConfigStatus {
+  return { status: process.env[name] ? "configured" : "missing" };
 }
 
 /**
  * GET /api/health
  *
- * Public endpoint (no auth required) that reports on all service
- * dependencies. Intended for uptime monitors and load balancers.
+ * Public endpoint (no auth required) that reports on all external
+ * service dependencies. Intended for uptime monitors and load balancers.
  */
 export async function GET() {
-  const [database, astroService] = await Promise.all([
+  const [database, astro_service] = await Promise.all([
     checkDatabase(),
     checkAstroService(),
   ]);
 
-  const email: ServiceStatus = {
-    status: process.env.RESEND_API_KEY ? "ok" : "unconfigured",
-  };
-
-  const redis: ServiceStatus = {
-    status: process.env.UPSTASH_REDIS_REST_URL ? "ok" : "unconfigured",
-  };
-
-  const claude: ServiceStatus = {
-    status: process.env.ANTHROPIC_API_KEY ? "ok" : "unconfigured",
-  };
+  const anthropic = checkEnvVar("ANTHROPIC_API_KEY");
+  const openai = checkEnvVar("OPENAI_API_KEY");
+  const stripe = checkEnvVar("STRIPE_SECRET_KEY");
+  const resend = checkEnvVar("RESEND_API_KEY");
+  const redis = checkEnvVar("UPSTASH_REDIS_REST_URL");
 
   // Determine overall status:
-  // - "down"     if the database is unreachable
-  // - "degraded" if the database is fine but astro-service is not
-  // - "ok"       if both critical services are healthy
-  let overallStatus: HealthResponse["status"];
-  if (database.status === "error") {
-    overallStatus = "down";
-  } else if (astroService.status === "error") {
-    overallStatus = "degraded";
+  // - "unhealthy" if DB or astro-service is down/errored
+  // - "degraded"  if any optional service (API keys) is missing
+  // - "healthy"   if all services are ok/configured
+  const dbDown = database.status === "error";
+  const astroDown =
+    astro_service.status === "error" || astro_service.status === "circuit_open";
+
+  let status: HealthResponse["status"];
+  if (dbDown || astroDown) {
+    status = "unhealthy";
+  } else if (
+    anthropic.status === "missing" ||
+    openai.status === "missing" ||
+    stripe.status === "missing" ||
+    resend.status === "missing" ||
+    redis.status === "missing"
+  ) {
+    status = "degraded";
   } else {
-    overallStatus = "ok";
+    status = "healthy";
   }
 
   const body: HealthResponse = {
-    status: overallStatus,
+    status,
+    timestamp: new Date().toISOString(),
     services: {
       database,
-      astroService,
-      email,
+      astro_service,
+      anthropic,
+      openai,
+      stripe,
+      resend,
       redis,
-      claude,
     },
-    timestamp: new Date().toISOString(),
   };
 
-  // Use 200 for ok/degraded, 503 for down.
-  const httpStatus = overallStatus === "down" ? 503 : 200;
+  // 200 for healthy/degraded, 503 for unhealthy.
+  const httpStatus = status === "unhealthy" ? 503 : 200;
 
   return NextResponse.json(body, { status: httpStatus });
 }

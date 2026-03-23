@@ -10,6 +10,7 @@
  */
 
 import { NextResponse } from "next/server";
+import * as Sentry from "@sentry/nextjs";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -26,6 +27,7 @@ import type {
 } from "@/types/astrology";
 import { Prisma } from "@/generated/prisma/client";
 import { createRateLimiter, getClientIp } from "@/lib/rate-limit";
+import { logServerEvent } from "@/lib/server-analytics";
 
 // Rate limit trial reports: 3 per IP per 24 hours
 const trialLimiter = createRateLimiter(3, 24 * 60 * 60 * 1000, "trial-report");
@@ -71,6 +73,7 @@ export async function POST(request: Request) {
 
     // --- Trial logic: allow ONE free premium report for free-plan users ---
     let isTrial = false;
+    let usingSingleReportCredit = false;
 
     if (!isPremium) {
       const premiumReportCount = await prisma.compatibilityReport.count({
@@ -83,7 +86,7 @@ export async function POST(request: Request) {
       if (premiumReportCount === 0) {
         // Rate limit trial reports by IP to prevent abuse via account creation
         const ip = getClientIp(request);
-        const trialRateResult = trialLimiter.check(ip);
+        const trialRateResult = await trialLimiter.check(ip);
         if (!trialRateResult.allowed) {
           return NextResponse.json(
             { error: "Trial limit reached", message: "Too many trial reports from this network. Please try again later or upgrade to Premium." },
@@ -93,14 +96,30 @@ export async function POST(request: Request) {
         // This is the user's first premium report — allow it as a trial
         isTrial = true;
       } else {
-        return NextResponse.json(
-          {
-            error: "Premium plan required",
-            message:
-              "You have used your free trial report. Full compatibility reports are available to Premium and Annual subscribers.",
+        // Check for a purchased single report credit
+        const reportCredit = await prisma.userAchievement.findFirst({
+          where: {
+            userId: session.user.id,
+            achievementType: "single_report_credit",
           },
-          { status: 403 }
-        );
+        });
+
+        if (reportCredit) {
+          // Consume the credit — delete it so it can only be used once
+          await prisma.userAchievement.delete({
+            where: { id: reportCredit.id },
+          });
+          usingSingleReportCredit = true;
+        } else {
+          return NextResponse.json(
+            {
+              error: "Premium plan required",
+              message:
+                "You have used your free trial report. Full compatibility reports are available to Premium and Annual subscribers, or purchase a single report for $4.99.",
+            },
+            { status: 403 }
+          );
+        }
       }
     }
 
@@ -291,7 +310,10 @@ export async function POST(request: Request) {
       },
     });
 
-    // --- 9. Return response ---
+    // --- 9. Log server-side analytics ---
+    logServerEvent("report_generated", { userId: session.user.id, tier: "PREMIUM", isTrial, usingSingleReportCredit, reportId: report.id });
+
+    // --- 10. Return response ---
     return NextResponse.json({
       id: report.id,
       scores: {
@@ -313,6 +335,7 @@ export async function POST(request: Request) {
       isTrial,
     });
   } catch (error) {
+    Sentry.captureException(error);
     console.error("[POST /api/compatibility/full] Error:", error);
 
     const errorMessage = error instanceof Error ? error.message : "";

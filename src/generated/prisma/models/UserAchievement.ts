@@ -1093,6 +1093,11 @@ export type UserAchievementFindManyArgs<ExtArgs extends runtime.Types.Extensions
    * Skip the first `n` UserAchievements.
    */
   skip?: number
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   * 
+   * Filter by unique combinations of UserAchievements.
+   */
   distinct?: Prisma.UserAchievementScalarFieldEnum | Prisma.UserAchievementScalarFieldEnum[]
 }
 

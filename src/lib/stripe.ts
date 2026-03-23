@@ -23,6 +23,9 @@ export const stripe = new Proxy({} as Stripe, {
   },
 });
 
+/** Single report one-time purchase price in cents */
+export const SINGLE_REPORT_PRICE = 499; // $4.99
+
 export const PLANS = {
   FREE: {
     name: "Free",

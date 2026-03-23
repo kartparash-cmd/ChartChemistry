@@ -352,6 +352,7 @@ export async function generateFreeReport(
     const response = await getClient().messages.create({
       model: CLAUDE_MODEL,
       max_tokens: 1024,
+      temperature: 0.7,
       system: FREE_REPORT_PROMPT,
       messages: [{ role: "user", content: userContent }],
     });
@@ -364,6 +365,7 @@ export async function generateFreeReport(
     const response = await getOpenAIClient().chat.completions.create({
       model: OPENAI_MODEL,
       max_tokens: 1024,
+      temperature: 0.7,
       messages: [
         { role: "system", content: FREE_REPORT_PROMPT },
         { role: "user", content: userContent },
@@ -411,6 +413,7 @@ export async function generatePremiumReport(
     const response = await getClient().messages.create({
       model: CLAUDE_MODEL,
       max_tokens: 4096,
+      temperature: 0.7,
       system: PREMIUM_REPORT_PROMPT,
       messages: [{ role: "user", content: userContent }],
     });
@@ -422,6 +425,7 @@ export async function generatePremiumReport(
     const response = await getOpenAIClient().chat.completions.create({
       model: OPENAI_MODEL,
       max_tokens: 4096,
+      temperature: 0.7,
       messages: [
         { role: "system", content: PREMIUM_REPORT_PROMPT },
         { role: "user", content: userContent },
@@ -561,6 +565,7 @@ export async function chatWithAstrologer(
     const response = await getOpenAIClient().chat.completions.create({
       model: OPENAI_MODEL,
       max_tokens: 1024,
+      temperature: 0.9,
       messages: openaiMessages,
     });
     return response.choices[0]?.message?.content?.trim() || "";
@@ -573,12 +578,125 @@ export async function chatWithAstrologer(
     const response = await getClient().messages.create({
       model: CLAUDE_MODEL,
       max_tokens: 1024,
+      temperature: 0.9,
       system: systemPrompt,
       messages: claudeMessages,
     });
     const textBlock = response.content.find((block) => block.type === "text");
     return textBlock ? textBlock.text.trim() : "";
   }
+}
+
+/**
+ * Streaming version of chatWithAstrologer.
+ * Returns a ReadableStream that yields text chunks as they arrive.
+ * Uses OpenAI streaming API (primary) with Claude fallback.
+ *
+ * The onComplete callback receives the full accumulated text after
+ * the stream finishes — callers use this for background persistence.
+ */
+export function chatWithAstrologerStreaming(
+  messages: ChatMessage[],
+  chartContext?: string,
+  onComplete?: (fullText: string) => void
+): ReadableStream<Uint8Array> {
+  let systemPrompt = CHAT_PROMPT;
+
+  if (chartContext) {
+    systemPrompt += `\n\nCHART CONTEXT (reference this data in your responses):\n${chartContext}`;
+  }
+
+  const openaiMessages: { role: "system" | "user" | "assistant"; content: string }[] = [
+    { role: "system", content: systemPrompt },
+    ...messages.map((msg) => ({
+      role: msg.role as "user" | "assistant",
+      content: msg.content,
+    })),
+  ];
+
+  const encoder = new TextEncoder();
+
+  return new ReadableStream<Uint8Array>({
+    async start(controller) {
+      let fullText = "";
+
+      try {
+        // Primary: OpenAI streaming
+        const stream = await getOpenAIClient().chat.completions.create({
+          model: OPENAI_MODEL,
+          max_tokens: 1024,
+          temperature: 0.9,
+          messages: openaiMessages,
+          stream: true,
+        });
+
+        for await (const chunk of stream) {
+          const delta = chunk.choices[0]?.delta?.content;
+          if (delta) {
+            fullText += delta;
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify({ text: delta })}\n\n`));
+          }
+        }
+      } catch (openaiError) {
+        console.error("[ChartChemistry] OpenAI streaming failed, falling back to Claude:", openaiError);
+
+        // Fallback: Claude streaming
+        try {
+          const claudeMessages = messages.map((msg) => ({
+            role: msg.role as "user" | "assistant",
+            content: msg.content,
+          }));
+
+          const stream = getClient().messages.stream({
+            model: CLAUDE_MODEL,
+            max_tokens: 1024,
+            temperature: 0.9,
+            system: systemPrompt,
+            messages: claudeMessages,
+          });
+
+          for await (const event of stream) {
+            if (
+              event.type === "content_block_delta" &&
+              event.delta.type === "text_delta"
+            ) {
+              const text = event.delta.text;
+              fullText += text;
+              controller.enqueue(encoder.encode(`data: ${JSON.stringify({ text })}\n\n`));
+            }
+          }
+        } catch (claudeError) {
+          console.error("[ChartChemistry] Claude streaming also failed, falling back to non-streaming:", claudeError);
+
+          // Last resort: non-streaming fallback
+          try {
+            const reply = await chatWithAstrologer(messages, chartContext);
+            fullText = reply;
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify({ text: reply })}\n\n`));
+          } catch {
+            controller.enqueue(
+              encoder.encode(`data: ${JSON.stringify({ error: "Failed to generate response" })}\n\n`)
+            );
+            controller.close();
+            return;
+          }
+        }
+      }
+
+      // Signal stream completion
+      controller.enqueue(encoder.encode(`data: ${JSON.stringify({ done: true })}\n\n`));
+      controller.close();
+
+      // Notify caller with the full accumulated text
+      if (onComplete) {
+        try {
+          onComplete(fullText);
+        } catch (err) {
+          console.error("[ChartChemistry] onComplete callback failed:", err);
+        }
+      }
+    },
+  });
 }
 
 /**
@@ -702,23 +820,26 @@ export function buildChatContext(
 const HOROSCOPE_PROMPT = `You are an expert astrologer writing a personalized daily horoscope based on the user's full natal chart and today's planetary transits. This is NOT a generic sun-sign horoscope — it's deeply personal.
 
 GUIDELINES:
-- Write 150-250 words.
 - Reference 2-3 specific transits affecting this person's chart today.
-- Cover: overall energy, love/relationships, career/purpose, and one actionable tip.
 - Be warm, specific, and encouraging. Avoid doom-and-gloom.
 - Use accessible language. Briefly explain any astrological terms.
 - Frame everything as tendencies, not predictions.
-- End with a "Cosmic tip" — one specific, actionable piece of advice for the day.
 
 OUTPUT FORMAT:
 Return a JSON object with these fields:
 {
-  "summary": "One sentence capturing today's overall energy (max 120 chars)",
-  "body": "The full horoscope text (150-250 words, flowing prose)",
+  "overview": "1-2 sentence general outlook for the day (max 200 chars)",
+  "love": "2-3 sentences about love and relationships today, referencing relevant transits (Venus, Moon aspects, 7th house activity)",
+  "career": "2-3 sentences about career, work, and purpose today, referencing relevant transits (Saturn, Jupiter, 10th house activity)",
+  "wellness": "1-2 sentences about health, energy levels, and self-care today",
   "cosmicTip": "One actionable tip for the day (1-2 sentences)",
   "luckyTime": "A time window suggestion like 'Late morning' or '2-4 PM'",
-  "mood": "One word capturing the day's energy: 'expansive' | 'reflective' | 'passionate' | 'grounded' | 'transformative' | 'playful' | 'intense' | 'harmonious'"
-}`;
+  "luckyNumber": a number between 1 and 99,
+  "luckyColor": "A color name like 'Amethyst Purple' or 'Ocean Blue'",
+  "mood": "One word: 'energetic' | 'reflective' | 'passionate' | 'calm' | 'adventurous' | 'expansive' | 'grounded' | 'transformative' | 'playful' | 'intense' | 'harmonious'"
+}
+
+Return ONLY the JSON object, no markdown code fences.`;
 
 /**
  * Generate a personalized daily horoscope.
@@ -730,11 +851,18 @@ export async function generateDailyHoroscope(
   userName: string,
   date: string
 ): Promise<{
-  summary: string;
-  body: string;
+  overview: string;
+  love: string;
+  career: string;
+  wellness: string;
   cosmicTip: string;
   luckyTime: string;
+  luckyNumber: number;
+  luckyColor: string;
   mood: string;
+  // Legacy fields for backward compatibility
+  summary?: string;
+  body?: string;
 }> {
   const chartLines: string[] = [];
 
@@ -764,6 +892,7 @@ export async function generateDailyHoroscope(
     const response = await getOpenAIClient().chat.completions.create({
       model: OPENAI_MODEL,
       max_tokens: 1024,
+      temperature: 0.8,
       messages: [
         { role: "system", content: HOROSCOPE_PROMPT },
         { role: "user", content: horoscopeUserContent },
@@ -775,6 +904,7 @@ export async function generateDailyHoroscope(
     const response = await getClient().messages.create({
       model: CLAUDE_MODEL,
       max_tokens: 1024,
+      temperature: 0.8,
       system: HOROSCOPE_PROMPT,
       messages: [{ role: "user", content: horoscopeUserContent }],
     });
@@ -785,17 +915,48 @@ export async function generateDailyHoroscope(
   try {
     const jsonMatch = raw.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
-      return JSON.parse(jsonMatch[0]);
+      const parsed = JSON.parse(jsonMatch[0]);
+      // Handle old format responses (summary/body) by mapping to new structured fields
+      if (parsed.summary && parsed.body && !parsed.overview) {
+        return {
+          overview: parsed.summary,
+          love: "The stars are aligning to bring warmth to your connections today. Stay open to meaningful moments with loved ones.",
+          career: "Your professional energy is steady today. Focus on tasks that require careful attention.",
+          wellness: "Listen to your body and give yourself what you need — rest or movement.",
+          cosmicTip: parsed.cosmicTip || "Trust your intuition today.",
+          luckyTime: parsed.luckyTime || "Mid-afternoon",
+          luckyNumber: Math.floor(Math.random() * 99) + 1,
+          luckyColor: "Cosmic Purple",
+          mood: parsed.mood || "harmonious",
+          summary: parsed.summary,
+          body: parsed.body,
+        };
+      }
+      return {
+        overview: parsed.overview || "A day of cosmic potential awaits you.",
+        love: parsed.love || "Open your heart to the connections around you today.",
+        career: parsed.career || "Your professional energy is steady and focused.",
+        wellness: parsed.wellness || "Take a moment to check in with your body and mind.",
+        cosmicTip: parsed.cosmicTip || "Trust your intuition today.",
+        luckyTime: parsed.luckyTime || "Mid-afternoon",
+        luckyNumber: typeof parsed.luckyNumber === "number" ? parsed.luckyNumber : Math.floor(Math.random() * 99) + 1,
+        luckyColor: parsed.luckyColor || "Cosmic Purple",
+        mood: parsed.mood || "harmonious",
+      };
     }
   } catch {
     // Fallback
   }
 
   return {
-    summary: "A day of cosmic potential awaits you.",
-    body: raw,
+    overview: "A day of cosmic potential awaits you.",
+    love: "The stars encourage you to nurture your closest relationships today.",
+    career: "Steady focus will carry you through your professional tasks.",
+    wellness: "Take time to recharge — your body knows what it needs.",
     cosmicTip: "Trust your intuition today.",
     luckyTime: "Mid-afternoon",
+    luckyNumber: Math.floor(Math.random() * 99) + 1,
+    luckyColor: "Cosmic Purple",
     mood: "harmonious",
   };
 }
@@ -818,6 +979,7 @@ export async function explainChartElement(
     const response = await getOpenAIClient().chat.completions.create({
       model: OPENAI_MODEL,
       max_tokens: 512,
+      temperature: 0.7,
       messages: [
         { role: "system", content: explainSystemPrompt },
         { role: "user", content: explainUserContent },
@@ -829,6 +991,7 @@ export async function explainChartElement(
     const response = await getClient().messages.create({
       model: CLAUDE_MODEL,
       max_tokens: 512,
+      temperature: 0.7,
       system: explainSystemPrompt,
       messages: [{ role: "user", content: explainUserContent }],
     });
@@ -924,6 +1087,7 @@ export async function generateWellnessSuggestions(
     const response = await getOpenAIClient().chat.completions.create({
       model: OPENAI_MODEL,
       max_tokens: 2048,
+      temperature: 0.7,
       messages: [
         { role: "system", content: WELLNESS_PROMPT },
         { role: "user", content: wellnessUserContent },
@@ -935,6 +1099,7 @@ export async function generateWellnessSuggestions(
     const response = await getClient().messages.create({
       model: CLAUDE_MODEL,
       max_tokens: 2048,
+      temperature: 0.7,
       system: WELLNESS_PROMPT,
       messages: [{ role: "user", content: wellnessUserContent }],
     });
@@ -1073,6 +1238,7 @@ export async function generateRelationshipInsights(
     const response = await getClient().messages.create({
       model: CLAUDE_MODEL,
       max_tokens: 2048,
+      temperature: 0.7,
       system: RELATIONSHIP_INSIGHTS_PROMPT,
       messages: [{ role: "user", content: insightsUserContent }],
     });
@@ -1083,6 +1249,7 @@ export async function generateRelationshipInsights(
     const response = await getOpenAIClient().chat.completions.create({
       model: OPENAI_MODEL,
       max_tokens: 2048,
+      temperature: 0.7,
       messages: [
         { role: "system", content: RELATIONSHIP_INSIGHTS_PROMPT },
         { role: "user", content: insightsUserContent },
@@ -1171,6 +1338,7 @@ export async function generateChatTitle(messages: ChatMessage[]): Promise<string
     const response = await getOpenAIClient().chat.completions.create({
       model: OPENAI_MODEL,
       max_tokens: 30,
+      temperature: 0.5,
       messages: [
         { role: "system", content: prompt },
         { role: "user", content: context },
@@ -1217,6 +1385,7 @@ export async function extractMemories(
     const response = await getOpenAIClient().chat.completions.create({
       model: OPENAI_MODEL,
       max_tokens: 256,
+      temperature: 0.3,
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: transcript },

@@ -16,6 +16,7 @@ export const metadata: Metadata = {
   title: "The Zodiac Signs",
   description:
     "Learn about all 12 zodiac signs: their elements, modalities, ruling planets, date ranges, and key personality traits.",
+  alternates: { canonical: "/learn/zodiac" },
   keywords: [
     "zodiac signs",
     "astrology signs",

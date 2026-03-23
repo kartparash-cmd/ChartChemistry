@@ -4,6 +4,7 @@ export const metadata: Metadata = {
   title: "Connections | ChartChemistry",
   description:
     "Compare astrological compatibility between your saved profiles. Discover your cosmic connections.",
+  alternates: { canonical: "/connections" },
 };
 
 export default function ConnectionsLayout({

@@ -135,7 +135,7 @@ export async function GET(request: Request) {
     }
 
     // --- 3. Rate limit (5 per hour per user) ---
-    const rateLimitResult = weeklyLimiter.check(session.user.id);
+    const rateLimitResult = await weeklyLimiter.check(session.user.id);
 
     if (!rateLimitResult.allowed) {
       return NextResponse.json(

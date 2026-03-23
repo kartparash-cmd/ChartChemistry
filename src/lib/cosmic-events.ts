@@ -414,6 +414,139 @@ export function getBannerEvents(now: Date = new Date()): CosmicEvent[] {
 }
 
 // ============================================================
+// Calendar: all events for a given month
+// ============================================================
+
+/**
+ * Returns all cosmic events that fall within a given month (year/month).
+ * Unlike getCurrentCosmicEvents which only returns "active" events for today,
+ * this returns every event whose date range overlaps the specified month.
+ */
+export function getEventsForMonth(year: number, month: number): CosmicEvent[] {
+  const events: CosmicEvent[] = [];
+  const monthStart = new Date(year, month, 1);
+  const monthEnd = new Date(year, month + 1, 0, 23, 59, 59);
+
+  // --- Mercury Retrogrades ---
+  for (const retro of MERCURY_RETROGRADES) {
+    const start = parseDate(retro.start);
+    const end = endOfDay(retro.end);
+    if (start <= monthEnd && end >= monthStart) {
+      events.push({
+        name: `Mercury Retrograde in ${retro.sign}`,
+        type: "mercury-retrograde",
+        startDate: start,
+        endDate: end,
+        description:
+          RETROGRADE_DESCRIPTIONS[retro.sign] ||
+          "Communication and technology may be disrupted. Double-check everything.",
+        icon: "\u263F",
+        isActive: false,
+        sign: retro.sign,
+      });
+    }
+  }
+
+  // --- Full Moons ---
+  for (const fm of FULL_MOONS) {
+    const moonDate = parseDate(fm.date);
+    if (moonDate >= monthStart && moonDate <= monthEnd) {
+      events.push({
+        name: `Full Moon in ${fm.sign}`,
+        type: "full-moon",
+        startDate: moonDate,
+        endDate: moonDate,
+        description:
+          FULL_MOON_DESCRIPTIONS[fm.sign] || "A time of culmination and illumination.",
+        icon: "\uD83C\uDF15",
+        isActive: false,
+        sign: fm.sign,
+      });
+    }
+  }
+
+  // --- New Moons ---
+  for (const nm of NEW_MOONS) {
+    const moonDate = parseDate(nm.date);
+    if (moonDate >= monthStart && moonDate <= monthEnd) {
+      events.push({
+        name: `New Moon in ${nm.sign}`,
+        type: "new-moon",
+        startDate: moonDate,
+        endDate: moonDate,
+        description:
+          NEW_MOON_DESCRIPTIONS[nm.sign] || "A time for new beginnings and setting intentions.",
+        icon: "\uD83C\uDF11",
+        isActive: false,
+        sign: nm.sign,
+      });
+    }
+  }
+
+  // --- Eclipses ---
+  for (const eclipse of ECLIPSES) {
+    const eclipseDate = parseDate(eclipse.date);
+    if (eclipseDate >= monthStart && eclipseDate <= monthEnd) {
+      const eclipseType = eclipse.type === "solar-eclipse" ? "Solar" : "Lunar";
+      events.push({
+        name: eclipse.name,
+        type: eclipse.type,
+        startDate: eclipseDate,
+        endDate: eclipseDate,
+        description: `${eclipseType} Eclipse in ${eclipse.sign}. Prepare for accelerated change and karmic turning points.`,
+        icon: eclipse.type === "solar-eclipse" ? "\uD83C\uDF1E" : "\uD83C\uDF16",
+        isActive: false,
+        sign: eclipse.sign,
+      });
+    }
+  }
+
+  // --- Zodiac Seasons ---
+  for (const season of ZODIAC_SEASONS) {
+    const start = parseDate(season.start);
+    const end = endOfDay(season.end);
+    if (start <= monthEnd && end >= monthStart) {
+      events.push({
+        name: `${season.sign} Season Begins`,
+        type: "zodiac-season",
+        startDate: start,
+        endDate: end,
+        description: `The Sun enters ${season.sign}. A new cosmic chapter begins.`,
+        icon: getZodiacIcon(season.sign),
+        isActive: false,
+        sign: season.sign,
+      });
+    }
+  }
+
+  return events;
+}
+
+/**
+ * Calculate moon phase for any given date.
+ * Based on the synodic month (29.53059 days) from a known new moon reference.
+ */
+export function getMoonPhaseForDate(date: Date): { name: string; emoji: string; illumination: number } {
+  const referenceNewMoon = new Date("2000-01-06T18:14:00Z");
+  const synodicMonth = 29.53059;
+
+  const daysSinceRef = (date.getTime() - referenceNewMoon.getTime()) / (1000 * 60 * 60 * 24);
+  const moonAge = ((daysSinceRef % synodicMonth) + synodicMonth) % synodicMonth;
+
+  const illumination = Math.round((1 - Math.cos((2 * Math.PI * moonAge) / synodicMonth)) / 2 * 100);
+
+  if (moonAge < 1.85) return { name: "New Moon", emoji: "\uD83C\uDF11", illumination };
+  if (moonAge < 7.38) return { name: "Waxing Crescent", emoji: "\uD83C\uDF12", illumination };
+  if (moonAge < 9.23) return { name: "First Quarter", emoji: "\uD83C\uDF13", illumination };
+  if (moonAge < 14.77) return { name: "Waxing Gibbous", emoji: "\uD83C\uDF14", illumination };
+  if (moonAge < 16.61) return { name: "Full Moon", emoji: "\uD83C\uDF15", illumination };
+  if (moonAge < 22.15) return { name: "Waning Gibbous", emoji: "\uD83C\uDF16", illumination };
+  if (moonAge < 24.0) return { name: "Last Quarter", emoji: "\uD83C\uDF17", illumination };
+  if (moonAge < 27.68) return { name: "Waning Crescent", emoji: "\uD83C\uDF18", illumination };
+  return { name: "New Moon", emoji: "\uD83C\uDF11", illumination };
+}
+
+// ============================================================
 // Zodiac icon helper
 // ============================================================
 

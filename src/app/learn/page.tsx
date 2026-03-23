@@ -1,6 +1,4 @@
-"use client";
-
-import { motion, useReducedMotion } from "framer-motion";
+import type { Metadata } from "next";
 import Link from "next/link";
 import {
   BookOpen,
@@ -19,17 +17,26 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import {
+  AnimatedHero,
+  AnimatedCardGrid,
+  AnimatedCard,
+  AnimatedSection,
+} from "@/components/learn-animations";
 
-const fadeInUp = {
-  hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0 },
-};
-
-const staggerContainer = {
-  hidden: {},
-  visible: {
-    transition: { staggerChildren: 0.1 },
-  },
+export const metadata: Metadata = {
+  title: "Learn Astrology",
+  description:
+    "Explore the building blocks of astrology: zodiac signs, planets, houses, and aspects. Educational resources for beginners and intermediate learners.",
+  alternates: { canonical: "/learn" },
+  keywords: [
+    "learn astrology",
+    "astrology basics",
+    "zodiac signs",
+    "planets astrology",
+    "astrological houses",
+    "aspects astrology",
+  ],
 };
 
 interface LearningTopic {
@@ -76,20 +83,12 @@ const topics: LearningTopic[] = [
 ];
 
 export default function LearnPage() {
-  const shouldReduceMotion = useReducedMotion();
-
   return (
     <div className="min-h-screen">
       {/* Hero */}
       <section className="relative overflow-hidden pt-24 pb-16 px-4">
         <div className="absolute inset-0 bg-gradient-to-b from-cosmic-purple/5 via-transparent to-transparent" />
-        <motion.div
-          initial={shouldReduceMotion ? "visible" : "hidden"}
-          animate="visible"
-          variants={fadeInUp}
-          transition={{ duration: 0.5 }}
-          className="relative mx-auto max-w-4xl text-center"
-        >
+        <AnimatedHero>
           <Badge
             variant="outline"
             className="mb-4 border-cosmic-purple/30 bg-cosmic-purple/10 text-cosmic-purple-light"
@@ -105,22 +104,16 @@ export default function LearnPage() {
             understanding, explore the building blocks of astrology and learn how
             to interpret the cosmic patterns in your birth chart.
           </p>
-        </motion.div>
+        </AnimatedHero>
       </section>
 
       <Separator className="mx-auto max-w-4xl opacity-30" />
 
       {/* Topic Cards Grid */}
       <section className="px-4 py-16">
-        <motion.div
-          initial={shouldReduceMotion ? "visible" : "hidden"}
-          whileInView="visible"
-          viewport={{ once: true, margin: "-100px" }}
-          variants={staggerContainer}
-          className="mx-auto max-w-4xl grid grid-cols-1 gap-6 sm:grid-cols-2"
-        >
+        <AnimatedCardGrid>
           {topics.map((topic) => (
-            <motion.div key={topic.title} variants={fadeInUp} transition={{ duration: 0.5 }}>
+            <AnimatedCard key={topic.title}>
               <Link href={topic.href} className="group">
                 <Card className="h-full border-white/10 bg-white/[0.02] transition-all hover:border-cosmic-purple/30 hover:bg-cosmic-purple/[0.03] hover:shadow-lg hover:shadow-cosmic-purple/5">
                   <CardHeader>
@@ -152,21 +145,14 @@ export default function LearnPage() {
                   </CardFooter>
                 </Card>
               </Link>
-            </motion.div>
+            </AnimatedCard>
           ))}
-        </motion.div>
+        </AnimatedCardGrid>
       </section>
 
       {/* Bottom CTA */}
       <section className="px-4 pb-20">
-        <motion.div
-          initial={shouldReduceMotion ? "visible" : "hidden"}
-          whileInView="visible"
-          viewport={{ once: true, margin: "-100px" }}
-          variants={fadeInUp}
-          transition={{ duration: 0.5 }}
-          className="mx-auto max-w-2xl"
-        >
+        <AnimatedSection className="mx-auto max-w-2xl">
           <div className="glass-card rounded-2xl border border-white/10 p-8 text-center">
             <h2 className="font-heading text-2xl font-bold mb-3">
               Ready to see how this applies to{" "}
@@ -192,7 +178,7 @@ export default function LearnPage() {
               </Link>
             </div>
           </div>
-        </motion.div>
+        </AnimatedSection>
       </section>
     </div>
   );

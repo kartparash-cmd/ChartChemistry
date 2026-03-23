@@ -10,12 +10,14 @@
  */
 
 import { NextResponse } from "next/server";
+import * as Sentry from "@sentry/nextjs";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { calculateNatalChart, calculateSynastry } from "@/lib/astro-client";
 import { generateFreeReport, extractSynastryHighlights } from "@/lib/claude";
 import { checkRateLimit, getClientIp, getRemainingChecks } from "@/lib/rate-limit";
 import { geocodeCity } from "@/lib/geocode";
+import { find as findTimezone } from "geo-tz";
 import { sanitizeInput } from "@/lib/sanitize";
 import type {
   PersonInput,
@@ -112,9 +114,9 @@ function validatePersonInput(
       birthTime: p.birthTime as string | undefined,
       birthCity: p.birthCity as string,
       birthCountry: p.birthCountry as string,
-      latitude: (p.latitude as number) || 0,
-      longitude: (p.longitude as number) || 0,
-      timezone: (p.timezone as string) || "",
+      latitude: (p.latitude as number) ?? 0,
+      longitude: (p.longitude as number) ?? 0,
+      timezone: (p.timezone as string) ?? "",
     },
   };
 }
@@ -219,44 +221,38 @@ export async function POST(request: Request) {
       );
     }
 
-    // --- Geocode if coordinates are missing ---
-    const geocodePromises: Promise<void>[] = [];
-
-    if (!person1.latitude || !person1.longitude || !person1.timezone) {
-      geocodePromises.push(
-        geocodeCity(person1.birthCity, person1.birthCountry).then((geo) => {
-          person1.latitude = geo.latitude;
-          person1.longitude = geo.longitude;
-          person1.timezone = geo.timezone;
-        })
-      );
-    }
-
-    if (!person2.latitude || !person2.longitude || !person2.timezone) {
-      geocodePromises.push(
-        geocodeCity(person2.birthCity, person2.birthCountry).then((geo) => {
-          person2.latitude = geo.latitude;
-          person2.longitude = geo.longitude;
-          person2.timezone = geo.timezone;
-        })
-      );
-    }
-
-    if (geocodePromises.length > 0) {
-      try {
-        await Promise.all(geocodePromises);
-      } catch (geoError) {
-        return NextResponse.json(
-          {
-            error: "Geocoding failed",
-            message:
-              geoError instanceof Error
-                ? geoError.message
-                : "Could not determine coordinates for the provided city. Please check the city name.",
-          },
-          { status: 400 }
-        );
+    // --- Geocode / resolve timezone ---
+    // If the form already provided lat/lon (from city autocomplete), we only
+    // need the timezone — derive it locally with geo-tz instead of hitting
+    // Nominatim again. When lat/lon are missing, geocode sequentially to
+    // respect Nominatim's 1-request-per-second rate limit.
+    try {
+      for (const person of [person1, person2]) {
+        if (person.latitude && person.longitude) {
+          // Coords available — just derive timezone locally
+          if (!person.timezone) {
+            const tzs = findTimezone(person.latitude, person.longitude);
+            person.timezone = tzs[0] || "UTC";
+          }
+        } else {
+          // No coords — geocode via Nominatim (sequential to avoid rate limit)
+          const geo = await geocodeCity(person.birthCity, person.birthCountry);
+          person.latitude = geo.latitude;
+          person.longitude = geo.longitude;
+          person.timezone = geo.timezone;
+        }
       }
+    } catch (geoError) {
+      return NextResponse.json(
+        {
+          error: "Geocoding failed",
+          message:
+            geoError instanceof Error
+              ? geoError.message
+              : "Could not determine coordinates for the provided city. Please check the city name.",
+        },
+        { status: 400 }
+      );
     }
 
     // --- Step 1+2: Calculate natal charts in parallel ---
@@ -293,6 +289,7 @@ export async function POST(request: Request) {
       remainingChecks,
     });
   } catch (error) {
+    Sentry.captureException(error);
     console.error("[POST /api/compatibility] Error:", error);
 
     // Distinguish between upstream service errors and internal errors

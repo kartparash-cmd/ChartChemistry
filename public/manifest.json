@@ -1,0 +1,14 @@
+{
+  "name": "ChartChemistry",
+  "short_name": "ChartChem",
+  "description": "AI-Powered Astrological Compatibility",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "background_color": "#0F172A",
+  "theme_color": "#7C3AED",
+  "orientation": "portrait",
+  "icons": [
+    { "src": "/logo.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/logo.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

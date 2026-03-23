@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "About | Chart Chemistry",
-  description: "Learn about Chart Chemistry — AI-powered astrology compatibility analysis using real astronomical data and advanced AI interpretation.",
+  title: "About | ChartChemistry",
+  description: "Learn about ChartChemistry — AI-powered astrology compatibility analysis using real astronomical data and advanced AI interpretation.",
   alternates: { canonical: "https://chartchemistry.com/about" },
   openGraph: {
-    title: "About Chart Chemistry",
+    title: "About ChartChemistry",
     description: "AI-powered astrology compatibility analysis using real astronomical data.",
   },
 };

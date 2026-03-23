@@ -4,6 +4,7 @@ export const metadata: Metadata = {
   title: "Wellness & Timing | ChartChemistry",
   description:
     "Personalized wellness suggestions based on today's planetary transits to your natal chart.",
+  alternates: { canonical: "/wellness" },
 };
 
 export default function WellnessLayout({

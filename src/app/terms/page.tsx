@@ -4,6 +4,7 @@ export const metadata: Metadata = {
   title: "Terms of Service",
   description:
     "Terms of Service for ChartChemistry. Read our terms governing the use of our AI-powered astrological compatibility platform, subscription plans, and services.",
+  alternates: { canonical: "/terms" },
 };
 
 export default function TermsOfServicePage() {

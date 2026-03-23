@@ -2,43 +2,38 @@ import { NextResponse } from "next/server";
 import crypto from "crypto";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
-import { sendVerificationEmail } from "@/lib/email";
+import { sendVerificationEmail, sendExistingAccountNotification } from "@/lib/email";
 import { sendWelcomeEmail } from "@/lib/emails";
-import { getClientIp } from "@/lib/rate-limit";
+import { createRateLimiter, getClientIp } from "@/lib/rate-limit";
 import { sanitizeName, sanitizeEmail } from "@/lib/sanitize";
+import { checkReferralAchievements } from "@/lib/achievements";
+import { logServerEvent } from "@/lib/server-analytics";
 
 // ============================================================
-// Signup-specific rate limiter (in-memory, per-IP)
+// Signup rate limiter: 5 signups per hour per IP
+// Redis-backed (Upstash) with in-memory fallback
 // ============================================================
 
-const signupLimiter = new Map<string, { count: number; resetAt: number }>();
-const SIGNUP_LIMIT = 5; // 5 signups per hour per IP
-const SIGNUP_WINDOW = 60 * 60 * 1000; // 1 hour
-
-function checkSignupRateLimit(ip: string): boolean {
-  const now = Date.now();
-  const entry = signupLimiter.get(ip);
-  if (!entry || now > entry.resetAt) {
-    signupLimiter.set(ip, { count: 1, resetAt: now + SIGNUP_WINDOW });
-    return true;
-  }
-  if (entry.count >= SIGNUP_LIMIT) return false;
-  entry.count++;
-  return true;
-}
+const signupLimiter = createRateLimiter(5, 60 * 60 * 1000, "signup");
 
 export async function POST(request: Request) {
   try {
     // Rate limit by IP before doing any work
     const ip = getClientIp(request);
-    if (!checkSignupRateLimit(ip)) {
+    const { allowed } = await signupLimiter.check(ip);
+    if (!allowed) {
       return NextResponse.json(
         { error: "Too many signup attempts. Please try again later." },
         { status: 429 }
       );
     }
 
-    const body = await request.json();
+    let body;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json({ error: "Invalid JSON in request body" }, { status: 400 });
+    }
     const { name, email, password, referralCode: bodyRefCode, ageConfirmed } = body;
 
     if (!email || !password) {
@@ -69,9 +64,16 @@ export async function POST(request: Request) {
     });
 
     if (existingUser) {
+      // Return identical response to prevent email enumeration.
+      // Notify the existing account owner via email instead.
+      sendExistingAccountNotification(normalizedEmail).catch(() => {
+        // Swallow — sendExistingAccountNotification already logs on failure.
+      });
       return NextResponse.json(
-        { error: "An account with this email already exists" },
-        { status: 409 }
+        {
+          message: "Account created! Please check your email to verify your account.",
+        },
+        { status: 201 }
       );
     }
 
@@ -107,11 +109,20 @@ export async function POST(request: Request) {
 
     // Increment the referrer's referral count if applicable
     if (referredByUserId) {
-      await prisma.user.update({
+      const updatedReferrer = await prisma.user.update({
         where: { id: referredByUserId },
         data: { referralCount: { increment: 1 } },
+        select: { referralCount: true },
       });
+
+      // Fire-and-forget: check referral achievements (REFERRED_FRIEND / THREE_REFERRALS)
+      checkReferralAchievements(referredByUserId, updatedReferrer.referralCount).catch((err) =>
+        console.warn("[POST /api/auth/signup] Referral achievement check failed:", err)
+      );
     }
+
+    // Log server-side signup event
+    logServerEvent("user_signup", { userId: user.id, hasReferral: !!referredByUserId });
 
     // Generate verification token and send email
     const verificationToken = crypto.randomUUID();
@@ -136,10 +147,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json(
       {
-        message: emailResult.success
-          ? "Account created! Please check your email to verify your account."
-          : "Account created successfully!",
-        userId: user.id,
+        message: "Account created! Please check your email to verify your account.",
       },
       { status: 201 }
     );

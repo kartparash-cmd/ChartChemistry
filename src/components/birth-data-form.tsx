@@ -1,22 +1,16 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Info, MapPin, Loader2 } from "lucide-react";
+import { Info, MapPin, Loader2, ChevronsUpDown, Check, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { trackEvent } from "@/lib/analytics";
 
 export interface BirthData {
   name: string;
@@ -267,6 +261,80 @@ export function BirthDataForm({
     lon: number;
   } | null>(null);
 
+  // Country search combobox state
+  const [countrySearch, setCountrySearch] = useState("");
+  const [countryOpen, setCountryOpen] = useState(false);
+  const [countryHighlightedIndex, setCountryHighlightedIndex] = useState(-1);
+  const countryInputRef = useRef<HTMLInputElement>(null);
+  const countryDropdownRef = useRef<HTMLDivElement>(null);
+  const countryTriggerRef = useRef<HTMLButtonElement>(null);
+
+  const filteredCountries = useMemo(() => {
+    if (!countrySearch.trim()) return COUNTRIES;
+    const q = countrySearch.toLowerCase();
+    return COUNTRIES.filter((c) => c.toLowerCase().includes(q));
+  }, [countrySearch]);
+
+  // Close country dropdown when clicking outside
+  useEffect(() => {
+    if (!countryOpen) return;
+    function handleClickOutside(e: MouseEvent) {
+      if (
+        countryDropdownRef.current &&
+        !countryDropdownRef.current.contains(e.target as Node) &&
+        countryTriggerRef.current &&
+        !countryTriggerRef.current.contains(e.target as Node)
+      ) {
+        setCountryOpen(false);
+        setCountrySearch("");
+        setCountryHighlightedIndex(-1);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [countryOpen]);
+
+  // Focus search input when dropdown opens
+  useEffect(() => {
+    if (countryOpen) {
+      // Small delay to let the DOM render
+      requestAnimationFrame(() => countryInputRef.current?.focus());
+    }
+  }, [countryOpen]);
+
+  const handleCountrySelect = (country: string) => {
+    setBirthCountry(country);
+    setCountryOpen(false);
+    setCountrySearch("");
+    setCountryHighlightedIndex(-1);
+  };
+
+  const handleCountryKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setCountryHighlightedIndex((prev) =>
+        prev < filteredCountries.length - 1 ? prev + 1 : 0
+      );
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setCountryHighlightedIndex((prev) =>
+        prev > 0 ? prev - 1 : filteredCountries.length - 1
+      );
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      if (countryHighlightedIndex >= 0 && filteredCountries[countryHighlightedIndex]) {
+        handleCountrySelect(filteredCountries[countryHighlightedIndex]);
+      } else if (filteredCountries.length === 1) {
+        handleCountrySelect(filteredCountries[0]);
+      }
+    } else if (e.key === "Escape") {
+      setCountryOpen(false);
+      setCountrySearch("");
+      setCountryHighlightedIndex(-1);
+      countryTriggerRef.current?.focus();
+    }
+  };
+
   // City autocomplete state
   const [citySuggestions, setCitySuggestions] = useState<CityResult[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -280,6 +348,9 @@ export function BirthDataForm({
   const onSubmitRef = useRef(onSubmit);
   onSubmitRef.current = onSubmit;
 
+  // Track when the form becomes fully valid (once per mount)
+  const profileCompleteTracked = useRef(false);
+
   // Auto-notify parent whenever form validity changes
   const isValid =
     name.trim() &&
@@ -289,6 +360,10 @@ export function BirthDataForm({
     birthCountry;
 
   useEffect(() => {
+    if (isValid && !profileCompleteTracked.current) {
+      profileCompleteTracked.current = true;
+      trackEvent("profile_complete");
+    }
     if (isValid) {
       onSubmitRef.current({
         name: name.trim(),
@@ -579,24 +654,93 @@ export function BirthDataForm({
         </div>
       </div>
 
-      {/* Birth Country */}
+      {/* Birth Country — searchable combobox */}
       <div className="space-y-2">
         <Label>Birth Country</Label>
-        <Select
-          value={birthCountry}
-          onValueChange={(value) => setBirthCountry(value)}
-        >
-          <SelectTrigger className="w-full h-11 bg-background/50" aria-label="Select birth country">
-            <SelectValue placeholder="Select country" />
-          </SelectTrigger>
-          <SelectContent className="max-h-60">
-            {COUNTRIES.map((country) => (
-              <SelectItem key={country} value={country}>
-                {country}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="relative">
+          <button
+            ref={countryTriggerRef}
+            type="button"
+            role="combobox"
+            aria-expanded={countryOpen}
+            aria-controls={`country-listbox-${label}`}
+            aria-haspopup="listbox"
+            aria-label="Select birth country"
+            onClick={() => {
+              setCountryOpen((prev) => !prev);
+              if (countryOpen) {
+                setCountrySearch("");
+                setCountryHighlightedIndex(-1);
+              }
+            }}
+            className={cn(
+              "flex h-11 w-full items-center justify-between rounded-md border border-input bg-background/50 px-3 py-2 text-sm ring-offset-background",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+              "hover:bg-accent/50 transition-colors",
+              !birthCountry && "text-muted-foreground"
+            )}
+          >
+            <span className="truncate">
+              {birthCountry || "Select country"}
+            </span>
+            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+          </button>
+
+          {countryOpen && (
+            <div
+              ref={countryDropdownRef}
+              className="absolute z-50 mt-1 w-full rounded-lg border border-border bg-popover shadow-lg"
+            >
+              {/* Search input */}
+              <div className="flex items-center border-b border-border px-3">
+                <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+                <input
+                  ref={countryInputRef}
+                  type="text"
+                  placeholder="Search countries..."
+                  value={countrySearch}
+                  onChange={(e) => {
+                    setCountrySearch(e.target.value);
+                    setCountryHighlightedIndex(-1);
+                  }}
+                  onKeyDown={handleCountryKeyDown}
+                  className="flex h-10 w-full bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground"
+                  autoComplete="off"
+                />
+              </div>
+
+              {/* Country list */}
+              <div className="max-h-[200px] overflow-y-auto p-1" role="listbox" id={`country-listbox-${label}`}>
+                {filteredCountries.length === 0 ? (
+                  <p className="py-4 text-center text-sm text-muted-foreground">
+                    No country found.
+                  </p>
+                ) : (
+                  filteredCountries.map((country, i) => (
+                    <button
+                      key={country}
+                      type="button"
+                      role="option"
+                      aria-selected={birthCountry === country}
+                      className={cn(
+                        "relative flex w-full cursor-pointer items-center rounded-sm py-2 pl-8 pr-2 text-sm outline-none transition-colors",
+                        "hover:bg-accent hover:text-accent-foreground",
+                        i === countryHighlightedIndex && "bg-accent text-accent-foreground",
+                        birthCountry === country && "font-medium"
+                      )}
+                      onClick={() => handleCountrySelect(country)}
+                    >
+                      {birthCountry === country && (
+                        <Check className="absolute left-2 h-4 w-4 text-cosmic-purple" />
+                      )}
+                      {country}
+                    </button>
+                  ))
+                )}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Visual indicator of form completeness */}

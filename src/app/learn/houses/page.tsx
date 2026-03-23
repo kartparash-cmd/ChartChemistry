@@ -15,6 +15,7 @@ export const metadata: Metadata = {
   title: "The Astrological Houses",
   description:
     "Learn about the 12 astrological houses, each representing a different area of life from identity and finances to relationships and spirituality.",
+  alternates: { canonical: "/learn/houses" },
   keywords: [
     "astrological houses",
     "birth chart houses",

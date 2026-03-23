@@ -22,6 +22,35 @@ export async function GET() {
         },
         chatSessions: true,
         achievements: true,
+        marieMemories: {
+          select: {
+            key: true,
+            value: true,
+            createdAt: true,
+            updatedAt: true,
+          },
+        },
+        relationshipCheckIns: {
+          select: {
+            connectionScore: true,
+            conflictNote: true,
+            positiveNote: true,
+            growthGoal: true,
+            overallMood: true,
+            createdAt: true,
+          },
+        },
+        supportTickets: {
+          include: {
+            replies: {
+              select: {
+                message: true,
+                isAdmin: true,
+                createdAt: true,
+              },
+            },
+          },
+        },
       },
     });
 

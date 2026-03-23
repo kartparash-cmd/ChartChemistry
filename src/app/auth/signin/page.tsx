@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, Suspense } from "react";
+import { trackEvent } from "@/lib/analytics";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
@@ -36,6 +37,7 @@ function SignInContent() {
   const handleGoogleSignIn = async () => {
     setIsLoadingGoogle(true);
     try {
+      trackEvent("signin", { method: "google" });
       await signIn("google", { callbackUrl });
     } catch {
       setIsLoadingGoogle(false);
@@ -59,6 +61,7 @@ function SignInContent() {
         setErrorMessage("Invalid email or password");
         setIsLoadingCredentials(false);
       } else {
+        trackEvent("signin", { method: "credentials" });
         window.location.href = callbackUrl;
       }
     } catch {

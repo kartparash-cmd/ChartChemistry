@@ -16,10 +16,17 @@ import {
   Check,
   ArrowRight,
   Fingerprint,
+  Download,
+  Share2,
+  Twitter,
+  Smartphone,
+  MessageCircle,
+  Link2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { trackEvent } from "@/lib/analytics";
 
 // ============================================================
 // Types
@@ -204,6 +211,173 @@ function getElementBalance(planets: PlanetData[] | undefined): Record<string, nu
 }
 
 // ============================================================
+// Helpers
+// ============================================================
+
+function buildCardUrl(name: string, sun: string, moon: string | null, rising: string | null, element: string): string {
+  const base = typeof window !== "undefined" ? window.location.origin : "https://chartchemistry.com";
+  const params = new URLSearchParams({ name, sun });
+  if (moon) params.set("moon", moon);
+  if (rising) params.set("rising", rising);
+  params.set("element", element);
+  return `${base}/cosmic-identity?${params.toString()}`;
+}
+
+// ============================================================
+// CosmicCardShare sub-component
+// ============================================================
+
+interface CosmicCardShareProps {
+  name: string;
+  sun: string;
+  moon: string | null;
+  rising: string | null;
+  element: string;
+  copied: boolean;
+  linkCopied: boolean;
+  downloading: boolean;
+  onCopyIdentity: () => void;
+  onCopyLink: () => void;
+  onDownload: () => void;
+  onShareTwitter: () => void;
+  onShareWhatsApp: () => void;
+  onShareSms: () => void;
+}
+
+function CosmicCardShare({
+  name, sun, moon, rising, element,
+  copied, linkCopied, downloading,
+  onCopyIdentity, onCopyLink, onDownload,
+  onShareTwitter, onShareWhatsApp, onShareSms,
+}: CosmicCardShareProps) {
+  const params = new URLSearchParams({ name, sun });
+  if (moon) params.set("moon", moon);
+  if (rising) params.set("rising", rising);
+  params.set("element", element);
+  const cardPreviewUrl = `/api/cosmic-card?${params.toString()}`;
+
+  return (
+    <div className="rounded-2xl border border-cosmic-purple/20 bg-gradient-to-br from-cosmic-purple/[0.06] via-transparent to-gold/[0.03] p-6 sm:p-8 backdrop-blur-sm">
+      <div className="text-center mb-6">
+        <div className="flex items-center justify-center gap-2 mb-2">
+          <Share2 className="h-5 w-5 text-cosmic-purple-light" />
+          <h3 className="font-heading text-xl font-semibold">
+            Share Your <span className="cosmic-text">Cosmic Card</span>
+          </h3>
+        </div>
+        <p className="text-sm text-muted-foreground">
+          Show off your Sun, Moon &amp; Rising to friends and see who&apos;s compatible
+        </p>
+      </div>
+
+      {/* Card Preview */}
+      <div className="mb-6 flex justify-center">
+        <div className="relative rounded-xl overflow-hidden border border-white/10 shadow-2xl shadow-cosmic-purple/10 max-w-[480px] w-full">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={cardPreviewUrl}
+            alt={`${name}'s Cosmic Card - ${sun} Sun${moon ? `, ${moon} Moon` : ""}${rising ? `, ${rising} Rising` : ""}`}
+            className="w-full h-auto"
+            loading="lazy"
+          />
+        </div>
+      </div>
+
+      {/* Action Buttons */}
+      <div className="space-y-4">
+        {/* Download */}
+        <div className="flex justify-center">
+          <Button
+            onClick={onDownload}
+            disabled={downloading}
+            className="bg-cosmic-purple hover:bg-cosmic-purple-dark text-white w-full sm:w-auto"
+          >
+            {downloading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Generating...
+              </>
+            ) : (
+              <>
+                <Download className="mr-2 h-4 w-4" />
+                Download Card
+              </>
+            )}
+          </Button>
+        </div>
+
+        {/* Share Row */}
+        <div className="flex flex-wrap items-center justify-center gap-2">
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-10 w-10 border-white/10 hover:bg-green-500/10 hover:border-green-500/30"
+            onClick={onShareWhatsApp}
+            title="Share on WhatsApp"
+          >
+            <MessageCircle className="h-4 w-4 text-green-400" />
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-10 w-10 border-white/10 hover:bg-sky-500/10 hover:border-sky-500/30"
+            onClick={onShareTwitter}
+            title="Share on X"
+          >
+            <Twitter className="h-4 w-4 text-sky-400" />
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-10 w-10 border-white/10 hover:bg-blue-500/10 hover:border-blue-500/30"
+            onClick={onShareSms}
+            title="Share via SMS"
+          >
+            <Smartphone className="h-4 w-4 text-blue-400" />
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="border-white/10 hover:bg-cosmic-purple/10"
+            onClick={onCopyLink}
+          >
+            {linkCopied ? (
+              <>
+                <Check className="mr-2 h-4 w-4 text-green-400" />
+                Link Copied!
+              </>
+            ) : (
+              <>
+                <Link2 className="mr-2 h-4 w-4" />
+                Copy Link
+              </>
+            )}
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="border-gold/20 text-gold hover:bg-gold/10"
+            onClick={onCopyIdentity}
+          >
+            {copied ? (
+              <>
+                <Check className="mr-2 h-4 w-4" />
+                Copied!
+              </>
+            ) : (
+              <>
+                <Copy className="mr-2 h-4 w-4" />
+                Copy Text
+              </>
+            )}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
 // Component
 // ============================================================
 
@@ -214,6 +388,8 @@ export default function CosmicIdentityPage() {
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
+  const [linkCopied, setLinkCopied] = useState(false);
+  const [downloading, setDownloading] = useState(false);
 
   const isPremium =
     session?.user?.plan === "PREMIUM" || session?.user?.plan === "ANNUAL";
@@ -731,31 +907,77 @@ export default function CosmicIdentityPage() {
           </motion.div>
         )}
 
-        {/* Share / Copy button */}
+        {/* Share Your Cosmic Card */}
         {sunSign && (
           <motion.div
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5 }}
-            className="flex justify-center"
           >
-            <Button
-              variant="outline"
-              className="border-gold/20 text-gold hover:bg-gold/10"
-              onClick={handleCopyIdentity}
-            >
-              {copied ? (
-                <>
-                  <Check className="mr-2 h-4 w-4" />
-                  Copied to clipboard!
-                </>
-              ) : (
-                <>
-                  <Copy className="mr-2 h-4 w-4" />
-                  Share Your Cosmic Identity
-                </>
-              )}
-            </Button>
+            <CosmicCardShare
+              name={profile.name}
+              sun={sunSign}
+              moon={moonSign}
+              rising={risingSign}
+              element={dominantElement?.element || sunElement || "Fire"}
+              copied={copied}
+              linkCopied={linkCopied}
+              downloading={downloading}
+              onCopyIdentity={handleCopyIdentity}
+              onCopyLink={async () => {
+                const cardUrl = buildCardUrl(profile.name, sunSign, moonSign, risingSign, dominantElement?.element || sunElement || "Fire");
+                try {
+                  await navigator.clipboard.writeText(cardUrl);
+                  setLinkCopied(true);
+                  trackEvent("share_click", { method: "cosmic-card-copy-link" });
+                  setTimeout(() => setLinkCopied(false), 2000);
+                } catch {}
+              }}
+              onDownload={async () => {
+                setDownloading(true);
+                trackEvent("share_click", { method: "cosmic-card-download" });
+                try {
+                  const params = new URLSearchParams({ name: profile.name, sun: sunSign });
+                  if (moonSign) params.set("moon", moonSign);
+                  if (risingSign) params.set("rising", risingSign);
+                  params.set("element", dominantElement?.element || sunElement || "Fire");
+                  params.set("format", "square");
+                  const res = await fetch(`/api/cosmic-card?${params.toString()}`);
+                  if (!res.ok) throw new Error("Failed to generate card");
+                  const blob = await res.blob();
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement("a");
+                  a.href = url;
+                  a.download = `cosmic-card-${profile.name.toLowerCase().replace(/\s+/g, "-")}.png`;
+                  document.body.appendChild(a);
+                  a.click();
+                  document.body.removeChild(a);
+                  URL.revokeObjectURL(url);
+                } catch {
+                  // Download failed silently
+                } finally {
+                  setDownloading(false);
+                }
+              }}
+              onShareTwitter={() => {
+                trackEvent("share_click", { method: "cosmic-card-twitter" });
+                const text = `My Cosmic Card: ${sunSign} Sun ${moonSign ? `/ ${moonSign} Moon` : ""} ${risingSign ? `/ ${risingSign} Rising` : ""} - Check your compatibility with me!`;
+                const cardUrl = buildCardUrl(profile.name, sunSign, moonSign, risingSign, dominantElement?.element || sunElement || "Fire");
+                window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(cardUrl)}`, "_blank");
+              }}
+              onShareWhatsApp={() => {
+                trackEvent("share_click", { method: "cosmic-card-whatsapp" });
+                const text = `My Cosmic Card: ${sunSign} Sun ${moonSign ? `/ ${moonSign} Moon` : ""} ${risingSign ? `/ ${risingSign} Rising` : ""} - Check your compatibility with me!\n`;
+                const cardUrl = buildCardUrl(profile.name, sunSign, moonSign, risingSign, dominantElement?.element || sunElement || "Fire");
+                window.open(`https://wa.me/?text=${encodeURIComponent(text + cardUrl)}`, "_blank");
+              }}
+              onShareSms={() => {
+                trackEvent("share_click", { method: "cosmic-card-sms" });
+                const text = `My Cosmic Card: ${sunSign} Sun ${moonSign ? `/ ${moonSign} Moon` : ""} ${risingSign ? `/ ${risingSign} Rising` : ""} - Check your compatibility with me!`;
+                const cardUrl = buildCardUrl(profile.name, sunSign, moonSign, risingSign, dominantElement?.element || sunElement || "Fire");
+                window.open(`sms:?&body=${encodeURIComponent(text + "\n" + cardUrl)}`, "_self");
+              }}
+            />
           </motion.div>
         )}
       </div>

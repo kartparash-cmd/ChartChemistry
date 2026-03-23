@@ -13,6 +13,7 @@ import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/generated/prisma/client";
 import { calculateTransits } from "@/lib/astro-client";
 import { generateDailyHoroscope } from "@/lib/claude";
+import { awardAchievement } from "@/lib/achievements";
 import type { NatalChart, NatalChartInput } from "@/types/astrology";
 
 // In-memory cache for horoscopes (per deployment — good enough for MVP)
@@ -104,7 +105,19 @@ export async function GET() {
     const response = {
       date: today,
       userName: profile.name,
-      ...horoscope,
+      // Structured fields
+      overview: horoscope.overview,
+      love: horoscope.love,
+      career: horoscope.career,
+      wellness: horoscope.wellness,
+      cosmicTip: horoscope.cosmicTip,
+      luckyTime: horoscope.luckyTime,
+      luckyNumber: horoscope.luckyNumber,
+      luckyColor: horoscope.luckyColor,
+      mood: horoscope.mood,
+      // Legacy fields for backward compatibility
+      summary: horoscope.summary || horoscope.overview,
+      body: horoscope.body || `${horoscope.love}\n\n${horoscope.career}\n\n${horoscope.wellness}`,
     };
 
     // Cache until midnight (approximately — good enough for MVP)
@@ -115,6 +128,11 @@ export async function GET() {
       data: response,
       expiresAt: midnight.getTime(),
     });
+
+    // Fire-and-forget: award FIRST_HOROSCOPE achievement
+    awardAchievement(session.user.id, "FIRST_HOROSCOPE").catch((err) =>
+      console.warn("[GET /api/horoscope] Achievement award failed:", err)
+    );
 
     return NextResponse.json(response);
   } catch (error) {

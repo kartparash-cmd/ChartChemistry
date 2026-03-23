@@ -77,7 +77,7 @@ export async function POST(request: Request) {
     }
 
     // Rate limit check
-    const rateResult = rateLimiter.check(session.user.id);
+    const rateResult = await rateLimiter.check(session.user.id);
     if (!rateResult.allowed) {
       return NextResponse.json(
         {

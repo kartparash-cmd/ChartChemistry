@@ -1811,6 +1811,11 @@ export type BirthProfileFindManyArgs<ExtArgs extends runtime.Types.Extensions.In
    * Skip the first `n` BirthProfiles.
    */
   skip?: number
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   * 
+   * Filter by unique combinations of BirthProfiles.
+   */
   distinct?: Prisma.BirthProfileScalarFieldEnum | Prisma.BirthProfileScalarFieldEnum[]
 }
 

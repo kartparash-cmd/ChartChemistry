@@ -3,7 +3,7 @@ import { sanitizeInput, sanitizeEmail, sanitizeName } from "@/lib/sanitize";
 
 describe("sanitizeInput", () => {
   it("strips HTML tags from input", () => {
-    expect(sanitizeInput("<script>alert('xss')</script>")).toBe("alert('xss')");
+    expect(sanitizeInput("<script>alert('xss')</script>")).toBe("alert(&#x27;xss&#x27;)");
   });
 
   it("strips nested HTML tags", () => {
@@ -19,12 +19,12 @@ describe("sanitizeInput", () => {
   });
 
   it("handles special characters (ampersand)", () => {
-    expect(sanitizeInput("Tom & Jerry")).toBe("Tom & Jerry");
+    expect(sanitizeInput("Tom & Jerry")).toBe("Tom &amp; Jerry");
   });
 
   it("strips angle-bracket tags but preserves other special chars", () => {
     expect(sanitizeInput('He said "hello" & <b>goodbye</b>')).toBe(
-      'He said "hello" & goodbye'
+      'He said &quot;hello&quot; &amp; goodbye'
     );
   });
 

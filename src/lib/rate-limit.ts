@@ -175,26 +175,63 @@ export function getRemainingChecks(ip: string): number {
 }
 
 /* -------------------------------------------------------------------------- */
-/*  Generic in-memory rate limiter                                            */
+/*  Generic rate limiter (Redis-backed with in-memory fallback)               */
 /* -------------------------------------------------------------------------- */
 
 /**
- * Create a reusable in-memory rate limiter for any endpoint.
+ * Convert milliseconds to an Upstash duration string.
+ */
+function msToUpstashWindow(ms: number): `${number} ${"ms" | "s" | "m" | "h" | "d"}` {
+  if (ms >= 24 * 60 * 60 * 1000 && ms % (24 * 60 * 60 * 1000) === 0)
+    return `${ms / (24 * 60 * 60 * 1000)} d`;
+  if (ms >= 60 * 60 * 1000 && ms % (60 * 60 * 1000) === 0)
+    return `${ms / (60 * 60 * 1000)} h`;
+  if (ms >= 60 * 1000 && ms % (60 * 1000) === 0)
+    return `${ms / (60 * 1000)} m`;
+  if (ms >= 1000 && ms % 1000 === 0)
+    return `${ms / 1000} s`;
+  return `${ms} ms`;
+}
+
+/**
+ * Create a reusable rate limiter for any endpoint.
+ *
+ * Uses Upstash Redis when UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN
+ * are configured. Falls back to in-memory otherwise (or on Redis errors).
  *
  * @param maxRequests  Maximum requests allowed per window
  * @param windowMs     Window duration in milliseconds
- * @param prefix       Optional prefix for distinguishing limiter stores
+ * @param prefix       Prefix for Redis keys (required for Redis-backed limiters)
  *
- * Returns a `check(key)` function that returns `{ allowed, remaining, resetAt }`.
+ * Returns an object with an async `check(key)` method.
  */
 export function createRateLimiter(
   maxRequests: number,
   windowMs: number,
-  _prefix?: string
+  prefix?: string
 ) {
+  // Attempt to initialise Upstash Redis limiter
+  let upstash: Ratelimit | null = null;
+  const url = process.env.UPSTASH_REDIS_REST_URL;
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+
+  if (url && token) {
+    try {
+      const redis = new Redis({ url, token });
+      upstash = new Ratelimit({
+        redis,
+        limiter: Ratelimit.slidingWindow(maxRequests, msToUpstashWindow(windowMs)),
+        prefix: `ratelimit:${prefix ?? "generic"}`,
+      });
+    } catch {
+      upstash = null;
+    }
+  }
+
+  // In-memory fallback store
   const limiterStore = new Map<string, RateLimitEntry>();
 
-  // Periodic cleanup
+  // Periodic cleanup for in-memory store
   const timer = setInterval(() => {
     const now = Date.now();
     for (const [key, entry] of limiterStore) {
@@ -208,27 +245,44 @@ export function createRateLimiter(
     timer.unref();
   }
 
+  function checkInMemory(key: string): RateLimitResult {
+    const now = Date.now();
+    const entry = limiterStore.get(key);
+
+    if (!entry || now >= entry.resetAt) {
+      const resetAt = now + windowMs;
+      limiterStore.set(key, { count: 1, resetAt });
+      return { allowed: true, remaining: maxRequests - 1, resetAt };
+    }
+
+    if (entry.count < maxRequests) {
+      entry.count++;
+      return {
+        allowed: true,
+        remaining: maxRequests - entry.count,
+        resetAt: entry.resetAt,
+      };
+    }
+
+    return { allowed: false, remaining: 0, resetAt: entry.resetAt };
+  }
+
   return {
-    check(key: string): RateLimitResult {
-      const now = Date.now();
-      const entry = limiterStore.get(key);
-
-      if (!entry || now >= entry.resetAt) {
-        const resetAt = now + windowMs;
-        limiterStore.set(key, { count: 1, resetAt });
-        return { allowed: true, remaining: maxRequests - 1, resetAt };
+    async check(key: string): Promise<RateLimitResult> {
+      if (upstash) {
+        try {
+          const result = await upstash.limit(key);
+          return {
+            allowed: result.success,
+            remaining: result.remaining,
+            resetAt: result.reset,
+          };
+        } catch {
+          // Fall back to in-memory on Redis errors
+          return checkInMemory(key);
+        }
       }
-
-      if (entry.count < maxRequests) {
-        entry.count++;
-        return {
-          allowed: true,
-          remaining: maxRequests - entry.count,
-          resetAt: entry.resetAt,
-        };
-      }
-
-      return { allowed: false, remaining: 0, resetAt: entry.resetAt };
+      return checkInMemory(key);
     },
   };
 }

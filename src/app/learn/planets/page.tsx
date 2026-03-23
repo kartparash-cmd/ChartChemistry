@@ -16,6 +16,7 @@ export const metadata: Metadata = {
   title: "The Planets in Astrology",
   description:
     "Learn about the ten planets used in astrology: the Sun, Moon, Mercury, Venus, Mars, Jupiter, Saturn, Uranus, Neptune, and Pluto.",
+  alternates: { canonical: "/learn/planets" },
   keywords: [
     "planets astrology",
     "personal planets",

@@ -665,6 +665,29 @@
 /* ============================================================================
    Reduced Motion Support
    ============================================================================ */
+/* ============================================================================
+   Windows High Contrast Mode Fallback
+   ============================================================================ */
+@media (forced-colors: active) {
+  .cosmic-text {
+    background: none;
+    -webkit-background-clip: unset;
+    background-clip: unset;
+    -webkit-text-fill-color: unset;
+    color: LinkText;
+  }
+}
+
+/* ============================================================================
+   Accessibility Utilities
+   ============================================================================ */
+[aria-busy="true"] {
+  cursor: wait;
+}
+
+/* ============================================================================
+   Reduced Motion Support
+   ============================================================================ */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;

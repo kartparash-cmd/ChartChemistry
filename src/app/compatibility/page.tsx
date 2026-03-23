@@ -3,9 +3,17 @@
 import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import { useSession } from "next-auth/react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
-import { ArrowRight, AlertTriangle, RefreshCw, LayoutDashboard, Crown, X, Infinity } from "lucide-react";
+import { ArrowRight, AlertTriangle, RefreshCw, LayoutDashboard, Crown, X, Infinity, Sparkles } from "lucide-react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { StarField } from "@/components/star-field";
 import { BirthDataForm, type BirthData } from "@/components/birth-data-form";
 import { LoadingFacts } from "./loading-facts";
@@ -49,8 +57,18 @@ type PageState = "input" | "loading" | "results" | "error";
 /*  Component                                                                 */
 /* -------------------------------------------------------------------------- */
 
+interface InviteData {
+  name: string;
+  birthDate: string;
+  birthTime?: string;
+  birthCity: string;
+  birthCountry: string;
+  sign: string;
+}
+
 export default function CompatibilityPage() {
   const { data: session } = useSession();
+  const searchParams = useSearchParams();
   const prefersReducedMotion = useReducedMotion();
   const rateLimitModalRef = useRef<HTMLDivElement>(null);
   const [personA, setPersonA] = useState<BirthData | null>(null);
@@ -60,6 +78,7 @@ export default function CompatibilityPage() {
   const [error, setError] = useState<string>("");
   const [remainingChecks, setRemainingChecks] = useState<number | null>(null);
   const [showRateLimitModal, setShowRateLimitModal] = useState(false);
+  const [inviteData, setInviteData] = useState<InviteData | null>(null);
   interface SavedProfile {
     id: string;
     name: string;
@@ -75,6 +94,28 @@ export default function CompatibilityPage() {
   const [formKeyA, setFormKeyA] = useState(0);
   const [formKeyB, setFormKeyB] = useState(0);
   const [initialChecksLoaded, setInitialChecksLoaded] = useState(false);
+
+  // Detect invite query param on mount and pre-fill Person A
+  useEffect(() => {
+    const inviteParam = searchParams.get("invite");
+    if (!inviteParam) return;
+    try {
+      const decoded = JSON.parse(atob(inviteParam)) as InviteData;
+      if (decoded.name && decoded.birthDate && decoded.birthCity && decoded.birthCountry) {
+        setInviteData(decoded);
+        setPersonA({
+          name: decoded.name,
+          birthDate: decoded.birthDate,
+          birthTime: decoded.birthTime,
+          birthCity: decoded.birthCity,
+          birthCountry: decoded.birthCountry,
+        });
+        setFormKeyA((k) => k + 1);
+      }
+    } catch {
+      // Invalid invite data — ignore
+    }
+  }, [searchParams]);
 
   // Fetch remaining checks count on mount for free / unauthenticated users
   useEffect(() => {
@@ -200,8 +241,9 @@ export default function CompatibilityPage() {
           setPageState("input");
           return;
         }
+        const errBody = await response.json().catch(() => null);
         throw new Error(
-          `Analysis failed (${response.status}). Please try again.`
+          errBody?.message || `Analysis failed (${response.status}). Please try again.`
         );
       }
 
@@ -259,6 +301,7 @@ export default function CompatibilityPage() {
     setResult(null);
     setPageState("input");
     setError("");
+    setInviteData(null);
   };
 
   return (
@@ -292,73 +335,119 @@ export default function CompatibilityPage() {
               exit={{ opacity: 0 }}
               transition={fade}
             >
+              {/* Invite banner */}
+              {inviteData && (
+                <motion.div
+                  className="mb-6 rounded-2xl border border-gold/30 bg-gold/10 p-5 text-center"
+                  initial={prefersReducedMotion ? false : { opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.4 }}
+                >
+                  <div className="flex items-center justify-center gap-2 mb-1">
+                    <Sparkles className="h-5 w-5 text-gold" />
+                    <p className="text-sm font-semibold text-gold">
+                      {inviteData.name} wants to check your compatibility!
+                    </p>
+                    <Sparkles className="h-5 w-5 text-gold" />
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Enter your details below to see your cosmic connection.
+                  </p>
+                </motion.div>
+              )}
+
               <div className="grid gap-6 md:grid-cols-2">
                 <div>
-                  {savedProfiles.length > 0 && (
-                    <div className="mb-3">
-                      <label
-                        htmlFor="saved-profile-a"
-                        className="mb-1 block text-sm font-medium text-muted-foreground"
-                      >
-                        Your saved profile
-                      </label>
-                      <select
-                        id="saved-profile-a"
-                        className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-foreground"
-                        defaultValue=""
-                        onChange={(e) => {
-                          const profile = savedProfiles.find(
-                            (p: SavedProfile) => p.id === e.target.value
-                          );
-                          if (profile) {
-                            setPersonA({
-                              name: profile.name,
-                              birthDate: profile.birthDate,
-                              birthTime: profile.birthTime ?? undefined,
-                              birthCity: profile.birthCity,
-                              birthCountry: profile.birthCountry,
-                              latitude: profile.latitude ?? undefined,
-                              longitude: profile.longitude ?? undefined,
-                              timezone: profile.timezone ?? undefined,
-                            });
-                            setFormKeyA((k) => k + 1);
-                          }
-                        }}
-                      >
-                        <option value="" disabled>
-                          Use a saved profile...
-                        </option>
-                        {savedProfiles.map((p: SavedProfile) => (
-                          <option key={p.id} value={p.id}>
-                            {p.name}
-                          </option>
-                        ))}
-                      </select>
+                  {inviteData ? (
+                    /* Read-only summary card for invited Person A */
+                    <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-6 backdrop-blur-sm">
+                      <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-cosmic-purple-light">
+                        Their Details
+                      </p>
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-cosmic-purple/15 text-2xl">
+                          {(() => {
+                            const INVITE_ZODIAC: Record<string, string> = {
+                              Aries: "\u2648", Taurus: "\u2649", Gemini: "\u264A", Cancer: "\u264B",
+                              Leo: "\u264C", Virgo: "\u264D", Libra: "\u264E", Scorpio: "\u264F",
+                              Sagittarius: "\u2650", Capricorn: "\u2651", Aquarius: "\u2652", Pisces: "\u2653",
+                            };
+                            return INVITE_ZODIAC[inviteData.sign] ?? "";
+                          })()}
+                        </div>
+                        <div>
+                          <p className="text-lg font-semibold">{inviteData.name}</p>
+                          <p className="text-sm text-muted-foreground">{inviteData.sign}</p>
+                        </div>
+                      </div>
+                      <div className="space-y-1 text-xs text-muted-foreground">
+                        <p>Born: {new Date(inviteData.birthDate + "T12:00:00").toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}</p>
+                        <p>Location: {inviteData.birthCity}, {inviteData.birthCountry}</p>
+                      </div>
                     </div>
+                  ) : (
+                    <>
+                      {savedProfiles.length > 0 && (
+                        <div className="mb-3">
+                          <label
+                            className="mb-1 block text-sm font-medium text-muted-foreground"
+                          >
+                            Your saved profile
+                          </label>
+                          <Select
+                            onValueChange={(value) => {
+                              const profile = savedProfiles.find(
+                                (p: SavedProfile) => p.id === value
+                              );
+                              if (profile) {
+                                setPersonA({
+                                  name: profile.name,
+                                  birthDate: profile.birthDate,
+                                  birthTime: profile.birthTime ?? undefined,
+                                  birthCity: profile.birthCity,
+                                  birthCountry: profile.birthCountry,
+                                  latitude: profile.latitude ?? undefined,
+                                  longitude: profile.longitude ?? undefined,
+                                  timezone: profile.timezone ?? undefined,
+                                });
+                                setFormKeyA((k) => k + 1);
+                              }
+                            }}
+                          >
+                            <SelectTrigger aria-label="Your saved profile" className="w-full h-11 rounded-lg border-white/10 bg-background/50">
+                              <SelectValue placeholder="Use a saved profile..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {savedProfiles.map((p: SavedProfile) => (
+                                <SelectItem key={p.id} value={p.id}>
+                                  {p.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      )}
+                      <BirthDataForm
+                        key={`formA-${formKeyA}`}
+                        label="Your Details"
+                        onSubmit={setPersonA}
+                        defaultValues={personA ?? undefined}
+                      />
+                    </>
                   )}
-                  <BirthDataForm
-                    key={`formA-${formKeyA}`}
-                    label="Your Details"
-                    onSubmit={setPersonA}
-                    defaultValues={personA ?? undefined}
-                  />
                 </div>
                 <div>
                   {savedProfiles.length > 0 && (
                     <div className="mb-3">
                       <label
-                        htmlFor="saved-profile-b"
                         className="mb-1 block text-sm font-medium text-muted-foreground"
                       >
                         Their saved profile
                       </label>
-                      <select
-                        id="saved-profile-b"
-                        className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-foreground"
-                        defaultValue=""
-                        onChange={(e) => {
+                      <Select
+                        onValueChange={(value) => {
                           const profile = savedProfiles.find(
-                            (p: SavedProfile) => p.id === e.target.value
+                            (p: SavedProfile) => p.id === value
                           );
                           if (profile) {
                             setPersonB({
@@ -375,20 +464,22 @@ export default function CompatibilityPage() {
                           }
                         }}
                       >
-                        <option value="" disabled>
-                          Use a saved profile...
-                        </option>
-                        {savedProfiles.map((p: SavedProfile) => (
-                          <option key={p.id} value={p.id}>
-                            {p.name}
-                          </option>
-                        ))}
-                      </select>
+                        <SelectTrigger aria-label="Their saved profile" className="w-full h-11 rounded-lg border-white/10 bg-background/50">
+                          <SelectValue placeholder="Use a saved profile..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {savedProfiles.map((p: SavedProfile) => (
+                            <SelectItem key={p.id} value={p.id}>
+                              {p.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                   )}
                   <BirthDataForm
                     key={`formB-${formKeyB}`}
-                    label="Their Details"
+                    label={inviteData ? "Your Details" : "Their Details"}
                     onSubmit={setPersonB}
                     defaultValues={personB ?? undefined}
                   />
@@ -397,8 +488,9 @@ export default function CompatibilityPage() {
 
               {/* Instruction text */}
               <p className="mt-4 text-center text-xs text-muted-foreground">
-                Fill in both forms above, then press &ldquo;Check
-                Compatibility&rdquo; below.
+                {inviteData
+                  ? "Fill in your details above, then press \u201CCheck Compatibility\u201D below."
+                  : "Fill in both forms above, then press \u201CCheck Compatibility\u201D below."}
               </p>
 
               {/* Submit Button */}
@@ -416,7 +508,7 @@ export default function CompatibilityPage() {
                   )}
                 >
                   Check Compatibility
-                  <ArrowRight className="ml-2 h-5 w-5" />
+                  <ArrowRight aria-hidden="true" className="ml-2 h-5 w-5" />
                 </Button>
                 {!personAReady || !personBReady ? (
                   <p id="compat-disabled-hint" className="mt-2 text-center text-xs text-muted-foreground">
@@ -424,6 +516,8 @@ export default function CompatibilityPage() {
                       ? "Fill in both forms above to check compatibility."
                       : !personAReady
                       ? "Complete your birth details to continue."
+                      : inviteData
+                      ? "Enter your birth details above to continue."
                       : "Complete the second person's birth details to continue."}
                   </p>
                 ) : null}
@@ -437,7 +531,7 @@ export default function CompatibilityPage() {
                   if (isPremium) {
                     return (
                       <p className="mt-3 flex items-center justify-center gap-1.5 text-xs font-medium text-emerald-400">
-                        <Infinity className="h-3.5 w-3.5" />
+                        <Infinity aria-hidden="true" className="h-3.5 w-3.5" />
                         Unlimited checks
                       </p>
                     );
@@ -454,7 +548,7 @@ export default function CompatibilityPage() {
                             ? "text-red-400"
                             : isWarning
                             ? "text-amber-400"
-                            : "text-muted-foreground/70"
+                            : "text-emerald-400/80"
                         )}
                       >
                         {isDepleted ? (
@@ -468,7 +562,9 @@ export default function CompatibilityPage() {
                             </Link>
                           </>
                         ) : (
-                          `${remainingChecks} free check${remainingChecks === 1 ? "" : "s"} remaining today`
+                          remainingChecks === 1
+                            ? "Last free check today!"
+                            : `${remainingChecks} free checks remaining today`
                         )}
                       </p>
                     );
@@ -497,6 +593,7 @@ export default function CompatibilityPage() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={fade}
+              aria-busy="true"
             >
               <LoadingFacts />
             </motion.div>
@@ -562,7 +659,7 @@ export default function CompatibilityPage() {
                   transition={prefersReducedMotion ? { duration: 0 } : { delay: 0.1, ...springPop }}
                   className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-cosmic-purple/10"
                 >
-                  <AlertTriangle className="h-8 w-8 text-cosmic-purple-light" />
+                  <AlertTriangle aria-hidden="true" className="h-8 w-8 text-cosmic-purple-light" />
                 </motion.div>
                 <h3 className="font-heading text-xl font-semibold mb-2">
                   {error.toLowerCase().includes("updated") ||
@@ -578,7 +675,7 @@ export default function CompatibilityPage() {
                     onClick={handleSubmit}
                     className="bg-cosmic-purple text-white hover:bg-cosmic-purple-dark"
                   >
-                    <RefreshCw className="mr-2 h-4 w-4" />
+                    <RefreshCw aria-hidden="true" className="mr-2 h-4 w-4" />
                     Try Again
                   </Button>
                   <Button
@@ -594,7 +691,7 @@ export default function CompatibilityPage() {
                     className="text-muted-foreground hover:text-foreground"
                   >
                     <Link href="/dashboard">
-                      <LayoutDashboard className="mr-2 h-4 w-4" />
+                      <LayoutDashboard aria-hidden="true" className="mr-2 h-4 w-4" />
                       Go to Dashboard
                     </Link>
                   </Button>
@@ -638,7 +735,7 @@ export default function CompatibilityPage() {
               </button>
 
               <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-cosmic-purple/15">
-                <Crown className="h-8 w-8 text-cosmic-purple-light" />
+                <Crown aria-hidden="true" className="h-8 w-8 text-cosmic-purple-light" />
               </div>
 
               <h3
@@ -660,7 +757,7 @@ export default function CompatibilityPage() {
                 >
                   <Link href="/pricing">
                     Upgrade to Premium
-                    <ArrowRight className="ml-2 h-5 w-5" />
+                    <ArrowRight aria-hidden="true" className="ml-2 h-5 w-5" />
                   </Link>
                 </Button>
                 <Button

@@ -21,10 +21,21 @@ const VALID_LUCIDE_ICONS = [
   "Rocket",
   "Check",
   "CircleCheck",
+  "MessageCircle",
+  "HeartPulse",
+  "Share2",
+  "UserPlus",
+  "Search",
+  "Compass",
+  "StarHalf",
+  "Users",
+  "GraduationCap",
+  "Eclipse",
+  "Network",
 ];
 
 describe("Achievement Definitions", () => {
-  const expectedKeys = [
+  const originalKeys = [
     "FIRST_CHART",
     "FIRST_COMPATIBILITY",
     "STREAK_7",
@@ -32,17 +43,36 @@ describe("Achievement Definitions", () => {
     "PREMIUM_MEMBER",
   ];
 
-  it("defines exactly 5 achievements", () => {
-    expect(Object.keys(ACHIEVEMENTS)).toHaveLength(5);
+  const allExpectedKeys = [
+    ...originalKeys,
+    "FIRST_HOROSCOPE",
+    "FIRST_CHAT",
+    "FIRST_CHECKIN",
+    "SHARED_REPORT",
+    "REFERRED_FRIEND",
+    "FIVE_REPORTS",
+    "TEN_REPORTS",
+    "STREAK_3",
+    "STREAK_14",
+    "STREAK_60",
+    "STREAK_100",
+    "FIVE_PROFILES",
+    "LEARNED_ALL",
+    "COSMIC_EVENT",
+    "THREE_REFERRALS",
+  ];
+
+  it("defines exactly 20 achievements", () => {
+    expect(Object.keys(ACHIEVEMENTS)).toHaveLength(20);
   });
 
   it("contains all expected achievement keys", () => {
-    for (const key of expectedKeys) {
+    for (const key of allExpectedKeys) {
       expect(ACHIEVEMENTS).toHaveProperty(key);
     }
   });
 
-  it.each(expectedKeys)("%s has name, description, and icon fields", (key) => {
+  it.each(allExpectedKeys)("%s has name, description, and icon fields", (key) => {
     const achievement: AchievementDef = ACHIEVEMENTS[key];
     expect(achievement.name).toBeDefined();
     expect(typeof achievement.name).toBe("string");
@@ -57,7 +87,7 @@ describe("Achievement Definitions", () => {
     expect(achievement.icon.length).toBeGreaterThan(0);
   });
 
-  it.each(expectedKeys)("%s has a valid Lucide icon name", (key) => {
+  it.each(allExpectedKeys)("%s has a valid Lucide icon name", (key) => {
     const achievement: AchievementDef = ACHIEVEMENTS[key];
     expect(VALID_LUCIDE_ICONS).toContain(achievement.icon);
   });

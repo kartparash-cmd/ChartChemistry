@@ -5,23 +5,11 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { getImpersonation } from "@/lib/impersonation";
+import { createRateLimiter } from "@/lib/rate-limit";
 
 // Signin rate limiter: 5 attempts per 15 minutes per email
-const signinLimiter = new Map<string, { count: number; resetAt: number }>();
-const SIGNIN_LIMIT = 5;
-const SIGNIN_WINDOW = 15 * 60 * 1000;
-
-function checkSigninRateLimit(email: string): boolean {
-  const now = Date.now();
-  const entry = signinLimiter.get(email);
-  if (!entry || now > entry.resetAt) {
-    signinLimiter.set(email, { count: 1, resetAt: now + SIGNIN_WINDOW });
-    return true;
-  }
-  if (entry.count >= SIGNIN_LIMIT) return false;
-  entry.count++;
-  return true;
-}
+// Redis-backed (Upstash) with in-memory fallback
+const signinLimiter = createRateLimiter(5, 15 * 60 * 1000, "signin");
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma) as NextAuthOptions["adapter"],
@@ -41,7 +29,8 @@ export const authOptions: NextAuthOptions = {
           throw new Error("Email and password are required");
         }
 
-        if (!checkSigninRateLimit(credentials.email.toLowerCase())) {
+        const { allowed } = await signinLimiter.check(credentials.email.toLowerCase());
+        if (!allowed) {
           throw new Error("Too many sign-in attempts. Please try again later.");
         }
 
@@ -90,12 +79,29 @@ export const authOptions: NextAuthOptions = {
         if (impersonatedId) {
           session.user.id = impersonatedId;
           session.user.realId = adminId;
+          // Fetch impersonated user's plan and role from DB
+          try {
+            const impersonatedUser = await prisma.user.findUnique({
+              where: { id: impersonatedId },
+              select: { plan: true, role: true },
+            });
+            if (impersonatedUser) {
+              session.user.plan = impersonatedUser.plan;
+              session.user.role = impersonatedUser.role;
+            } else {
+              session.user.plan = token.plan as string;
+              session.user.role = token.role as string;
+            }
+          } catch {
+            // Fall back to admin's token values on DB error
+            session.user.plan = token.plan as string;
+            session.user.role = token.role as string;
+          }
         } else {
           session.user.id = token.sub;
+          session.user.plan = token.plan as string;
+          session.user.role = token.role as string;
         }
-
-        session.user.plan = token.plan as string;
-        session.user.role = token.role as string;
       }
       return session;
     },

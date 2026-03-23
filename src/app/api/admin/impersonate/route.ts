@@ -11,7 +11,12 @@ export async function POST(request: Request) {
   if ("error" in auth) return auth.error;
 
   try {
-    const body = await request.json();
+    let body;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json({ error: "Invalid JSON in request body" }, { status: 400 });
+    }
     const { targetUserId, stop } = body;
 
     // The real admin ID — use realId if already impersonating, otherwise id

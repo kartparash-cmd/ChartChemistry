@@ -15,6 +15,7 @@ export const metadata: Metadata = {
   title: "Astrological Aspects",
   description:
     "Learn about the five major aspects in astrology: conjunction, sextile, square, trine, and opposition, and how they shape your birth chart.",
+  alternates: { canonical: "/learn/aspects" },
   keywords: [
     "astrological aspects",
     "conjunction",

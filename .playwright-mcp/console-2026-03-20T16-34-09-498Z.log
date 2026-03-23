@@ -1,0 +1,4 @@
+[     272ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://api.whatsapp.com/data/manifest.json:0
+[     273ms] [ERROR] Manifest fetch from https://api.whatsapp.com/data/manifest.json failed, code 404 @ https://api.whatsapp.com/send/?text=%EF%BF%BD+Kay+%26+%EF%BF%BD+Annie+scored+52%25+compatible+on+ChartChemistry%21%0Ahttps%3A%2F%2Fchartchemistry.com%2Fcompatibility&type=custom_url&app_absent=0:0
+[     804ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://api.whatsapp.com/data/manifest.json:0
+[     825ms] [ERROR] Manifest fetch from https://api.whatsapp.com/data/manifest.json failed, code 404 @ https://api.whatsapp.com/send/?text=%EF%BF%BD+Kay+%26+%EF%BF%BD+Annie+scored+52%25+compatible+on+ChartChemistry%21%0Ahttps%3A%2F%2Fchartchemistry.com%2Fcompatibility&type=custom_url&app_absent=0:0

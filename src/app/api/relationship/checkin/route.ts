@@ -9,6 +9,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { awardAchievement } from "@/lib/achievements";
 
 const VALID_MOODS = [
   "hopeful",
@@ -46,7 +47,12 @@ export async function POST(request: Request) {
       );
     }
 
-    const body = await request.json();
+    let body;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json({ error: "Invalid JSON in request body" }, { status: 400 });
+    }
     const { connectionScore, conflictNote, positiveNote, growthGoal, overallMood } = body;
 
     // Validate connectionScore
@@ -96,6 +102,11 @@ export async function POST(request: Request) {
         overallMood,
       },
     });
+
+    // Fire-and-forget: award FIRST_CHECKIN achievement
+    awardAchievement(session.user.id, "FIRST_CHECKIN").catch((err) =>
+      console.warn("[POST /api/relationship/checkin] Achievement award failed:", err)
+    );
 
     return NextResponse.json(checkIn, { status: 201 });
   } catch (error) {

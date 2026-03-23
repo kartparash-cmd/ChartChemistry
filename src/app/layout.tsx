@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter, Playfair_Display } from "next/font/google";
 import Script from "next/script";
 import { SessionProvider } from "@/components/providers/session-provider";
+import { AnalyticsLoader } from "@/components/analytics-loader";
 import { ThemeProvider } from "@/components/theme-provider";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Navigation } from "@/components/navigation";
@@ -61,6 +62,12 @@ export const metadata: Metadata = {
       "Go beyond sun signs. Analyze full birth chart compatibility with AI-powered synastry and composite charts.",
     site: "@chartchemistry",
   },
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "ChartChemistry",
+  },
   robots: {
     index: true,
     follow: true,
@@ -78,6 +85,7 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="https://analytics.ownerly.xyz" />
+        <link rel="apple-touch-icon" href="/logo.png" />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
@@ -149,21 +157,11 @@ export default function RootLayout({
             ]),
           }}
         />
-        {process.env.NEXT_PUBLIC_UMAMI_URL && process.env.NEXT_PUBLIC_UMAMI_SITE_ID && (
-          <Script
-            src={`${process.env.NEXT_PUBLIC_UMAMI_URL}/script.js`}
-            data-website-id={process.env.NEXT_PUBLIC_UMAMI_SITE_ID}
-            strategy="afterInteractive"
-          />
-        )}
-        <Script id="sw-cleanup" strategy="afterInteractive">
+        <AnalyticsLoader />
+        <Script id="sw-register" strategy="afterInteractive">
           {`
             if ('serviceWorker' in navigator) {
-              navigator.serviceWorker.getRegistrations().then(function(registrations) {
-                registrations.forEach(function(registration) {
-                  registration.unregister();
-                });
-              });
+              navigator.serviceWorker.register('/sw.js').catch(function() {});
             }
           `}
         </Script>
@@ -177,10 +175,12 @@ export default function RootLayout({
         >
           Skip to main content
         </a>
-        <BreathingBackground />
-        <StarField starCount={60} cosmic className="fixed inset-0 z-0 opacity-40 pointer-events-none" />
-        <ConstellationLines />
-        <CursorGlow />
+        <div aria-hidden="true">
+          <BreathingBackground />
+          <StarField starCount={60} cosmic className="fixed inset-0 z-0 opacity-40 pointer-events-none" />
+          <ConstellationLines />
+          <CursorGlow />
+        </div>
         <ThemeProvider>
           <SessionProvider>
             <TooltipProvider>

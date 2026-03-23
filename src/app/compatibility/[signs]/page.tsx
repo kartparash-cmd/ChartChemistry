@@ -56,6 +56,8 @@ function parseSigns(slug: string): [ZodiacSign, ZodiacSign] | null {
   return [a as ZodiacSign, b as ZodiacSign];
 }
 
+export const revalidate = 86400; // ISR: revalidate every 24 hours
+
 export function generateStaticParams() {
   const pairs: { signs: string }[] = [];
   for (let i = 0; i < ZODIAC_SIGNS.length; i++) {

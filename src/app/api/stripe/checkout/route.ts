@@ -6,9 +6,10 @@
  */
 
 import { NextResponse } from "next/server";
+import * as Sentry from "@sentry/nextjs";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { stripe, PLANS } from "@/lib/stripe";
+import { stripe, PLANS, SINGLE_REPORT_PRICE } from "@/lib/stripe";
 import { prisma } from "@/lib/prisma";
 import { createRateLimiter } from "@/lib/rate-limit";
 
@@ -26,7 +27,7 @@ export async function POST(request: Request) {
     }
 
     // Rate limit: 5 checkout attempts per hour per user
-    const rateLimitResult = checkoutLimiter.check(session.user.id);
+    const rateLimitResult = await checkoutLimiter.check(session.user.id);
     if (!rateLimitResult.allowed) {
       return NextResponse.json(
         { error: "Too many checkout attempts. Please try again later." },
@@ -46,19 +47,22 @@ export async function POST(request: Request) {
 
     const { plan, callbackUrl } = body;
 
-    if (plan !== "PREMIUM" && plan !== "ANNUAL") {
+    if (plan !== "PREMIUM" && plan !== "ANNUAL" && plan !== "SINGLE_REPORT") {
       return NextResponse.json(
-        { error: "Invalid plan. Must be PREMIUM or ANNUAL." },
+        { error: "Invalid plan. Must be PREMIUM, ANNUAL, or SINGLE_REPORT." },
         { status: 400 }
       );
     }
 
-    const planConfig = PLANS[plan];
-    if (!planConfig.priceId) {
-      return NextResponse.json(
-        { error: `Price ID not configured for ${plan} plan. Set STRIPE_${plan}_PRICE_ID in environment.` },
-        { status: 500 }
-      );
+    // For subscription plans, validate price ID
+    if (plan !== "SINGLE_REPORT") {
+      const planConfig = PLANS[plan];
+      if (!planConfig.priceId) {
+        return NextResponse.json(
+          { error: `Price ID not configured for ${plan} plan. Set STRIPE_${plan}_PRICE_ID in environment.` },
+          { status: 500 }
+        );
+      }
     }
 
     // Get or create Stripe customer
@@ -94,9 +98,45 @@ export async function POST(request: Request) {
       successPath = `${callbackUrl}${separator}upgraded=true`;
     }
 
+    // Single report: one-time payment with inline price_data
+    if (plan === "SINGLE_REPORT") {
+      const singleReportSuccessPath = callbackUrl && callbackUrl.startsWith("/")
+        ? `${callbackUrl}${callbackUrl.includes("?") ? "&" : "?"}report_purchased=true`
+        : "/dashboard?report_purchased=true";
+
+      const checkoutSession = await stripe.checkout.sessions.create({
+        customer: customerId,
+        mode: "payment",
+        line_items: [
+          {
+            price_data: {
+              currency: "usd",
+              product_data: {
+                name: "Single Compatibility Report",
+                description: "One full 7-section premium compatibility report",
+              },
+              unit_amount: SINGLE_REPORT_PRICE,
+            },
+            quantity: 1,
+          },
+        ],
+        success_url: `${origin}${singleReportSuccessPath}`,
+        cancel_url: `${origin}/pricing?cancelled=true`,
+        metadata: {
+          userId: session.user.id,
+          type: "single_report",
+        },
+      });
+
+      return NextResponse.json({ url: checkoutSession.url });
+    }
+
+    // Subscription plans
+    const planConfig = PLANS[plan];
     const checkoutSession = await stripe.checkout.sessions.create({
       customer: customerId,
       mode: "subscription",
+      allow_promotion_codes: true,
       line_items: [
         {
           price: planConfig.priceId,
@@ -113,6 +153,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ url: checkoutSession.url });
   } catch (error) {
+    Sentry.captureException(error);
     console.error(JSON.stringify({ event: "checkout_error", error: error instanceof Error ? error.message : "Unknown error", timestamp: new Date().toISOString() }));
     return NextResponse.json(
       { error: "Failed to create checkout session" },

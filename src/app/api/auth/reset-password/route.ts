@@ -10,7 +10,7 @@ export async function POST(request: Request) {
   try {
     // --- Rate limiting ---
     const ip = getClientIp(request);
-    const rl = resetLimiter.check(ip);
+    const rl = await resetLimiter.check(ip);
 
     if (!rl.allowed) {
       return NextResponse.json(
@@ -19,7 +19,13 @@ export async function POST(request: Request) {
       );
     }
 
-    const { token, password } = await request.json();
+    let body;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json({ error: "Invalid JSON in request body" }, { status: 400 });
+    }
+    const { token, password } = body;
 
     if (!token || typeof token !== "string") {
       return NextResponse.json(

@@ -14,13 +14,16 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
+import * as Sentry from "@sentry/nextjs";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { chatWithAstrologer, buildChatContext, generateChatTitle, extractMemories, classifyConversation } from "@/lib/claude";
+import { chatWithAstrologer, chatWithAstrologerStreaming, buildChatContext, generateChatTitle, extractMemories, classifyConversation } from "@/lib/claude";
 import { getOpenAIClient, OPENAI_MODEL } from "@/lib/openai";
+import { awardAchievement } from "@/lib/achievements";
 import { createRateLimiter, getClientIp } from "@/lib/rate-limit";
 import { sanitizeInput } from "@/lib/sanitize";
+import { moderateContent, moderateOutput, MODERATION_RESPONSE } from "@/lib/moderation";
 import type { ChatMessage, ChatRequest } from "@/types/astrology";
 import type { Prisma } from "@/generated/prisma/client";
 
@@ -63,6 +66,7 @@ async function generateConversationSummary(
   const response = await getOpenAIClient().chat.completions.create({
     model: OPENAI_MODEL,
     max_tokens: 512,
+    temperature: 0.5,
     messages: [
       { role: "system", content: "You are a helpful assistant. Summarize the following astrology chat conversation into a brief paragraph (3-5 sentences). Capture the key topics discussed, any specific astrological aspects mentioned, and the main advice or insights given. This summary will be used to maintain context in future conversations." },
       { role: "user", content: transcript },
@@ -190,7 +194,7 @@ export async function POST(request: Request) {
 
     // --- Rate limiting: 20 requests per hour per user ---
     const rateLimitKey = session.user.id || getClientIp(request);
-    const rateLimitResult = chatRateLimiter.check(rateLimitKey);
+    const rateLimitResult = await chatRateLimiter.check(rateLimitKey);
 
     if (!rateLimitResult.allowed) {
       return NextResponse.json(
@@ -242,6 +246,20 @@ export async function POST(request: Request) {
         { error: "Message too long. Maximum 2000 characters." },
         { status: 400 }
       );
+    }
+
+    // --- 2b. Content moderation (input) ---
+    const inputModeration = moderateContent(userMessage);
+    if (!inputModeration.safe) {
+      console.warn(
+        `[POST /api/chat] Message moderated | user=${session.user.id} category=${inputModeration.reason}`
+      );
+      return NextResponse.json({
+        reply: MODERATION_RESPONSE,
+        sessionId: body.sessionId || null,
+        hasHistory: false,
+        moderated: true,
+      });
     }
 
     // --- 3. Build chart context from report (if provided) ---
@@ -296,7 +314,7 @@ export async function POST(request: Request) {
 
     // --- 4. Load or create chat session ---
     let storedEntries: StoredEntry[] = [];
-    let chatSessionId = body.sessionId;
+    const chatSessionId = body.sessionId;
     let existingSummary: string | null = null;
 
     if (chatSessionId) {
@@ -437,150 +455,244 @@ export async function POST(request: Request) {
       }
     }
 
-    // --- 6. Call Claude API ---
-    const aiReply = await chatWithAstrologer(messagesToSend, enhancedChartContext);
+    // --- 6. Determine if client wants streaming ---
+    const wantsStream =
+      request.headers.get("accept") === "text/event-stream" ||
+      body.stream === true;
 
-    // --- 7. Save conversation ---
-    const assistantMessage: ChatMessage = {
-      role: "assistant",
-      content: aiReply,
-      timestamp: new Date().toISOString(),
-    };
+    // --- Helper: run all background tasks after AI reply is complete ---
+    const runBackgroundTasks = async (aiReply: string, resolvedSessionId: string | undefined) => {
+      // Content moderation (output — defense-in-depth)
+      const outputModeration = moderateOutput(aiReply);
+      if (!outputModeration.safe) {
+        console.warn(
+          `[POST /api/chat] AI output moderated | user=${session.user.id} category=${outputModeration.reason}`
+        );
+        // For streaming, moderation happens after the fact — log but cannot retract
+      }
 
-    conversationHistory.push(assistantMessage);
-
-    // Build the entries to store (messages + optional summary metadata)
-    const entriesToStore: StoredEntry[] = [...conversationHistory];
-
-    // Preserve existing summary in stored entries
-    if (existingSummary) {
-      entriesToStore.unshift({
-        role: "system",
-        content: existingSummary,
+      const assistantMessage: ChatMessage = {
+        role: "assistant",
+        content: aiReply,
         timestamp: new Date().toISOString(),
-        _type: "context_summary",
-      });
-    }
+      };
 
-    if (chatSessionId) {
-      // Update existing session
-      await prisma.chatSession.update({
-        where: { id: chatSessionId },
-        data: {
-          messages: JSON.parse(JSON.stringify(entriesToStore)) as Prisma.InputJsonValue,
-        },
-      });
-    } else {
-      // Create new session
-      const newSession = await prisma.chatSession.create({
-        data: {
-          userId: session.user.id,
-          reportId: body.reportId || null,
-          messages: JSON.parse(JSON.stringify(entriesToStore)) as Prisma.InputJsonValue,
-        },
-      });
-      chatSessionId = newSession.id;
-    }
+      conversationHistory.push(assistantMessage);
 
-    // --- 8. Generate summary if conversation has reached 20+ messages ---
-    // This runs asynchronously after the response is sent
-    const totalMessages = conversationHistory.length;
-    if (
-      totalMessages >= 20 &&
-      totalMessages % 10 === 0 // Re-summarize every 10 messages after 20
-    ) {
-      // Fire-and-forget: generate summary in the background
-      generateConversationSummary(conversationHistory)
-        .then(async (summary) => {
-          if (!summary || !chatSessionId) return;
+      // Build the entries to store (messages + optional summary metadata)
+      const entriesToStore: StoredEntry[] = [...conversationHistory];
 
-          // Update the stored entries with the new summary
-          const updatedEntries: StoredEntry[] = [
-            {
-              role: "system",
-              content: summary,
-              timestamp: new Date().toISOString(),
-              _type: "context_summary",
-            },
-            ...conversationHistory,
-          ];
-
-          await prisma.chatSession.update({
-            where: { id: chatSessionId },
-            data: {
-              messages: JSON.parse(JSON.stringify(updatedEntries)) as Prisma.InputJsonValue,
-            },
-          });
-        })
-        .catch((err) => {
-          console.error("[POST /api/chat] Summary generation failed:", err);
+      if (existingSummary) {
+        entriesToStore.unshift({
+          role: "system",
+          content: existingSummary,
+          timestamp: new Date().toISOString(),
+          _type: "context_summary",
         });
-    }
+      }
 
-    // Auto-generate title after first exchange (fire-and-forget)
-    if (chatSessionId && conversationHistory.length <= 3) {
-      const chatMessages = conversationHistory.filter(
-        (e: any) => !e._type
-      ) as ChatMessage[];
-      if (chatMessages.length >= 2) {
-        generateChatTitle(chatMessages)
-          .then(async (title) => {
-            if (!title || !chatSessionId) return;
-            await prisma.chatSession.update({
-              where: { id: chatSessionId, title: null },
-              data: { title },
+      let finalSessionId = resolvedSessionId;
+
+      if (finalSessionId) {
+        await prisma.chatSession.update({
+          where: { id: finalSessionId },
+          data: {
+            messages: JSON.parse(JSON.stringify(entriesToStore)) as Prisma.InputJsonValue,
+          },
+        });
+      } else {
+        const newSession = await prisma.chatSession.create({
+          data: {
+            userId: session.user.id,
+            reportId: body.reportId || null,
+            messages: JSON.parse(JSON.stringify(entriesToStore)) as Prisma.InputJsonValue,
+          },
+        });
+        finalSessionId = newSession.id;
+      }
+
+      // Generate summary if conversation has reached 20+ messages
+      const totalMessages = conversationHistory.length;
+      if (totalMessages >= 20 && totalMessages % 10 === 0) {
+        const summarySessionId = finalSessionId;
+        generateConversationSummary(conversationHistory)
+          .then(async (summary) => {
+            if (!summary || !summarySessionId) return;
+            await prisma.$transaction(async (tx) => {
+              const currentSession = await tx.chatSession.findUnique({
+                where: { id: summarySessionId },
+              });
+              if (!currentSession) return;
+              const currentEntries = (currentSession.messages as unknown as StoredEntry[]) || [];
+              const entriesWithoutSummary = currentEntries.filter((e) => !isContextSummary(e));
+              const updatedEntries: StoredEntry[] = [
+                {
+                  role: "system",
+                  content: summary,
+                  timestamp: new Date().toISOString(),
+                  _type: "context_summary",
+                },
+                ...entriesWithoutSummary,
+              ];
+              await tx.chatSession.update({
+                where: { id: summarySessionId },
+                data: {
+                  messages: JSON.parse(JSON.stringify(updatedEntries)) as Prisma.InputJsonValue,
+                },
+              });
             });
           })
           .catch((err) => {
-            console.error("[POST /api/chat] Title generation failed:", err);
+            console.error("[POST /api/chat] Summary generation failed:", err);
           });
       }
-    }
 
-    // --- 8b. Anonymized analytics (fire-and-forget, no PII) ---
-    try {
-      const analytics = classifyConversation(
-        userMessage,
-        aiReply,
-        !!enhancedChartContext,
-        memories.length > 0
+      // Auto-generate title after first exchange
+      if (finalSessionId && conversationHistory.length <= 3) {
+        const chatMessages = conversationHistory.filter((e: any) => !e._type) as ChatMessage[];
+        if (chatMessages.length >= 2) {
+          generateChatTitle(chatMessages)
+            .then(async (title) => {
+              if (!title || !finalSessionId) return;
+              await prisma.chatSession.update({
+                where: { id: finalSessionId, title: null },
+                data: { title },
+              });
+            })
+            .catch((err) => {
+              console.error("[POST /api/chat] Title generation failed:", err);
+            });
+        }
+      }
+
+      // Anonymized analytics
+      try {
+        const analytics = classifyConversation(
+          userMessage,
+          aiReply,
+          !!enhancedChartContext,
+          memories.length > 0
+        );
+        prisma.marieAnalytics.create({ data: analytics }).catch((err) => console.warn("[chat] Analytics save failed:", err instanceof Error ? err.message : "unknown"));
+      } catch {
+        // Non-blocking
+      }
+
+      // Extract long-term memories
+      extractMemories(
+        conversationHistory.slice(-4),
+        memories.map((m) => ({ key: m.key, value: m.value }))
+      )
+        .then(async (newMemories) => {
+          for (const mem of newMemories) {
+            await prisma.marieMemory.upsert({
+              where: {
+                userId_key: { userId: session.user.id, key: mem.key },
+              },
+              create: {
+                userId: session.user.id,
+                key: mem.key,
+                value: mem.value,
+              },
+              update: { value: mem.value },
+            });
+          }
+        })
+        .catch((err) =>
+          console.error("[Marie Memory] Extraction failed:", err)
+        );
+
+      // Award FIRST_CHAT achievement
+      awardAchievement(session.user.id, "FIRST_CHAT").catch((err) =>
+        console.warn("[POST /api/chat] Achievement award failed:", err)
       );
-      prisma.marieAnalytics.create({ data: analytics }).catch(() => {});
-    } catch {
-      // Non-blocking
-    }
 
-    // --- 8c. Extract long-term memories (fire-and-forget) ---
-    extractMemories(
-      conversationHistory.slice(-4),
-      memories.map((m) => ({ key: m.key, value: m.value }))
-    )
-      .then(async (newMemories) => {
-        for (const mem of newMemories) {
-          await prisma.marieMemory.upsert({
-            where: {
-              userId_key: { userId: session.user.id, key: mem.key },
-            },
-            create: {
-              userId: session.user.id,
-              key: mem.key,
-              value: mem.value,
-            },
-            update: { value: mem.value },
+      return finalSessionId;
+    };
+
+    // --- 6a. Streaming path ---
+    if (wantsStream) {
+      const stream = chatWithAstrologerStreaming(
+        messagesToSend,
+        enhancedChartContext,
+        (fullText: string) => {
+          // This callback fires after the stream completes.
+          // Run all background tasks (save, summary, memories, etc.)
+          runBackgroundTasks(fullText, chatSessionId).catch((err) => {
+            console.error("[POST /api/chat] Streaming background tasks failed:", err);
           });
         }
-      })
-      .catch((err) =>
-        console.error("[Marie Memory] Extraction failed:", err)
       );
 
-    // --- 9. Return response ---
+      // Send the sessionId in the first SSE event so the client can track it
+      const encoder = new TextEncoder();
+      const sessionIdStream = new ReadableStream<Uint8Array>({
+        start(controller) {
+          controller.enqueue(
+            encoder.encode(`data: ${JSON.stringify({ sessionId: chatSessionId || null })}\n\n`)
+          );
+          controller.close();
+        },
+      });
+
+      // Concatenate the sessionId event + the AI text stream
+      const combinedStream = new ReadableStream<Uint8Array>({
+        async start(controller) {
+          // First: send sessionId
+          const sessionReader = sessionIdStream.getReader();
+          while (true) {
+            const { done, value } = await sessionReader.read();
+            if (done) break;
+            controller.enqueue(value);
+          }
+
+          // Then: pipe the AI stream
+          const aiReader = stream.getReader();
+          while (true) {
+            const { done, value } = await aiReader.read();
+            if (done) break;
+            controller.enqueue(value);
+          }
+
+          controller.close();
+        },
+      });
+
+      return new Response(combinedStream, {
+        headers: {
+          "Content-Type": "text/event-stream",
+          "Cache-Control": "no-cache",
+          Connection: "keep-alive",
+        },
+      });
+    }
+
+    // --- 6b. Non-streaming path (backward compatible) ---
+    let aiReply = await chatWithAstrologer(messagesToSend, enhancedChartContext);
+
+    // Content moderation (output — defense-in-depth)
+    const outputModeration = moderateOutput(aiReply);
+    if (!outputModeration.safe) {
+      console.warn(
+        `[POST /api/chat] AI output moderated | user=${session.user.id} category=${outputModeration.reason}`
+      );
+      aiReply =
+        "I'd love to help you explore your astrological chart! " +
+        "Could you rephrase your question? I'm best at topics like compatibility, " +
+        "transits, birth charts, and relationship insights.";
+    }
+
+    const finalSessionId = await runBackgroundTasks(aiReply, chatSessionId);
+    const totalMessages = conversationHistory.length;
+
+    // --- 10. Return response ---
     return NextResponse.json({
       reply: aiReply,
-      sessionId: chatSessionId,
+      sessionId: finalSessionId,
       hasHistory: totalMessages > 1,
     });
   } catch (error) {
+    Sentry.captureException(error);
     console.error("[POST /api/chat] Error:", error);
     return NextResponse.json(
       { error: "Internal server error" },

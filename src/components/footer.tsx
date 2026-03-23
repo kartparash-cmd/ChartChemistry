@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { Sparkles } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 
@@ -30,7 +31,7 @@ export function Footer() {
                 className="inline-flex items-center gap-2 py-2 mb-2"
                 aria-label="ChartChemistry home"
               >
-                <img src="/logo.png" alt="ChartChemistry" className="h-8 w-auto" aria-hidden="true" />
+                <Image src="/logo.png" alt="ChartChemistry" width={32} height={32} className="h-8 w-auto" aria-hidden="true" />
                 <span className="font-heading text-lg font-bold cosmic-text">
                   ChartChemistry
                 </span>

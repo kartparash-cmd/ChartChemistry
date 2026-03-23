@@ -252,6 +252,7 @@ export interface ChatRequest {
   reportId?: string;
   message: string;
   sessionId?: string;
+  stream?: boolean;
 }
 
 /** A single message in a chat conversation. */

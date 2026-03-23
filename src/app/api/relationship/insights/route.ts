@@ -100,14 +100,14 @@ export async function POST(request: Request) {
 
     if (!profile1) {
       return NextResponse.json(
-        { error: `Birth profile not found: ${body.profileId1}` },
+        { error: "Birth profile not found" },
         { status: 404 }
       );
     }
 
     if (!profile2) {
       return NextResponse.json(
-        { error: `Birth profile not found: ${body.profileId2}` },
+        { error: "Birth profile not found" },
         { status: 404 }
       );
     }

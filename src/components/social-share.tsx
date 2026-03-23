@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Share2, Copy, Check, Twitter, Facebook } from "lucide-react";
+import { Share2, Copy, Check, Twitter, Facebook, Smartphone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface SocialShareProps {
@@ -31,9 +31,10 @@ export function SocialShare({ url, title, description }: SocialShareProps) {
 
   const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(title)}&url=${encodeURIComponent(url)}`;
   const facebookUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`;
+  const smsUrl = `sms:?&body=${encodeURIComponent(`${title}\n${url}`)}`;
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex flex-wrap items-center gap-2">
       {typeof navigator !== "undefined" && "share" in navigator && (
         <Button variant="outline" size="sm" onClick={handleNativeShare}>
           <Share2 className="mr-2 h-4 w-4" />
@@ -48,6 +49,11 @@ export function SocialShare({ url, title, description }: SocialShareProps) {
       <Button variant="outline" size="icon" className="h-9 w-9" asChild>
         <a href={facebookUrl} target="_blank" rel="noopener noreferrer" aria-label="Share on Facebook">
           <Facebook className="h-4 w-4" />
+        </a>
+      </Button>
+      <Button variant="outline" size="icon" className="h-9 w-9" asChild>
+        <a href={smsUrl} aria-label="Share via text message">
+          <Smartphone className="h-4 w-4" />
         </a>
       </Button>
       <Button variant="outline" size="sm" onClick={handleCopy}>

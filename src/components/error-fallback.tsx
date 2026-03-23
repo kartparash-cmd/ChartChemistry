@@ -1,8 +1,10 @@
 "use client";
 
+import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Sparkles } from "lucide-react";
 import Link from "next/link";
+import { trackEvent } from "@/lib/analytics";
 
 interface ErrorFallbackProps {
   error: Error & { digest?: string };
@@ -10,11 +12,15 @@ interface ErrorFallbackProps {
 }
 
 export function ErrorFallback({ error, reset }: ErrorFallbackProps) {
+  useEffect(() => {
+    trackEvent("error_shown", { message: error.message || "unknown" });
+  }, [error]);
+
   return (
     <div className="flex min-h-[60vh] items-center justify-center px-4">
       <div className="glass-card mx-auto max-w-md rounded-2xl p-8 text-center">
         <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-cosmic-purple/20">
-          <Sparkles className="h-8 w-8 text-cosmic-purple" />
+          <Sparkles aria-hidden="true" className="h-8 w-8 text-cosmic-purple" />
         </div>
         <h1 className="mb-2 text-2xl font-bold text-white">
           Something went wrong

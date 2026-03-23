@@ -22,11 +22,23 @@ import {
   Star,
   RefreshCw,
   MessageCircle,
+  Smartphone,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import dynamic from "next/dynamic";
 import { CompatibilityScoreCard } from "@/components/compatibility-score-card";
-import { CompatibilityRadarChart } from "@/components/radar-chart";
+const CompatibilityRadarChart = dynamic(
+  () => import("@/components/radar-chart").then((m) => m.CompatibilityRadarChart),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex h-[350px] w-full items-center justify-center">
+        <div className="h-[300px] w-[300px] animate-pulse rounded-full bg-muted/30" />
+      </div>
+    ),
+  }
+);
 import { ScoreBar } from "@/components/score-bar";
 import { Confetti } from "@/components/confetti";
 import { cn } from "@/lib/utils";
@@ -232,6 +244,9 @@ export function CompatibilityResults({
   // Tracks whether the free user has already used their trial (set when the API returns 403)
   const [trialUsed, setTrialUsed] = useState(false);
 
+  // Single report purchase loading state
+  const [singleReportLoading, setSingleReportLoading] = useState(false);
+
   // Save state
   const [saved, setSaved] = useState(false);
 
@@ -243,6 +258,9 @@ export function CompatibilityResults({
 
   // "Send to them" copy state
   const [sendCopied, setSendCopied] = useState(false);
+
+  // Invite link state
+  const [inviteCopied, setInviteCopied] = useState(false);
 
   const radarData = [
     { dimension: "Emotional", score: result.dimensions.emotional },
@@ -295,11 +313,13 @@ export function CompatibilityResults({
     if (navigator.share) {
       try {
         await navigator.share({ title: "ChartChemistry Compatibility", text, url });
+        trackEvent("share_complete", { method: "native" });
       } catch {
         // User cancelled
       }
     } else {
       await navigator.clipboard.writeText(`${text}\n${url}`);
+      trackEvent("share_complete", { method: "clipboard" });
       setShareToast(true);
       setTimeout(() => setShareToast(false), 2000);
     }
@@ -310,6 +330,7 @@ export function CompatibilityResults({
     const url = getShareUrl();
     try {
       await navigator.clipboard.writeText(`${text}\n${url}`);
+      trackEvent("share_complete", { method: "copy_link" });
       setLinkCopied(true);
       setTimeout(() => setLinkCopied(false), 2000);
     } catch {
@@ -319,6 +340,7 @@ export function CompatibilityResults({
 
   const handleShareWhatsApp = () => {
     trackEvent("share_click", { method: "whatsapp" });
+    trackEvent("share_complete", { method: "whatsapp" });
     const text = getShareText();
     const url = getShareUrl();
     window.open(`https://wa.me/?text=${encodeURIComponent(`${text}\n${url}`)}`, "_blank");
@@ -326,9 +348,18 @@ export function CompatibilityResults({
 
   const handleShareTwitter = () => {
     trackEvent("share_click", { method: "twitter" });
+    trackEvent("share_complete", { method: "twitter" });
     const text = getShareText();
     const url = getShareUrl();
     window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`, "_blank");
+  };
+
+  const handleShareSMS = () => {
+    trackEvent("share_click", { method: "sms" });
+    trackEvent("share_complete", { method: "sms" });
+    const text = getShareText();
+    const url = getShareUrl();
+    window.open(`sms:?&body=${encodeURIComponent(`${text}\n${url}`)}`, "_self");
   };
 
   const handleSendToThem = async () => {
@@ -353,6 +384,103 @@ export function CompatibilityResults({
       } catch {
         // Clipboard not available
       }
+    }
+  };
+
+  // ── Invite link helpers ──
+  const getInviteUrl = useCallback(() => {
+    if (!personAData) return "";
+    const origin = typeof window !== "undefined" ? window.location.origin : "https://chartchemistry.com";
+    const payload = {
+      name: personAData.name,
+      birthDate: personAData.birthDate,
+      birthTime: personAData.birthTime || undefined,
+      birthCity: personAData.birthCity,
+      birthCountry: personAData.birthCountry,
+      sign: result.personA.sunSign,
+    };
+    const encoded = btoa(JSON.stringify(payload));
+    return `${origin}/compatibility?invite=${encoded}`;
+  }, [personAData, result.personA.sunSign]);
+
+  const getInviteText = useCallback(() => {
+    return `${result.personA.name} wants to check your cosmic compatibility! \uD83C\uDF19\u2728`;
+  }, [result.personA.name]);
+
+  const handleInviteCopy = async () => {
+    trackEvent("share_click", { method: "invite" });
+    const url = getInviteUrl();
+    const text = getInviteText();
+    try {
+      await navigator.clipboard.writeText(`${text}\n${url}`);
+      setInviteCopied(true);
+      setTimeout(() => setInviteCopied(false), 2500);
+    } catch {
+      // Clipboard not available
+    }
+  };
+
+  const handleInviteWhatsApp = () => {
+    trackEvent("share_click", { method: "invite" });
+    const url = getInviteUrl();
+    const text = getInviteText();
+    window.open(`https://wa.me/?text=${encodeURIComponent(`${text}\n${url}`)}`, "_blank");
+  };
+
+  const handleInviteTwitter = () => {
+    trackEvent("share_click", { method: "invite" });
+    const url = getInviteUrl();
+    const text = getInviteText();
+    window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`, "_blank");
+  };
+
+  const handleInviteSMS = () => {
+    trackEvent("share_click", { method: "invite" });
+    const url = getInviteUrl();
+    const text = getInviteText();
+    window.open(`sms:?body=${encodeURIComponent(`${text}\n${url}`)}`, "_self");
+  };
+
+  const handleShareStory = async () => {
+    trackEvent("share_click", { method: "story" });
+    const emoji1 = getZodiacSymbol(result.personA.sunSign);
+    const emoji2 = getZodiacSymbol(result.personB.sunSign);
+    const params = new URLSearchParams({
+      person1Name: result.personA.name,
+      person2Name: result.personB.name,
+      sign1: result.personA.sunSign,
+      sign2: result.personB.sunSign,
+      score: String(result.overallScore),
+      emoji1,
+      emoji2,
+    });
+    const imageUrl = `/api/story-card?${params.toString()}`;
+
+    try {
+      const res = await fetch(imageUrl);
+      const blob = await res.blob();
+      const file = new File([blob], "chartchemistry-compatibility.png", { type: "image/png" });
+
+      if (navigator.share && navigator.canShare?.({ files: [file] })) {
+        await navigator.share({
+          files: [file],
+          title: "ChartChemistry Compatibility",
+        });
+        trackEvent("share_complete", { method: "story" });
+      } else {
+        // Fallback: trigger download
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "chartchemistry-compatibility.png";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        trackEvent("share_complete", { method: "story_download" });
+      }
+    } catch {
+      // User cancelled or fetch failed
     }
   };
 
@@ -403,6 +531,7 @@ export function CompatibilityResults({
       }
 
       const data = await res.json();
+      trackEvent("report_generate", { tier: data.isTrial ? "trial" : "premium" });
       if (data.id) {
         setReportId(data.id);
       }
@@ -422,6 +551,40 @@ export function CompatibilityResults({
       );
     } finally {
       setPremiumLoading(false);
+    }
+  };
+
+  const handleBuySingleReport = async () => {
+    if (!session) {
+      router.push("/auth/signin");
+      return;
+    }
+
+    setSingleReportLoading(true);
+    try {
+      const res = await fetch("/api/stripe/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          plan: "SINGLE_REPORT",
+          callbackUrl: "/compatibility?restored=true",
+        }),
+      });
+
+      const data = await res.json();
+      if (res.ok && data.url) {
+        // Save current results so they can be restored after purchase
+        if (typeof window !== "undefined" && personAData && personBData) {
+          sessionStorage.setItem("pendingCompatibilityResults", JSON.stringify({
+            personAData, personBData, result,
+          }));
+        }
+        window.location.href = data.url;
+      }
+    } catch {
+      // Silently fail — user can retry
+    } finally {
+      setSingleReportLoading(false);
     }
   };
 
@@ -586,6 +749,14 @@ export function CompatibilityResults({
             Twitter / X
           </Button>
           <Button
+            onClick={handleShareSMS}
+            size="sm"
+            className="rounded-full bg-[#34C759] hover:bg-[#2db84e] text-white text-xs h-8 px-3"
+          >
+            <Smartphone className="mr-1.5 h-3.5 w-3.5" />
+            Text
+          </Button>
+          <Button
             onClick={handleCopyLink}
             size="sm"
             variant="outline"
@@ -602,6 +773,14 @@ export function CompatibilityResults({
                 Copy
               </>
             )}
+          </Button>
+          <Button
+            onClick={handleShareStory}
+            size="sm"
+            className="rounded-full bg-gradient-to-r from-[#833AB4] via-[#FD1D1D] to-[#F77737] hover:opacity-90 text-white text-xs h-8 px-3"
+          >
+            <Smartphone className="mr-1.5 h-3.5 w-3.5" />
+            Story
           </Button>
           <Button
             onClick={handleShare}
@@ -865,21 +1044,41 @@ export function CompatibilityResults({
             <div className="glass-card rounded-2xl p-8 text-center">
               <Lock className="mx-auto mb-3 h-8 w-8 text-cosmic-purple-light" />
               <h3 className="mb-2 text-lg font-semibold">
-                Upgrade to Premium for Unlimited Full Reports
+                Unlock This Full Report
               </h3>
               <p className="mb-5 text-sm text-muted-foreground max-w-md mx-auto">
-                You have used your free trial report. Upgrade to Premium for unlimited full
-                compatibility reports, Marie (personal astrologer), daily horoscopes, and more.
+                You have used your free trial report. Purchase a single report or upgrade to Premium
+                for unlimited full compatibility reports, Marie (personal astrologer), daily horoscopes, and more.
               </p>
-              <Button
-                asChild
-                className="rounded-full bg-cosmic-purple hover:bg-cosmic-purple-dark px-8 text-sm font-semibold text-white"
-              >
-                <Link href="/pricing">
-                  <Sparkles className="mr-2 h-4 w-4" />
-                  View Premium Plans
-                </Link>
-              </Button>
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+                <Button
+                  onClick={handleBuySingleReport}
+                  disabled={singleReportLoading}
+                  className="rounded-full border-gold/30 bg-gold/10 text-gold hover:bg-gold/20 px-8 text-sm font-semibold"
+                  variant="outline"
+                >
+                  {singleReportLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Redirecting...
+                    </>
+                  ) : (
+                    <>
+                      Buy This Report — $4.99
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </>
+                  )}
+                </Button>
+                <Button
+                  asChild
+                  className="rounded-full bg-cosmic-purple hover:bg-cosmic-purple-dark px-8 text-sm font-semibold text-white"
+                >
+                  <Link href="/pricing">
+                    <Sparkles className="mr-2 h-4 w-4" />
+                    View Premium Plans
+                  </Link>
+                </Button>
+              </div>
             </div>
 
             <LockedSection
@@ -948,6 +1147,75 @@ export function CompatibilityResults({
           </div>
         </div>
       </motion.div>
+
+      {/* ── Invite to Compare CTA ── */}
+      {personAData && (
+        <motion.div
+          className="relative overflow-hidden rounded-2xl border border-gold/30 bg-gradient-to-br from-gold/10 via-cosmic-purple/5 to-pink-500/10 p-8 text-center"
+          initial={prefersReducedMotion ? "visible" : "hidden"}
+          animate="visible"
+          variants={fadeInUp}
+          transition={{ duration: prefersReducedMotion ? 0 : 0.5, delay: prefersReducedMotion ? 0 : 1.25 }}
+        >
+          <div className="absolute inset-0 bg-gradient-to-r from-gold/5 via-transparent to-cosmic-purple/5 pointer-events-none" />
+          <div className="relative">
+            <UserPlus className="mx-auto mb-3 h-10 w-10 text-gold" />
+            <h3 className="mb-1 text-xl font-bold">
+              Invite Someone to Check <em>Their</em> Compatibility With You
+            </h3>
+            <p className="mx-auto mb-2 max-w-md text-sm text-muted-foreground">
+              Send a link that pre-fills your birth data. They just enter theirs and instantly see your cosmic connection.
+            </p>
+            <p className="mx-auto mb-6 max-w-sm rounded-lg border border-white/5 bg-white/[0.03] px-4 py-2 text-xs italic text-muted-foreground/70">
+              &ldquo;{result.personA.name} wants to check your cosmic compatibility! &#127769;&#10024;&rdquo;
+            </p>
+            <div className="flex flex-col items-center gap-3 sm:flex-row sm:justify-center sm:flex-wrap">
+              <Button
+                onClick={handleInviteWhatsApp}
+                size="sm"
+                className="w-full rounded-full bg-[#25D366] hover:bg-[#20bd5a] text-white sm:w-auto"
+              >
+                <MessageCircle className="mr-2 h-4 w-4" />
+                WhatsApp
+              </Button>
+              <Button
+                onClick={handleInviteTwitter}
+                size="sm"
+                className="w-full rounded-full bg-[#1DA1F2] hover:bg-[#1a8cd8] text-white sm:w-auto"
+              >
+                <Send className="mr-2 h-4 w-4" />
+                Twitter / X
+              </Button>
+              <Button
+                onClick={handleInviteSMS}
+                size="sm"
+                className="w-full rounded-full bg-emerald-600 hover:bg-emerald-700 text-white sm:w-auto"
+              >
+                <MessageCircle className="mr-2 h-4 w-4" />
+                SMS
+              </Button>
+              <Button
+                onClick={handleInviteCopy}
+                size="sm"
+                variant="outline"
+                className="w-full rounded-full border-white/20 sm:w-auto"
+              >
+                {inviteCopied ? (
+                  <>
+                    <Check className="mr-2 h-4 w-4 text-green-500" />
+                    Copied!
+                  </>
+                ) : (
+                  <>
+                    <Copy className="mr-2 h-4 w-4" />
+                    Copy Link
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </motion.div>
+      )}
 
       {/* What to do next */}
       <motion.div

@@ -37,6 +37,9 @@ import {
   Check,
   Pencil,
   Trash2,
+  UserPlus,
+  X,
+  Brain,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -56,14 +59,16 @@ import { ACHIEVEMENTS } from "@/lib/achievement-defs";
 import { getBannerEvents, formatShortDate } from "@/lib/cosmic-events";
 import { OnboardingWizard } from "@/components/onboarding-wizard";
 import { RelationshipCheckIn } from "@/components/relationship-checkin";
+import { CheckInHistoryChart } from "@/components/checkin-history-chart";
+import { trackEvent } from "@/lib/analytics";
 
 // Map achievement icon names to Lucide components
 const ACHIEVEMENT_ICONS: Record<string, React.ReactNode> = {
-  Star: <Star className="h-4 w-4" />,
-  Heart: <Heart className="h-4 w-4" />,
-  Flame: <Flame className="h-4 w-4" />,
-  Trophy: <Trophy className="h-4 w-4" />,
-  Crown: <Crown className="h-4 w-4" />,
+  Star: <Star aria-hidden="true" className="h-4 w-4" />,
+  Heart: <Heart aria-hidden="true" className="h-4 w-4" />,
+  Flame: <Flame aria-hidden="true" className="h-4 w-4" />,
+  Trophy: <Trophy aria-hidden="true" className="h-4 w-4" />,
+  Crown: <Crown aria-hidden="true" className="h-4 w-4" />,
 };
 
 interface EarnedAchievement {
@@ -282,7 +287,7 @@ function ReportCard({ report, shouldAnimate }: { report: CompatibilityReport; sh
               {report.person1.name} & {report.person2.name}
             </h4>
             <p className="text-xs text-muted-foreground mt-1">
-              <Calendar className="inline mr-1 h-3 w-3" />
+              <Calendar aria-hidden="true" className="inline mr-1 h-3 w-3" />
               {new Date(report.createdAt).toLocaleDateString("en-US", {
                 month: "short",
                 day: "numeric",
@@ -321,7 +326,7 @@ export default function DashboardPage() {
     <Suspense fallback={
       <div className="flex min-h-screen items-center justify-center">
         <div className="text-center">
-          <Loader2 className="mx-auto h-8 w-8 animate-spin text-cosmic-purple-light" />
+          <Loader2 aria-hidden="true" className="mx-auto h-8 w-8 animate-spin text-cosmic-purple-light" />
           <p className="mt-3 text-sm text-muted-foreground">Loading your cosmic dashboard...</p>
         </div>
       </div>
@@ -345,6 +350,7 @@ function DashboardContent() {
   const [activeTab, setActiveTab] = useState(initialTab);
   const [upgraded, setUpgraded] = useState(searchParams.get("upgraded") === "true");
   const [streak, setStreak] = useState<number>(0);
+  const [streakGraceUsed, setStreakGraceUsed] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
   const [greetingPrefix, setGreetingPrefix] = useState("Welcome back");
   const [portalLoading, setPortalLoading] = useState(false);
@@ -358,7 +364,15 @@ function DashboardContent() {
     rewardClaimed: boolean;
   } | null>(null);
   const [referralCopied, setReferralCopied] = useState(false);
+  const [referralClaiming, setReferralClaiming] = useState(false);
+  const [referralClaimMsg, setReferralClaimMsg] = useState<string | null>(null);
   const [showCheckIn, setShowCheckIn] = useState(false);
+  const [cosmicWeather, setCosmicWeather] = useState<{
+    moonPhase: { name: string; emoji: string; illumination: number };
+    zodiacSeason: string | null;
+    cosmicWeather: string;
+    events: Array<{ name: string; icon: string; description: string; type: string }>;
+  } | null>(null);
   const [editingProfile, setEditingProfile] = useState(false);
   const [editName, setEditName] = useState("");
   const [editBirthDate, setEditBirthDate] = useState("");
@@ -368,6 +382,9 @@ function DashboardContent() {
   const [editCityCoords, setEditCityCoords] = useState<{ lat: number; lon: number } | null>(null);
   const [editSaving, setEditSaving] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
+  const [marieMemories, setMarieMemories] = useState<{ key: string; value: string; updatedAt: string }[]>([]);
+  const [memoriesLoading, setMemoriesLoading] = useState(false);
+  const [memoriesFetched, setMemoriesFetched] = useState(false);
   const cityDebounceRef = useRef<ReturnType<typeof setTimeout>>(null);
 
   const searchEditCities = (query: string) => {
@@ -379,6 +396,60 @@ function DashboardContent() {
         if (res.ok) setEditCitySuggestions(await res.json());
       } catch {}
     }, 400);
+  };
+
+  // Fetch Marie memories when settings tab is active and user is premium
+  const fetchMarieMemories = async () => {
+    if (memoriesFetched || memoriesLoading) return;
+    setMemoriesLoading(true);
+    try {
+      const res = await fetch("/api/marie-memory");
+      if (res.ok) {
+        const json = await res.json();
+        setMarieMemories(json.memories || []);
+      }
+    } catch {
+      // Silent fail
+    } finally {
+      setMemoriesLoading(false);
+      setMemoriesFetched(true);
+    }
+  };
+
+  const deleteMarieMemory = async (key: string) => {
+    try {
+      const res = await fetch("/api/marie-memory", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ key }),
+      });
+      if (res.ok) {
+        setMarieMemories((prev) => prev.filter((m) => m.key !== key));
+      }
+    } catch {
+      // Silent fail
+    }
+  };
+
+  const formatMemoryKey = (key: string): string => {
+    const labels: Record<string, string> = {
+      user_name: "Your Name",
+      partner_name: "Partner's Name",
+      relationship_concern: "Relationship Concern",
+      communication_style: "Communication Style",
+      love_language: "Love Language",
+      relationship_status: "Relationship Status",
+      relationship_duration: "Relationship Duration",
+      partner_sign: "Partner's Sign",
+      user_sign: "Your Sign",
+      career_concern: "Career Concern",
+      life_goal: "Life Goal",
+      family_situation: "Family Situation",
+      emotional_pattern: "Emotional Pattern",
+      conflict_style: "Conflict Style",
+      attachment_style: "Attachment Style",
+    };
+    return labels[key] || key.split("_").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
   };
 
   // Determine greeting: first-visit detection + time-of-day
@@ -419,6 +490,8 @@ function DashboardContent() {
   // Trigger confetti on upgrade
   useEffect(() => {
     if (upgraded && shouldAnimate) {
+      trackEvent("upgrade_complete");
+      trackEvent("checkout_complete");
       setShowConfetti(true);
       const timer = setTimeout(() => setShowConfetti(false), 3500);
       return () => clearTimeout(timer);
@@ -431,12 +504,23 @@ function DashboardContent() {
 
     const syncStreak = async () => {
       try {
-        const res = await fetch("/api/streak", { method: "POST" });
+        const res = await fetch("/api/streak", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+          }),
+        });
         if (!res.ok) return;
 
         const result = await res.json();
         const newCount: number = result.streakCount;
         setStreak(newCount);
+
+        // Show grace period warning if streak was saved
+        if (result.graceUsed) {
+          setStreakGraceUsed(true);
+        }
 
         // Populate earned achievements from server response
         if (result.achievements) {
@@ -545,6 +629,32 @@ function DashboardContent() {
     fetchReferral();
   }, [status]);
 
+  // Fetch daily cosmic weather (free for all users, no auth needed)
+  useEffect(() => {
+    const fetchCosmicWeather = async () => {
+      try {
+        const res = await fetch("/api/daily-cosmic");
+        if (res.ok) {
+          const json = await res.json();
+          setCosmicWeather(json);
+        }
+      } catch {
+        // Non-critical — silently fail
+      }
+    };
+
+    fetchCosmicWeather();
+  }, []);
+
+  // Trigger memory fetch when settings tab becomes active
+  useEffect(() => {
+    const isPrem = data?.stats.plan === "PREMIUM" || data?.stats.plan === "ANNUAL";
+    if (activeTab === "settings" && isPrem && !memoriesFetched) {
+      fetchMarieMemories();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab, data?.stats.plan]);
+
   const handleCopyReferralLink = async () => {
     if (!referralData?.referralCode) return;
     const link = `${window.location.origin}/auth/signup?ref=${referralData.referralCode}`;
@@ -565,11 +675,32 @@ function DashboardContent() {
     }
   };
 
+  const handleClaimReferralReward = async () => {
+    setReferralClaiming(true);
+    setReferralClaimMsg(null);
+    try {
+      const res = await fetch("/api/referral", { method: "POST" });
+      const json = await res.json();
+      if (res.ok) {
+        setReferralClaimMsg(json.message);
+        setReferralData((prev) =>
+          prev ? { ...prev, rewardClaimed: true, eligible: false } : prev
+        );
+      } else {
+        setReferralClaimMsg(json.error || "Failed to claim reward.");
+      }
+    } catch {
+      setReferralClaimMsg("Something went wrong. Please try again.");
+    } finally {
+      setReferralClaiming(false);
+    }
+  };
+
   if (status === "loading" || loading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="text-center">
-          <Loader2 className="mx-auto h-8 w-8 animate-spin text-cosmic-purple-light" />
+          <Loader2 aria-hidden="true" className="mx-auto h-8 w-8 animate-spin text-cosmic-purple-light" />
           <p className="mt-3 text-sm text-muted-foreground">
             Loading your cosmic dashboard...
           </p>
@@ -596,6 +727,7 @@ function DashboardContent() {
       : data?.stats.plan === "ANNUAL"
         ? "Premium (Annual)"
         : "Free";
+  const isPremium = data?.stats.plan === "PREMIUM" || data?.stats.plan === "ANNUAL";
 
   // Determine whether the user has any birth profiles (for sidebar widget gating)
   const hasProfiles =
@@ -650,7 +782,7 @@ function DashboardContent() {
                     : ""
                 )}
               >
-                <Crown className="mr-1 h-3 w-3" />
+                <Crown aria-hidden="true" className="mr-1 h-3 w-3" />
                 {planLabel}
               </Badge>
             </div>
@@ -662,7 +794,7 @@ function DashboardContent() {
       {error && (
         <div className="mx-auto max-w-7xl px-4 pt-4 sm:px-6 lg:px-8">
           <div role="alert" className="flex items-center gap-3 rounded-lg border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-400">
-            <AlertTriangle className="h-4 w-4 shrink-0" />
+            <AlertTriangle aria-hidden="true" className="h-4 w-4 shrink-0" />
             <span className="flex-1">{error}</span>
             <button
               type="button"
@@ -740,19 +872,19 @@ function DashboardContent() {
             </p>
             <ul className="text-sm text-muted-foreground space-y-1 mb-4 text-left max-w-xs mx-auto">
               <li className="flex items-center gap-2">
-                <Sparkles className="h-3 w-3 text-emerald-400 shrink-0" />
+                <Sparkles aria-hidden="true" className="h-3 w-3 text-emerald-400 shrink-0" />
                 Full compatibility reports with in-depth analysis
               </li>
               <li className="flex items-center gap-2">
-                <MessageCircle className="h-3 w-3 text-emerald-400 shrink-0" />
+                <MessageCircle aria-hidden="true" className="h-3 w-3 text-emerald-400 shrink-0" />
                 Marie (personal astrologer) for personalized guidance
               </li>
               <li className="flex items-center gap-2">
-                <Sun className="h-3 w-3 text-emerald-400 shrink-0" />
+                <Sun aria-hidden="true" className="h-3 w-3 text-emerald-400 shrink-0" />
                 Daily horoscope tailored to your natal chart
               </li>
               <li className="flex items-center gap-2">
-                <Orbit className="h-3 w-3 text-emerald-400 shrink-0" />
+                <Orbit aria-hidden="true" className="h-3 w-3 text-emerald-400 shrink-0" />
                 Live transit alerts affecting your chart
               </li>
             </ul>
@@ -773,24 +905,77 @@ function DashboardContent() {
       {/* Main Content */}
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <div className="space-y-8">
+          {/* Today's Cosmic Weather */}
+          {cosmicWeather && (
+            <motion.div
+              initial={shouldAnimate ? { opacity: 0, y: 10 } : false}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4 }}
+              className="rounded-xl border border-cosmic-purple/30 bg-white/[0.03] p-5 backdrop-blur-sm overflow-hidden relative"
+            >
+              <div className="absolute inset-0 bg-gradient-to-r from-cosmic-purple/[0.06] via-transparent to-indigo-500/[0.04] pointer-events-none" />
+              <div className="relative">
+                <div className="flex items-start gap-4">
+                  <span className="text-3xl shrink-0 mt-0.5" aria-hidden="true">
+                    {cosmicWeather.moonPhase.emoji}
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap mb-2">
+                      <h3 className="font-semibold text-cosmic-purple-light text-sm uppercase tracking-wider">
+                        Today&apos;s Cosmic Weather
+                      </h3>
+                      <Badge variant="outline" className="text-xs border-cosmic-purple/30 text-cosmic-purple-light">
+                        {cosmicWeather.moonPhase.name}
+                      </Badge>
+                    </div>
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                      {cosmicWeather.cosmicWeather}
+                    </p>
+                    <div className="mt-3 flex items-center gap-3">
+                      {isPremium ? (
+                        <Link
+                          href="/horoscope"
+                          className="inline-flex items-center gap-1.5 text-xs font-medium text-cosmic-purple-light hover:text-cosmic-purple-light/80 transition-colors"
+                        >
+                          <Sparkles aria-hidden="true" className="h-3.5 w-3.5" />
+                          Read your full horoscope
+                          <ArrowRight aria-hidden="true" className="h-3 w-3" />
+                        </Link>
+                      ) : (
+                        <Link
+                          href="/pricing"
+                          className="inline-flex items-center gap-1.5 text-xs font-medium text-cosmic-purple-light hover:text-cosmic-purple-light/80 transition-colors"
+                        >
+                          <Lock aria-hidden="true" className="h-3.5 w-3.5" />
+                          Unlock your personalized daily horoscope
+                          <ArrowRight aria-hidden="true" className="h-3 w-3" />
+                        </Link>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
           {/* Stats Row — horizontal across the top */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <StatCard
-              icon={<TrendingUp className="h-5 w-5 text-cosmic-purple-light" />}
+              icon={<TrendingUp aria-hidden="true" className="h-5 w-5 text-cosmic-purple-light" />}
               label="Total Comparisons"
               value={String(data?.stats.totalReports || 0)}
               color="bg-cosmic-purple/10"
               shouldAnimate={shouldAnimate}
             />
             <StatCard
-              icon={<Award className="h-5 w-5 text-gold" />}
+              icon={<Award aria-hidden="true" className="h-5 w-5 text-gold" />}
               label="Highest Match"
               value={data?.stats.highestScore ? `${data.stats.highestScore}%` : "N/A"}
               color="bg-gold/10"
               shouldAnimate={shouldAnimate}
             />
             <StatCard
-              icon={<Crown className="h-5 w-5 text-cosmic-purple-light" />}
+              icon={<Crown aria-hidden="true" className="h-5 w-5 text-cosmic-purple-light" />}
               label="Account Plan"
               value={planLabel}
               color="bg-cosmic-purple/10"
@@ -800,13 +985,18 @@ function DashboardContent() {
               <div className="rounded-xl border border-orange-500/20 bg-gradient-to-br from-orange-500/[0.08] to-transparent p-4 backdrop-blur-sm">
                 <div className="flex items-center gap-3">
                   <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-orange-500/10">
-                    <Flame className="h-5 w-5 text-orange-400" />
+                    <Flame aria-hidden="true" className="h-5 w-5 text-orange-400" />
                   </div>
                   <div>
                     <p className="text-xs text-muted-foreground">Daily Streak</p>
                     <p className="text-lg font-semibold text-orange-400">Day {streak}</p>
                   </div>
                 </div>
+                {streakGraceUsed && (
+                  <p className="mt-2 text-xs text-amber-400/90">
+                    Close call! Your {streak}-day streak was saved by the grace period. Check in tomorrow to keep it going!
+                  </p>
+                )}
               </div>
             )}
           </div>
@@ -822,21 +1012,21 @@ function DashboardContent() {
                   value="chart"
                   className="data-[state=active]:bg-cosmic-purple/20 data-[state=active]:text-cosmic-purple-light"
                 >
-                  <BarChart3 className="mr-2 h-4 w-4" />
+                  <BarChart3 aria-hidden="true" className="mr-2 h-4 w-4" />
                   My Chart
                 </TabsTrigger>
                 <TabsTrigger
                   value="connections"
                   className="data-[state=active]:bg-cosmic-purple/20 data-[state=active]:text-cosmic-purple-light"
                 >
-                  <Heart className="mr-2 h-4 w-4" />
+                  <Heart aria-hidden="true" className="mr-2 h-4 w-4" />
                   My Connections
                 </TabsTrigger>
                 <TabsTrigger
                   value="settings"
                   className="data-[state=active]:bg-cosmic-purple/20 data-[state=active]:text-cosmic-purple-light"
                 >
-                  <Settings className="mr-2 h-4 w-4" />
+                  <Settings aria-hidden="true" className="mr-2 h-4 w-4" />
                   Settings
                 </TabsTrigger>
               </TabsList>
@@ -1009,7 +1199,7 @@ function DashboardContent() {
                                   <Button asChild variant="outline" size="sm" className="border-white/10">
                                     <Link href={`/chart/${data.profile.id}`}>
                                       View Full Chart
-                                      <ArrowRight className="ml-2 h-3 w-3" />
+                                      <ArrowRight aria-hidden="true" className="ml-2 h-3 w-3" />
                                     </Link>
                                   </Button>
                                 </>
@@ -1022,19 +1212,19 @@ function DashboardContent() {
                             <SignCard
                               label="Sun Sign"
                               sign={sunSign}
-                              icon={<Sun className="h-5 w-5 text-gold" />}
+                              icon={<Sun aria-hidden="true" className="h-5 w-5 text-gold" />}
                             />
                             <SignCard
                               label="Moon Sign"
                               sign={moonSign}
-                              icon={<Moon className="h-5 w-5 text-cosmic-purple-light" />}
+                              icon={<Moon aria-hidden="true" className="h-5 w-5 text-cosmic-purple-light" />}
                             />
                             <SignCard
                               label="Rising Sign"
                               sign={
                                 data.profile.birthTime ? risingSign : null
                               }
-                              icon={<Sunrise className="h-5 w-5 text-gold-light" />}
+                              icon={<Sunrise aria-hidden="true" className="h-5 w-5 text-gold-light" />}
                             />
                           </div>
                           {!data.profile.birthTime && (
@@ -1049,13 +1239,13 @@ function DashboardContent() {
                         <div className="flex flex-wrap gap-3">
                           <Button asChild className="bg-cosmic-purple hover:bg-cosmic-purple-dark text-white">
                             <Link href="/compatibility">
-                              <Users className="mr-2 h-4 w-4" />
+                              <Users aria-hidden="true" className="mr-2 h-4 w-4" />
                               New Compatibility Check
                             </Link>
                           </Button>
                           <Button asChild variant="outline" className="border-white/10">
                             <Link href={`/chart/${data.profile.id}`}>
-                              <BarChart3 className="mr-2 h-4 w-4" />
+                              <BarChart3 aria-hidden="true" className="mr-2 h-4 w-4" />
                               Explore Your Chart
                             </Link>
                           </Button>
@@ -1071,16 +1261,14 @@ function DashboardContent() {
                         {/* Hero area */}
                         <div className="text-center mb-8">
                           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-cosmic-purple/10">
-                            <Sparkles className="h-8 w-8 text-cosmic-purple-light" />
+                            <UserPlus aria-hidden="true" className="h-8 w-8 text-cosmic-purple-light" />
                           </div>
                           <h3 className="font-heading text-2xl font-bold mb-2">
-                            Discover Your Cosmic Identity
+                            Create Your First Birth Profile
                           </h3>
                           <p className="text-sm text-muted-foreground max-w-lg mx-auto">
-                            Your birth chart is a unique map of the sky at the
-                            moment you were born. Set up your profile to unlock
-                            personalized insights, daily guidance, and
-                            compatibility analysis.
+                            Add your birth details to unlock personalized cosmic
+                            insights, daily guidance, and compatibility analysis.
                           </p>
                         </div>
 
@@ -1096,7 +1284,7 @@ function DashboardContent() {
                               Your natal chart with 10+ planetary positions
                             </p>
                             <div className="hidden sm:block absolute top-1/2 -right-2.5 -translate-y-1/2">
-                              <ArrowRight className="h-4 w-4 text-white/20" />
+                              <ArrowRight aria-hidden="true" className="h-4 w-4 text-white/20" />
                             </div>
                           </div>
 
@@ -1110,7 +1298,7 @@ function DashboardContent() {
                               AI-powered daily horoscope tailored to you
                             </p>
                             <div className="hidden sm:block absolute top-1/2 -right-2.5 -translate-y-1/2">
-                              <ArrowRight className="h-4 w-4 text-white/20" />
+                              <ArrowRight aria-hidden="true" className="h-4 w-4 text-white/20" />
                             </div>
                           </div>
 
@@ -1156,7 +1344,7 @@ function DashboardContent() {
                             className="bg-cosmic-purple hover:bg-cosmic-purple-dark text-white px-8"
                           >
                             <Link href="/dashboard/profiles">
-                              <Plus className="mr-2 h-4 w-4" />
+                              <Plus aria-hidden="true" className="mr-2 h-4 w-4" />
                               Create Your Birth Profile
                             </Link>
                           </Button>
@@ -1191,7 +1379,7 @@ function DashboardContent() {
                             className="bg-cosmic-purple hover:bg-cosmic-purple-dark text-white"
                           >
                             <Link href="/compatibility">
-                              <Plus className="mr-2 h-3 w-3" />
+                              <Plus aria-hidden="true" className="mr-2 h-3 w-3" />
                               Compare With Someone New
                             </Link>
                           </Button>
@@ -1213,13 +1401,13 @@ function DashboardContent() {
                       <div className="rounded-xl border border-dashed border-white/20 bg-white/[0.02] p-8 sm:p-12">
                         <div className="text-center mb-8">
                           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-cosmic-purple/10">
-                            <Users className="h-8 w-8 text-cosmic-purple-light" />
+                            <Sparkles aria-hidden="true" className="h-8 w-8 text-cosmic-purple-light" />
                           </div>
                           <h3 className="font-heading text-xl font-semibold mb-2">
-                            No Connections Yet
+                            No Compatibility Reports Yet
                           </h3>
                           <p className="text-sm text-muted-foreground max-w-md mx-auto">
-                            Run your first compatibility check to see your connections here
+                            Check your compatibility with someone to generate your first report
                           </p>
                         </div>
 
@@ -1230,7 +1418,7 @@ function DashboardContent() {
                               <div className="min-w-0 flex-1">
                                 <h4 className="font-medium text-sm">You & Someone Special</h4>
                                 <p className="text-xs text-muted-foreground mt-1">
-                                  <Calendar className="inline mr-1 h-3 w-3" />
+                                  <Calendar aria-hidden="true" className="inline mr-1 h-3 w-3" />
                                   Your first match
                                 </p>
                               </div>
@@ -1257,7 +1445,7 @@ function DashboardContent() {
                             className="bg-cosmic-purple hover:bg-cosmic-purple-dark text-white"
                           >
                             <Link href="/compatibility">
-                              <Heart className="mr-2 h-4 w-4" />
+                              <Heart aria-hidden="true" className="mr-2 h-4 w-4" />
                               Check Compatibility
                             </Link>
                           </Button>
@@ -1267,7 +1455,7 @@ function DashboardContent() {
                             className="border-white/10"
                           >
                             <Link href="/about">
-                              <Lightbulb className="mr-2 h-4 w-4" />
+                              <Lightbulb aria-hidden="true" className="mr-2 h-4 w-4" />
                               Learn How It Works
                             </Link>
                           </Button>
@@ -1290,14 +1478,14 @@ function DashboardContent() {
                     <h3 className="font-heading text-lg font-semibold mb-4">Account</h3>
                     <div className="space-y-4">
                       <div className="flex items-center gap-3">
-                        <Mail className="h-4 w-4 text-muted-foreground" />
+                        <Mail aria-hidden="true" className="h-4 w-4 text-muted-foreground" />
                         <div>
                           <p className="text-xs text-muted-foreground">Email</p>
                           <p className="text-sm font-medium">{session?.user?.email}</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-3">
-                        <Shield className="h-4 w-4 text-muted-foreground" />
+                        <Shield aria-hidden="true" className="h-4 w-4 text-muted-foreground" />
                         <div>
                           <p className="text-xs text-muted-foreground">Name</p>
                           <p className="text-sm font-medium">{session?.user?.name || "Not set"}</p>
@@ -1311,7 +1499,7 @@ function DashboardContent() {
                     <h3 className="font-heading text-lg font-semibold mb-4">Subscription</h3>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <Crown className="h-5 w-5 text-cosmic-purple-light" />
+                        <Crown aria-hidden="true" className="h-5 w-5 text-cosmic-purple-light" />
                         <div>
                           <p className="text-sm font-medium">{planLabel} Plan</p>
                           <p className="text-xs text-muted-foreground">
@@ -1335,12 +1523,12 @@ function DashboardContent() {
                         >
                           {portalLoading ? (
                             <>
-                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              <Loader2 aria-hidden="true" className="mr-2 h-4 w-4 animate-spin" />
                               Loading...
                             </>
                           ) : (
                             <>
-                              <Settings className="mr-2 h-4 w-4" />
+                              <Settings aria-hidden="true" className="mr-2 h-4 w-4" />
                               Manage Subscription
                             </>
                           )}
@@ -1402,7 +1590,7 @@ function DashboardContent() {
                       className="border-red-500/30 text-red-400 hover:bg-red-500/10"
                       onClick={() => signOut({ callbackUrl: "/" })}
                     >
-                      <LogOut className="mr-2 h-4 w-4" />
+                      <LogOut aria-hidden="true" className="mr-2 h-4 w-4" />
                       Sign Out
                     </Button>
                   </div>
@@ -1411,6 +1599,58 @@ function DashboardContent() {
                   <div className="rounded-xl border border-white/10 bg-white/[0.03] p-6 backdrop-blur-sm">
                     <NotificationPreferences />
                   </div>
+
+                  {/* What Marie Knows About You — premium only */}
+                  {(data?.stats.plan === "PREMIUM" || data?.stats.plan === "ANNUAL") && (
+                    <div className="rounded-xl border border-white/10 bg-white/[0.03] p-6 backdrop-blur-sm">
+                      <div className="flex items-center gap-2 mb-4">
+                        <Brain aria-hidden="true" className="h-5 w-5 text-cosmic-purple-light" />
+                        <h3 className="font-heading text-lg font-semibold">What Marie Knows About You</h3>
+                      </div>
+                      <p className="text-xs text-muted-foreground mb-4">
+                        Marie learns about you through your conversations to provide personalized guidance. You can remove any memory at any time.
+                      </p>
+                      {memoriesLoading ? (
+                        <div className="flex items-center justify-center py-8">
+                          <Loader2 aria-hidden="true" className="h-5 w-5 animate-spin text-muted-foreground" />
+                        </div>
+                      ) : marieMemories.length === 0 ? (
+                        <div className="rounded-lg border border-white/5 bg-white/[0.02] p-6 text-center">
+                          <MessageCircle aria-hidden="true" className="mx-auto h-8 w-8 text-muted-foreground/50 mb-3" />
+                          <p className="text-sm text-muted-foreground">
+                            Marie hasn&apos;t learned anything about you yet. Chat with her to build your personalized experience.
+                          </p>
+                          <Button asChild size="sm" variant="outline" className="mt-4 border-white/10">
+                            <Link href="/chat">
+                              <MessageCircle aria-hidden="true" className="mr-2 h-3 w-3" />
+                              Chat with Marie
+                            </Link>
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          {marieMemories.map((memory) => (
+                            <div
+                              key={memory.key}
+                              className="group relative rounded-lg border border-white/5 bg-white/[0.02] p-3 transition-colors hover:border-white/10"
+                            >
+                              <button
+                                onClick={() => deleteMarieMemory(memory.key)}
+                                className="absolute right-2 top-2 rounded-md p-1 text-muted-foreground/50 opacity-0 transition-opacity hover:bg-white/10 hover:text-red-400 group-hover:opacity-100"
+                                aria-label={`Remove ${formatMemoryKey(memory.key)} memory`}
+                              >
+                                <X aria-hidden="true" className="h-3.5 w-3.5" />
+                              </button>
+                              <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-1">
+                                {formatMemoryKey(memory.key)}
+                              </p>
+                              <p className="text-sm text-foreground/90 pr-6">{memory.value}</p>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
 
                   {/* Account & Data Management */}
                   <div className="rounded-xl border border-white/10 bg-white/[0.03] p-6 backdrop-blur-sm">
@@ -1427,7 +1667,7 @@ function DashboardContent() {
             {achievements.length > 0 && (
               <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4 backdrop-blur-sm">
                 <div className="flex items-center gap-2 mb-3">
-                  <Award className="h-4 w-4 text-gold" />
+                  <Award aria-hidden="true" className="h-4 w-4 text-gold" />
                   <h4 className="font-heading text-sm font-semibold">Achievements</h4>
                 </div>
                 <div className="space-y-2">
@@ -1437,7 +1677,7 @@ function DashboardContent() {
                     return (
                       <div key={a.achievementType} className="flex items-center gap-3 rounded-lg border border-white/5 bg-white/[0.02] p-2.5">
                         <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gold/10 text-gold">
-                          {ACHIEVEMENT_ICONS[def.icon] || <Star className="h-4 w-4" />}
+                          {ACHIEVEMENT_ICONS[def.icon] || <Star aria-hidden="true" className="h-4 w-4" />}
                         </div>
                         <div className="min-w-0">
                           <p className="text-xs font-medium truncate">{def.name}</p>
@@ -1453,7 +1693,7 @@ function DashboardContent() {
             {/* Daily Horoscope */}
             <div className="rounded-xl border border-gold/20 bg-gradient-to-br from-gold/[0.06] to-transparent p-4">
               <div className="flex items-center gap-2 mb-2">
-                <Sun className="h-4 w-4 text-gold" />
+                <Sun aria-hidden="true" className="h-4 w-4 text-gold" />
                 <h4 className="font-heading text-sm font-semibold">Daily Horoscope</h4>
               </div>
               {hasProfiles ? (
@@ -1461,7 +1701,7 @@ function DashboardContent() {
                   <p className="text-xs text-muted-foreground mb-3">Your personalized cosmic reading for today</p>
                   <Button asChild size="sm" variant="outline" className="w-full border-gold/20 text-gold hover:bg-gold/10">
                     <Link href="/horoscope">
-                      <Lightbulb className="mr-2 h-3 w-3" />
+                      <Lightbulb aria-hidden="true" className="mr-2 h-3 w-3" />
                       Read Horoscope
                     </Link>
                   </Button>
@@ -1476,7 +1716,7 @@ function DashboardContent() {
             {/* Active Transits */}
             <div className="rounded-xl border border-cosmic-purple/20 bg-gradient-to-br from-cosmic-purple/[0.06] to-transparent p-4">
               <div className="flex items-center gap-2 mb-2">
-                <Orbit className="h-4 w-4 text-cosmic-purple-light" />
+                <Orbit aria-hidden="true" className="h-4 w-4 text-cosmic-purple-light" />
                 <h4 className="font-heading text-sm font-semibold">Active Transits</h4>
               </div>
               {hasProfiles ? (
@@ -1484,7 +1724,7 @@ function DashboardContent() {
                   <p className="text-xs text-muted-foreground mb-3">Planetary influences on your chart today</p>
                   <Button asChild size="sm" variant="outline" className="w-full border-cosmic-purple/20 text-cosmic-purple-light hover:bg-cosmic-purple/10">
                     <Link href="/transits">
-                      <Orbit className="mr-2 h-3 w-3" />
+                      <Orbit aria-hidden="true" className="mr-2 h-3 w-3" />
                       View Transits
                     </Link>
                   </Button>
@@ -1500,7 +1740,7 @@ function DashboardContent() {
             {data?.stats.plan !== "FREE" && (
               <div className="rounded-xl border border-pink-500/20 bg-gradient-to-br from-pink-500/[0.06] to-transparent p-4">
                 <div className="flex items-center gap-2 mb-2">
-                  <Heart className="h-5 w-5 text-pink-400" />
+                  <Heart aria-hidden="true" className="h-5 w-5 text-pink-400" />
                   <h4 className="font-heading text-sm font-semibold">Check-In</h4>
                 </div>
                 <p className="text-xs text-muted-foreground mb-3">Monthly relationship health check</p>
@@ -1510,27 +1750,60 @@ function DashboardContent() {
               </div>
             )}
 
+            {/* Check-In History */}
+            {data?.stats.plan !== "FREE" && (
+              <div className="rounded-xl border border-pink-500/20 bg-gradient-to-br from-pink-500/[0.06] to-transparent p-4 sm:col-span-2">
+                <div className="flex items-center gap-2 mb-3">
+                  <BarChart3 aria-hidden="true" className="h-4 w-4 text-pink-400" />
+                  <h4 className="font-heading text-sm font-semibold">Check-In History</h4>
+                </div>
+                <CheckInHistoryChart />
+              </div>
+            )}
+
             {/* Invite Friends — compact, fits in the grid */}
             {referralData && (
               <div className="rounded-xl border border-emerald-500/20 bg-gradient-to-br from-emerald-500/[0.06] to-transparent p-4">
                 <div className="flex items-center gap-2 mb-2">
-                  <Gift className="h-4 w-4 text-emerald-400" />
+                  <Gift aria-hidden="true" className="h-4 w-4 text-emerald-400" />
                   <h4 className="font-heading text-sm font-semibold">Invite Friends</h4>
                 </div>
 
                 {referralData.rewardClaimed ? (
-                  <p className="text-xs text-emerald-400 font-medium">
-                    Reward claimed! {referralData.referralCount} friend{referralData.referralCount !== 1 ? "s" : ""} invited
-                  </p>
+                  <div className="space-y-1">
+                    <p className="text-xs text-emerald-400 font-medium">
+                      Reward claimed! {referralData.referralCount} friend{referralData.referralCount !== 1 ? "s" : ""} invited
+                    </p>
+                    {referralClaimMsg && (
+                      <p className="text-[11px] text-muted-foreground">{referralClaimMsg}</p>
+                    )}
+                  </div>
                 ) : referralData.eligible ? (
-                  <div className="text-center py-2">
-                    <p className="text-xs text-emerald-400 font-medium mb-2">
+                  <div className="text-center py-2 space-y-2">
+                    <p className="text-xs text-emerald-400 font-medium">
                       You&apos;ve earned 1 month of free Premium!
                     </p>
-                    <Badge variant="outline" className="border-emerald-500/30 text-emerald-400 text-xs">
-                      <Award className="mr-1 h-3 w-3" />
-                      Reward Unlocked
-                    </Badge>
+                    <Button
+                      size="sm"
+                      className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs h-7 px-3"
+                      onClick={handleClaimReferralReward}
+                      disabled={referralClaiming}
+                    >
+                      {referralClaiming ? (
+                        <>
+                          <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                          Claiming...
+                        </>
+                      ) : (
+                        <>
+                          <Award aria-hidden="true" className="mr-1 h-3 w-3" />
+                          Claim Reward
+                        </>
+                      )}
+                    </Button>
+                    {referralClaimMsg && (
+                      <p className="text-[11px] text-muted-foreground">{referralClaimMsg}</p>
+                    )}
                   </div>
                 ) : (
                   <>
@@ -1591,19 +1864,19 @@ function DashboardContent() {
                   <div className="grid grid-cols-2 gap-2">
                     {[
                       {
-                        icon: <MessageCircle className="h-4 w-4" />,
+                        icon: <MessageCircle aria-hidden="true" className="h-4 w-4" />,
                         label: "Marie",
                       },
                       {
-                        icon: <Sun className="h-4 w-4" />,
+                        icon: <Sun aria-hidden="true" className="h-4 w-4" />,
                         label: "Daily Horoscope",
                       },
                       {
-                        icon: <TrendingUp className="h-4 w-4" />,
+                        icon: <TrendingUp aria-hidden="true" className="h-4 w-4" />,
                         label: "Transit Alerts",
                       },
                       {
-                        icon: <Heart className="h-4 w-4" />,
+                        icon: <Heart aria-hidden="true" className="h-4 w-4" />,
                         label: "Wellness Insights",
                       },
                     ].map((tile) => (
@@ -1613,7 +1886,7 @@ function DashboardContent() {
                         className="group relative rounded-lg border border-white/10 bg-white/[0.03] p-3 opacity-60 backdrop-blur-sm transition-all hover:opacity-80 hover:border-cosmic-purple/30"
                       >
                         <div className="absolute top-1.5 right-1.5">
-                          <Lock className="h-3 w-3 text-muted-foreground" />
+                          <Lock aria-hidden="true" className="h-3 w-3 text-muted-foreground" />
                         </div>
                         <div className="mb-1.5 text-muted-foreground">
                           {tile.icon}
@@ -1642,7 +1915,7 @@ function DashboardContent() {
                   </p>
                   <Button asChild size="sm" className="w-full bg-cosmic-purple hover:bg-cosmic-purple-dark text-white">
                     <Link href="/pricing?callbackUrl=/dashboard">
-                      <Sparkles className="mr-2 h-3 w-3" />
+                      <Sparkles aria-hidden="true" className="mr-2 h-3 w-3" />
                       View Plans
                     </Link>
                   </Button>

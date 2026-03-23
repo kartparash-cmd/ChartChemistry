@@ -14,7 +14,7 @@ export async function POST(request: Request) {
   try {
     // --- Rate limiting: 5 requests per hour per IP ---
     const ip = getClientIp(request);
-    const rateLimitResult = forgotPasswordLimiter.check(ip);
+    const rateLimitResult = await forgotPasswordLimiter.check(ip);
 
     if (!rateLimitResult.allowed) {
       // Return a generic message to prevent enumeration, but with 429 status
@@ -24,7 +24,13 @@ export async function POST(request: Request) {
       );
     }
 
-    const { email } = await request.json();
+    let body;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json({ error: "Invalid JSON in request body" }, { status: 400 });
+    }
+    const { email } = body;
 
     if (!email || typeof email !== "string") {
       return NextResponse.json(

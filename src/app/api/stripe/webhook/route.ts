@@ -10,9 +10,11 @@
 
 import { NextResponse } from "next/server";
 import { headers } from "next/headers";
+import * as Sentry from "@sentry/nextjs";
 import { stripe, PLANS } from "@/lib/stripe";
 import { prisma } from "@/lib/prisma";
-import { sendPaymentFailedEmail, sendReceiptEmail } from "@/lib/email";
+import { sendPaymentFailedEmail, sendReceiptEmail, sendCancellationEmail } from "@/lib/email";
+import { logServerEvent } from "@/lib/server-analytics";
 import type Stripe from "stripe";
 
 /**
@@ -69,13 +71,59 @@ export async function POST(request: Request) {
           break;
         }
 
-        // DB-backed idempotency: skip if user was updated more recently than this event
-        const existingUser = await prisma.user.findUnique({ where: { id: userId } });
-        if (existingUser && existingUser.updatedAt > new Date(event.created * 1000)) {
-          console.log(JSON.stringify({ event: "webhook_skipped_stale", type: event.type, timestamp: new Date().toISOString() }));
-          return NextResponse.json({ received: true });
+        // --- Handle one-time single report purchase ---
+        if (session.mode === "payment" && session.metadata?.type === "single_report") {
+          // Idempotency: check if credit already granted for this checkout session
+          const existingCredit = await prisma.userAchievement.findFirst({
+            where: { userId, achievementType: `single_report_paid:${session.id}` },
+          });
+          if (existingCredit) {
+            console.log(JSON.stringify({ event: "webhook_skipped_already_applied", type: event.type, userId, purchaseType: "single_report", sessionId: session.id, timestamp: new Date().toISOString() }));
+            return NextResponse.json({ received: true });
+          }
+
+          // Grant a report credit by creating a UserAchievement record
+          // The "single_report_credit" achievementType is what the report route checks for
+          await prisma.userAchievement.create({
+            data: {
+              userId,
+              achievementType: "single_report_credit",
+            },
+          });
+
+          // Also record that this specific checkout session was processed (for idempotency)
+          await prisma.userAchievement.create({
+            data: {
+              userId,
+              achievementType: `single_report_paid:${session.id}`,
+            },
+          });
+
+          // Also ensure the Stripe customer ID is stored
+          if (session.customer) {
+            await prisma.user.update({
+              where: { id: userId },
+              data: { stripeCustomerId: session.customer as string },
+            });
+          }
+
+          console.log(JSON.stringify({ event: "webhook_processed", type: event.type, userId, purchaseType: "single_report", sessionId: session.id, timestamp: new Date().toISOString() }));
+
+          // Log revenue event
+          logServerEvent("revenue_single_report", { userId, amount: 499, sessionId: session.id });
+
+          // Send receipt email
+          const singleReportUser = await prisma.user.findUnique({
+            where: { id: userId },
+            select: { email: true },
+          });
+          if (singleReportUser?.email) {
+            sendReceiptEmail(singleReportUser.email, "Single Report", "$4.99").catch((err) => console.warn("[webhook] Email send failed:", err instanceof Error ? err.message : "unknown"));
+          }
+          break;
         }
 
+        // --- Handle subscription checkout ---
         // Verify plan against actual price paid
         const lineItems = await stripe.checkout.sessions.listLineItems(session.id);
         const priceId = lineItems.data[0]?.price?.id;
@@ -84,6 +132,13 @@ export async function POST(request: Request) {
           plan = "ANNUAL";
         } else if (priceId === PLANS.PREMIUM.priceId) {
           plan = "PREMIUM";
+        }
+
+        // Plan-based idempotency: skip if user already has the correct plan and customer ID
+        const existingUser = await prisma.user.findUnique({ where: { id: userId } });
+        if (existingUser && existingUser.plan === plan && existingUser.stripeCustomerId === (session.customer as string)) {
+          console.log(JSON.stringify({ event: "webhook_skipped_already_applied", type: event.type, userId, plan, timestamp: new Date().toISOString() }));
+          return NextResponse.json({ received: true });
         }
 
         // Update user plan
@@ -97,6 +152,10 @@ export async function POST(request: Request) {
 
         console.log(JSON.stringify({ event: "webhook_processed", type: event.type, userId, plan, timestamp: new Date().toISOString() }));
 
+        // Log revenue event for server-side analytics
+        const amount = plan === "ANNUAL" ? 7999 : 999;
+        logServerEvent("revenue_upgrade", { userId, plan, amount, priceId: priceId ?? "unknown" });
+
         // Send receipt email
         const updatedUser = await prisma.user.findUnique({
           where: { id: userId },
@@ -104,7 +163,7 @@ export async function POST(request: Request) {
         });
         if (updatedUser?.email) {
           const amount = plan === "ANNUAL" ? "$79.99/yr" : "$9.99/mo";
-          sendReceiptEmail(updatedUser.email, plan, amount).catch(() => {});
+          sendReceiptEmail(updatedUser.email, plan, amount).catch((err) => console.warn("[webhook] Email send failed:", err instanceof Error ? err.message : "unknown"));
         }
         break;
       }
@@ -122,13 +181,19 @@ export async function POST(request: Request) {
           break;
         }
 
-        // If the subscription is no longer active, downgrade to FREE
-        if (subscription.status === "canceled" || subscription.status === "unpaid" || subscription.status === "past_due") {
+        // If the subscription is cancelled or unpaid, downgrade to FREE
+        if (subscription.status === "canceled" || subscription.status === "unpaid") {
           await prisma.user.update({
             where: { id: user.id },
             data: { plan: "FREE" },
           });
           console.log(JSON.stringify({ event: "webhook_processed", type: event.type, userId: user.id, plan: "FREE", reason: subscription.status, timestamp: new Date().toISOString() }));
+          break;
+        }
+
+        // For past_due, let Stripe's retry cycle + dunning emails handle it — don't downgrade yet
+        if (subscription.status === "past_due") {
+          console.log(JSON.stringify({ event: "webhook_grace_period", type: event.type, userId: user.id, status: "past_due", note: "Retaining premium access during Stripe retry cycle", timestamp: new Date().toISOString() }));
           break;
         }
 
@@ -167,6 +232,14 @@ export async function POST(request: Request) {
             data: { plan: "FREE" },
           });
           console.log(JSON.stringify({ event: "webhook_processed", type: event.type, userId: user.id, plan: "FREE", reason: "subscription_deleted", timestamp: new Date().toISOString() }));
+
+          // Log churn event for server-side analytics
+          logServerEvent("revenue_churn", { userId: user.id, reason: "subscription_deleted" });
+
+          // Fire-and-forget cancellation email
+          if (user.email) {
+            sendCancellationEmail(user.email).catch((err) => console.warn("[webhook] Cancellation email send failed:", err instanceof Error ? err.message : "unknown"));
+          }
         }
         break;
       }
@@ -181,10 +254,13 @@ export async function POST(request: Request) {
 
         if (user) {
           // Log the payment failure for monitoring / alerting
-          console.warn(JSON.stringify({ event: "webhook_warning", type: event.type, userId: user.id, email: user.email, invoiceId: invoice.id, attemptCount: invoice.attempt_count, timestamp: new Date().toISOString() }));
+          console.warn(JSON.stringify({ event: "webhook_warning", type: event.type, userId: user.id, invoiceId: invoice.id, attemptCount: invoice.attempt_count, timestamp: new Date().toISOString() }));
+
+          // Log payment failure for server-side analytics
+          logServerEvent("revenue_payment_failed", { userId: user.id, attemptCount: invoice.attempt_count ?? 1, invoiceId: invoice.id });
 
           // Send dunning email
-          sendPaymentFailedEmail(user.email, invoice.attempt_count ?? 1).catch(() => {});
+          sendPaymentFailedEmail(user.email, invoice.attempt_count ?? 1).catch((err) => console.warn("[webhook] Email send failed:", err instanceof Error ? err.message : "unknown"));
         } else {
           console.warn(JSON.stringify({ event: "webhook_warning", type: event.type, error: "Payment failed for unknown customer", customerId, invoiceId: invoice.id, timestamp: new Date().toISOString() }));
         }
@@ -211,6 +287,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ received: true });
     }
 
+    Sentry.captureException(error);
     console.error(JSON.stringify({ event: "webhook_error", type: event.type, error: errMsg, timestamp: new Date().toISOString() }));
     return NextResponse.json(
       { error: "Webhook handler failed" },

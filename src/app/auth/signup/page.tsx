@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, Suspense } from "react";
+import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { motion } from "framer-motion";
-import { Sparkles, ArrowLeft, Loader2, Eye, EyeOff } from "lucide-react";
+import { Sparkles, ArrowLeft, Loader2, Eye, EyeOff, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -33,6 +33,15 @@ function SignUpContent() {
   const [isLoadingSignup, setIsLoadingSignup] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [ageConfirmed, setAgeConfirmed] = useState(false);
+  const [emailTouched, setEmailTouched] = useState(false);
+  const [passwordTouched, setPasswordTouched] = useState(false);
+
+  const isEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  const isPasswordValid = password.length >= 8;
+
+  useEffect(() => {
+    trackEvent("signup_start");
+  }, []);
 
   const handleGoogleSignIn = async () => {
     setIsLoadingGoogle(true);
@@ -204,16 +213,25 @@ function SignUpContent() {
               <Label htmlFor="email" className="text-sm">
                 Email address
               </Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="you@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                autoComplete="email"
-                className="h-11 bg-white/5 border-white/10 focus:border-cosmic-purple/50 focus:ring-cosmic-purple/20"
-                required
-              />
+              <div className="relative">
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="you@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  onBlur={() => setEmailTouched(true)}
+                  autoComplete="email"
+                  className={`h-11 bg-white/5 border-white/10 focus:border-cosmic-purple/50 focus:ring-cosmic-purple/20 ${emailTouched && email && !isEmailValid ? "border-red-500/50" : ""}`}
+                  required
+                />
+                {emailTouched && email && isEmailValid && (
+                  <Check className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-emerald-400" aria-hidden="true" />
+                )}
+              </div>
+              {emailTouched && email && !isEmailValid && (
+                <p className="text-xs text-red-400">Please enter a valid email address</p>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="password" className="text-sm">
@@ -226,6 +244,7 @@ function SignUpContent() {
                   placeholder="At least 8 characters"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  onBlur={() => setPasswordTouched(true)}
                   autoComplete="new-password"
                   aria-describedby="password-hint"
                   className="h-11 bg-white/5 border-white/10 focus:border-cosmic-purple/50 focus:ring-cosmic-purple/20 pr-10"
@@ -247,12 +266,17 @@ function SignUpContent() {
               </div>
               <p
                 id="password-hint"
-                className={`text-xs ${
-                  password.length > 0 && password.length < 8
+                className={`text-xs flex items-center gap-1 ${
+                  passwordTouched && isPasswordValid
+                    ? "text-emerald-400"
+                    : password.length > 0 && password.length < 8
                     ? "text-amber-400"
                     : "text-muted-foreground"
                 }`}
               >
+                {passwordTouched && isPasswordValid && (
+                  <Check className="h-3 w-3" aria-hidden="true" />
+                )}
                 Must be at least 8 characters
               </p>
             </div>

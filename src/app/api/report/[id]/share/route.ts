@@ -10,6 +10,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { awardAchievement } from "@/lib/achievements";
 
 export async function POST(
   request: Request,
@@ -99,6 +100,11 @@ export async function POST(
       where: { id: reportId },
       data: { sharedWithUserId: partner.id },
     });
+
+    // Fire-and-forget: award SHARED_REPORT achievement
+    awardAchievement(session.user.id, "SHARED_REPORT").catch((err) =>
+      console.warn("[POST /api/report/[id]/share] Achievement award failed:", err)
+    );
 
     return NextResponse.json({
       success: true,

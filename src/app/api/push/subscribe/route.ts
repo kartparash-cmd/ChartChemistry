@@ -23,7 +23,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const subscription = await request.json();
+    let subscription;
+    try {
+      subscription = await request.json();
+    } catch {
+      return NextResponse.json({ error: "Invalid JSON in request body" }, { status: 400 });
+    }
 
     // Validate the subscription object has the expected shape
     if (!subscription || !subscription.endpoint || !subscription.keys) {

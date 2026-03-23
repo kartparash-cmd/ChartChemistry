@@ -34,7 +34,12 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: "Authentication required" }, { status: 401 });
     }
 
-    const body = await request.json();
+    let body;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json({ error: "Invalid JSON in request body" }, { status: 400 });
+    }
 
     // Only allow known preference keys with boolean values
     const data: Record<string, boolean> = {};

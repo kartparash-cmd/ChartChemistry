@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -20,6 +21,10 @@ import {
   UserPlus,
   Fingerprint,
   Lock,
+  Leaf,
+  Orbit,
+  Users,
+  CalendarDays,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -30,6 +35,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
+import { trackEvent } from "@/lib/analytics";
 
 const publicNavLinks = [
   { href: "/", label: "Home" },
@@ -41,12 +47,13 @@ const publicNavLinks = [
 const authedNavLinks = [
   { href: "/dashboard", label: "Dashboard" },
   { href: "/compatibility", label: "Compatibility" },
+  { href: "/horoscope", label: "Horoscope" },
   { href: "/chat", label: "AI Chat" },
   { href: "/learn", label: "Learn" },
 ];
 
 // Nav links that require a premium plan
-const premiumHrefs = new Set(["/horoscope", "/chat", "/relationship"]);
+const premiumHrefs = new Set(["/horoscope", "/chat", "/relationship", "/wellness", "/transits"]);
 
 export function Navigation() {
   const pathname = usePathname();
@@ -88,7 +95,7 @@ export function Navigation() {
         <nav aria-label="Main navigation" className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2 group">
-            <img src="/logo.png" alt="ChartChemistry" className="h-8 w-auto transition-transform group-hover:scale-105" />
+            <Image src="/logo.png" alt="ChartChemistry" width={32} height={32} className="h-8 w-auto transition-transform group-hover:scale-105" />
             <span className="font-heading text-xl font-bold cosmic-text hidden sm:inline">
               ChartChemistry
             </span>
@@ -116,7 +123,7 @@ export function Navigation() {
                 >
                   <span className="relative z-10">{link.label}</span>
                   {showLock && (
-                    <Lock className="relative z-10 h-3 w-3 text-muted-foreground/50" />
+                    <Lock aria-hidden="true" className="relative z-10 h-3 w-3 text-muted-foreground/50" />
                   )}
                   {isActive && (
                     <motion.div
@@ -135,6 +142,7 @@ export function Navigation() {
             {session?.user && (!session.user.plan || session.user.plan === "FREE") && (
               <Link
                 href="/pricing"
+                onClick={() => trackEvent("upgrade_click", { location: "nav" })}
                 className="rounded-full bg-gradient-to-r from-cosmic-purple to-cosmic-purple-light px-3 py-1 text-xs font-semibold text-white transition-opacity hover:opacity-90"
               >
                 Upgrade
@@ -179,6 +187,7 @@ export function Navigation() {
                         transition={{ duration: 0.15 }}
                         role="menu"
                         id="user-menu"
+                        aria-label="User account menu"
                         className="absolute right-0 top-full z-50 mt-2 w-56 rounded-xl border border-border bg-popover/95 backdrop-blur-xl p-1 shadow-xl"
                       >
                         <div className="px-3 py-2 border-b border-border mb-1">
@@ -200,7 +209,7 @@ export function Navigation() {
                           onClick={() => setDropdownOpen(false)}
                           className="flex items-center gap-2 rounded-lg px-3 py-3 text-sm transition-colors hover:bg-muted"
                         >
-                          <LayoutDashboard className="h-4 w-4" />
+                          <LayoutDashboard aria-hidden="true" className="h-4 w-4" />
                           Dashboard
                         </Link>
                         <Link
@@ -209,7 +218,7 @@ export function Navigation() {
                           onClick={() => setDropdownOpen(false)}
                           className="flex items-center gap-2 rounded-lg px-3 py-3 text-sm transition-colors hover:bg-muted"
                         >
-                          <Fingerprint className="h-4 w-4" />
+                          <Fingerprint aria-hidden="true" className="h-4 w-4" />
                           Cosmic ID
                         </Link>
                         <Link
@@ -218,16 +227,66 @@ export function Navigation() {
                           onClick={() => setDropdownOpen(false)}
                           className="flex items-center gap-2 rounded-lg px-3 py-3 text-sm transition-colors hover:bg-muted"
                         >
-                          <Settings className="h-4 w-4" />
+                          <Settings aria-hidden="true" className="h-4 w-4" />
                           Settings
                         </Link>
+                        <div className="my-1 border-t border-border" />
+                        <Link
+                          href="/wellness"
+                          role="menuitem"
+                          onClick={() => setDropdownOpen(false)}
+                          className="flex items-center gap-2 rounded-lg px-3 py-3 text-sm transition-colors hover:bg-muted"
+                        >
+                          <Leaf aria-hidden="true" className="h-4 w-4" />
+                          Wellness
+                          {isFreePlan && <Lock aria-hidden="true" className="ml-auto h-3 w-3 text-muted-foreground/50" />}
+                        </Link>
+                        <Link
+                          href="/transits"
+                          role="menuitem"
+                          onClick={() => setDropdownOpen(false)}
+                          className="flex items-center gap-2 rounded-lg px-3 py-3 text-sm transition-colors hover:bg-muted"
+                        >
+                          <Orbit aria-hidden="true" className="h-4 w-4" />
+                          Transits
+                          {isFreePlan && <Lock aria-hidden="true" className="ml-auto h-3 w-3 text-muted-foreground/50" />}
+                        </Link>
+                        <Link
+                          href="/relationship"
+                          role="menuitem"
+                          onClick={() => setDropdownOpen(false)}
+                          className="flex items-center gap-2 rounded-lg px-3 py-3 text-sm transition-colors hover:bg-muted"
+                        >
+                          <Heart aria-hidden="true" className="h-4 w-4" />
+                          Relationship
+                          {isFreePlan && <Lock aria-hidden="true" className="ml-auto h-3 w-3 text-muted-foreground/50" />}
+                        </Link>
+                        <Link
+                          href="/connections"
+                          role="menuitem"
+                          onClick={() => setDropdownOpen(false)}
+                          className="flex items-center gap-2 rounded-lg px-3 py-3 text-sm transition-colors hover:bg-muted"
+                        >
+                          <Users aria-hidden="true" className="h-4 w-4" />
+                          Connections
+                        </Link>
+                        <Link
+                          href="/calendar"
+                          role="menuitem"
+                          onClick={() => setDropdownOpen(false)}
+                          className="flex items-center gap-2 rounded-lg px-3 py-3 text-sm transition-colors hover:bg-muted"
+                        >
+                          <CalendarDays aria-hidden="true" className="h-4 w-4" />
+                          Cosmic Calendar
+                        </Link>
+                        <div className="my-1 border-t border-border" />
                         <Link
                           href="/support"
                           role="menuitem"
                           onClick={() => setDropdownOpen(false)}
                           className="flex items-center gap-2 rounded-lg px-3 py-3 text-sm transition-colors hover:bg-muted"
                         >
-                          <HelpCircle className="h-4 w-4" />
+                          <HelpCircle aria-hidden="true" className="h-4 w-4" />
                           Support
                         </Link>
                         {session.user.role === "ADMIN" && (
@@ -237,7 +296,7 @@ export function Navigation() {
                             onClick={() => setDropdownOpen(false)}
                             className="flex items-center gap-2 rounded-lg px-3 py-3 text-sm text-amber-500 transition-colors hover:bg-muted"
                           >
-                            <Shield className="h-4 w-4" />
+                            <Shield aria-hidden="true" className="h-4 w-4" />
                             Admin Dashboard
                           </Link>
                         )}
@@ -249,7 +308,7 @@ export function Navigation() {
                           }}
                           className="flex w-full items-center gap-2 rounded-lg px-3 py-3 text-sm text-red-400 transition-colors hover:bg-muted"
                         >
-                          <LogOut className="h-4 w-4" />
+                          <LogOut aria-hidden="true" className="h-4 w-4" />
                           Sign Out
                         </button>
                       </motion.div>
@@ -261,13 +320,13 @@ export function Navigation() {
               <div className="flex items-center gap-2">
                 <Button asChild size="sm" variant="outline" className="border-border text-foreground hover:bg-muted">
                   <Link href="/auth/signin">
-                    <LogIn className="mr-2 h-4 w-4" />
+                    <LogIn aria-hidden="true" className="mr-2 h-4 w-4" />
                     Sign In
                   </Link>
                 </Button>
                 <Button asChild size="sm" className="cosmic-gradient text-white hover:opacity-90">
                   <Link href="/auth/signup">
-                    <UserPlus className="mr-2 h-4 w-4" />
+                    <UserPlus aria-hidden="true" className="mr-2 h-4 w-4" />
                     Sign Up
                   </Link>
                 </Button>
@@ -285,11 +344,12 @@ export function Navigation() {
               </SheetTrigger>
               <SheetContent
                 side="right"
+                aria-label="Mobile navigation menu"
                 className="w-[min(300px,85vw)] bg-popover/95 backdrop-blur-xl border-border"
               >
                 <SheetHeader>
                   <SheetTitle className="flex items-center gap-2">
-                    <img src="/logo.png" alt="ChartChemistry" className="h-6 w-auto" />
+                    <Image src="/logo.png" alt="ChartChemistry" width={24} height={24} className="h-6 w-auto" />
                     <span className="cosmic-text font-heading">ChartChemistry</span>
                   </SheetTitle>
                 </SheetHeader>
@@ -316,7 +376,7 @@ export function Navigation() {
                       >
                         <span>{link.label}</span>
                         {showLock && (
-                          <Lock className="h-3 w-3 text-muted-foreground/50" />
+                          <Lock aria-hidden="true" className="h-3 w-3 text-muted-foreground/50" />
                         )}
                       </Link>
                     );
@@ -355,15 +415,65 @@ export function Navigation() {
                         onClick={() => setMobileOpen(false)}
                         className="flex items-center gap-2 rounded-lg px-4 py-3 text-sm transition-colors hover:bg-muted text-muted-foreground hover:text-foreground"
                       >
-                        <Fingerprint className="h-4 w-4" />
+                        <Fingerprint aria-hidden="true" className="h-4 w-4" />
                         Cosmic ID
                       </Link>
+                      <Link
+                        href="/wellness"
+                        onClick={() => setMobileOpen(false)}
+                        className="flex items-center justify-between rounded-lg px-4 py-3 text-sm transition-colors hover:bg-muted text-muted-foreground hover:text-foreground"
+                      >
+                        <span className="flex items-center gap-2">
+                          <Leaf aria-hidden="true" className="h-4 w-4" />
+                          Wellness
+                        </span>
+                        {isFreePlan && <Lock aria-hidden="true" className="h-3 w-3 text-muted-foreground/50" />}
+                      </Link>
+                      <Link
+                        href="/transits"
+                        onClick={() => setMobileOpen(false)}
+                        className="flex items-center justify-between rounded-lg px-4 py-3 text-sm transition-colors hover:bg-muted text-muted-foreground hover:text-foreground"
+                      >
+                        <span className="flex items-center gap-2">
+                          <Orbit aria-hidden="true" className="h-4 w-4" />
+                          Transits
+                        </span>
+                        {isFreePlan && <Lock aria-hidden="true" className="h-3 w-3 text-muted-foreground/50" />}
+                      </Link>
+                      <Link
+                        href="/relationship"
+                        onClick={() => setMobileOpen(false)}
+                        className="flex items-center justify-between rounded-lg px-4 py-3 text-sm transition-colors hover:bg-muted text-muted-foreground hover:text-foreground"
+                      >
+                        <span className="flex items-center gap-2">
+                          <Heart aria-hidden="true" className="h-4 w-4" />
+                          Relationship
+                        </span>
+                        {isFreePlan && <Lock aria-hidden="true" className="h-3 w-3 text-muted-foreground/50" />}
+                      </Link>
+                      <Link
+                        href="/connections"
+                        onClick={() => setMobileOpen(false)}
+                        className="flex items-center gap-2 rounded-lg px-4 py-3 text-sm transition-colors hover:bg-muted text-muted-foreground hover:text-foreground"
+                      >
+                        <Users aria-hidden="true" className="h-4 w-4" />
+                        Connections
+                      </Link>
+                      <Link
+                        href="/calendar"
+                        onClick={() => setMobileOpen(false)}
+                        className="flex items-center gap-2 rounded-lg px-4 py-3 text-sm transition-colors hover:bg-muted text-muted-foreground hover:text-foreground"
+                      >
+                        <CalendarDays aria-hidden="true" className="h-4 w-4" />
+                        Cosmic Calendar
+                      </Link>
+                      <div className="my-2 border-t border-border" />
                       <Link
                         href="/support"
                         onClick={() => setMobileOpen(false)}
                         className="flex items-center gap-2 rounded-lg px-4 py-3 text-sm transition-colors hover:bg-muted text-muted-foreground hover:text-foreground"
                       >
-                        <HelpCircle className="h-4 w-4" />
+                        <HelpCircle aria-hidden="true" className="h-4 w-4" />
                         Support
                       </Link>
                       {session.user.role === "ADMIN" && (
@@ -372,7 +482,7 @@ export function Navigation() {
                           onClick={() => setMobileOpen(false)}
                           className="flex items-center gap-2 rounded-lg px-4 py-3 text-sm text-amber-500 transition-colors hover:bg-muted"
                         >
-                          <Shield className="h-4 w-4" />
+                          <Shield aria-hidden="true" className="h-4 w-4" />
                           Admin Dashboard
                         </Link>
                       )}
@@ -383,7 +493,7 @@ export function Navigation() {
                         }}
                         className="flex items-center gap-2 rounded-lg px-4 py-3 text-sm text-red-400 transition-colors hover:bg-muted"
                       >
-                        <LogOut className="h-4 w-4" />
+                        <LogOut aria-hidden="true" className="h-4 w-4" />
                         Sign Out
                       </button>
                     </>
@@ -394,7 +504,7 @@ export function Navigation() {
                         onClick={() => setMobileOpen(false)}
                         className="flex items-center gap-2 rounded-lg px-4 py-3 text-sm font-medium text-cosmic-purple-light transition-colors hover:bg-muted"
                       >
-                        <LogIn className="h-4 w-4" />
+                        <LogIn aria-hidden="true" className="h-4 w-4" />
                         Sign In
                       </Link>
                       <Link
@@ -402,7 +512,7 @@ export function Navigation() {
                         onClick={() => setMobileOpen(false)}
                         className="flex items-center gap-2 rounded-lg px-4 py-3 text-sm font-medium cosmic-text transition-colors hover:bg-muted"
                       >
-                        <UserPlus className="h-4 w-4" />
+                        <UserPlus aria-hidden="true" className="h-4 w-4" />
                         Sign Up
                       </Link>
                     </>
@@ -440,9 +550,9 @@ export function Navigation() {
                   )}
                 >
                   <span className="relative">
-                    <Icon className="h-5 w-5" />
+                    <Icon aria-hidden="true" className="h-5 w-5" />
                     {showLock && (
-                      <Lock className="absolute -top-1 -right-2 h-2.5 w-2.5 text-muted-foreground/60" />
+                      <Lock aria-hidden="true" className="absolute -top-1 -right-2 h-2.5 w-2.5 text-muted-foreground/60" />
                     )}
                   </span>
                   <span className="text-xs leading-none">{item.label}</span>
@@ -462,7 +572,7 @@ export function Navigation() {
                   : "text-muted-foreground"
               )}
             >
-              <Menu className="h-5 w-5" />
+              <Menu aria-hidden="true" className="h-5 w-5" />
               <span className="text-xs leading-none">More</span>
             </button>
           </div>

@@ -56,20 +56,46 @@ export async function sendPaymentFailedEmail(email: string, attemptCount: number
     return { success: false };
   }
 
+  // Escalating dunning sequence based on attempt count
+  let subject: string;
+  let heading: string;
+  let body: string;
+  let footer: string;
+
+  if (attemptCount <= 1) {
+    // Attempt 1: Friendly reminder
+    subject = "Quick heads up: your payment didn't go through";
+    heading = "Just a quick heads up";
+    body = "It looks like your latest payment didn't go through. This can happen for a number of reasons — an expired card, insufficient funds, or a temporary bank issue. No worries, these things happen!";
+    footer = "We'll try again in a few days. In the meantime, you can update your payment method to avoid any interruption to your premium features.";
+  } else if (attemptCount === 2) {
+    // Attempt 2: Urgency
+    subject = "Action needed: your premium features are at risk";
+    heading = "Your premium access needs attention";
+    body = "We've tried to process your payment twice now, but it's still not going through. Your premium features — including Marie, unlimited reports, and full chart analysis — are at risk of being suspended.";
+    footer = "Please update your payment method as soon as possible to keep your access.";
+  } else {
+    // Attempt 3+: Final notice
+    subject = "Last chance: update your payment method to keep Premium";
+    heading = "Final notice: your subscription is about to end";
+    body = `We've attempted to charge your payment method ${attemptCount} times without success. If we can't process your payment soon, your Premium subscription will be cancelled and you'll lose access to all premium features.`;
+    footer = "This is your last chance to update your payment method before your subscription is cancelled.";
+  }
+
   try {
     await resend.emails.send({
       from: FROM_EMAIL,
       to: email,
-      subject: "Action Required: Payment Failed — ChartChemistry",
+      subject,
       html: `
         <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto; padding: 24px;">
           <h2 style="color: #7c3aed;">ChartChemistry</h2>
-          <p>We were unable to process your payment (attempt ${attemptCount}).</p>
-          <p>Please update your payment method to continue enjoying premium features:</p>
+          <h3>${heading}</h3>
+          <p>${body}</p>
+          <p>${footer}</p>
           <a href="${APP_URL}/dashboard?tab=settings" style="display: inline-block; background: #7c3aed; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; margin: 16px 0;">
             Update Payment Method
           </a>
-          <p style="color: #888; font-size: 14px;">If your payment continues to fail, your subscription may be cancelled.</p>
         </div>
       `,
     });
@@ -114,6 +140,92 @@ export async function sendReceiptEmail(email: string, plan: string, amount: stri
     return { success: true };
   } catch (error) {
     console.error("Failed to send receipt email:", error);
+    return { success: false };
+  }
+}
+
+export async function sendExistingAccountNotification(email: string): Promise<{ success: boolean }> {
+  const resend = getResend();
+  if (!resend) {
+    console.warn("RESEND_API_KEY is not configured — skipping existing account notification email");
+    return { success: false };
+  }
+
+  try {
+    await resend.emails.send({
+      from: FROM_EMAIL,
+      to: email,
+      subject: "Sign-in reminder — ChartChemistry",
+      text: `Hi,\n\nSomeone tried to create a new ChartChemistry account using your email address. If this was you, you already have an account — just sign in instead:\n\n${APP_URL}/auth/signin\n\nIf this wasn't you, you can safely ignore this email. Your account is secure.\n\n— ChartChemistry`,
+    });
+
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to send existing account notification email:", error);
+    return { success: false };
+  }
+}
+
+export async function sendCancellationEmail(email: string): Promise<{ success: boolean }> {
+  const resend = getResend();
+  if (!resend) {
+    console.warn("RESEND_API_KEY is not configured — skipping cancellation email");
+    return { success: false };
+  }
+
+  try {
+    await resend.emails.send({
+      from: FROM_EMAIL,
+      to: email,
+      subject: "We're sorry to see you go",
+      html: `
+        <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto; padding: 24px;">
+          <h2 style="color: #7c3aed;">ChartChemistry</h2>
+          <p>Your premium subscription has been cancelled. We're sorry to see you go.</p>
+          <p>Don't worry — your account and all your data (birth profiles, reports, and chat history) are safe and will be here whenever you're ready to return.</p>
+          <p>You can re-subscribe anytime to regain access to unlimited compatibility reports, Marie (your personal astrologer), and all premium features.</p>
+          <a href="${APP_URL}/pricing" style="display: inline-block; background: #7c3aed; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; margin: 16px 0;">
+            View Plans
+          </a>
+          <p style="color: #888; font-size: 14px;">Thank you for being part of ChartChemistry. The stars will be waiting for you.</p>
+        </div>
+      `,
+    });
+
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to send cancellation email:", error);
+    return { success: false };
+  }
+}
+
+export async function sendAccountExistsEmail(email: string): Promise<{ success: boolean }> {
+  const resend = getResend();
+  if (!resend) {
+    console.warn("RESEND_API_KEY is not configured — skipping account exists email");
+    return { success: false };
+  }
+
+  try {
+    await resend.emails.send({
+      from: FROM_EMAIL,
+      to: email,
+      subject: "Sign in to ChartChemistry",
+      html: `
+        <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto; padding: 24px;">
+          <h2 style="color: #7c3aed;">ChartChemistry</h2>
+          <p>Someone tried to create an account with your email address. If this was you, you already have an account — just sign in instead.</p>
+          <a href="${APP_URL}/auth/signin" style="display: inline-block; background: #7c3aed; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; margin: 16px 0;">
+            Sign In
+          </a>
+          <p style="color: #888; font-size: 14px;">If this wasn't you, you can safely ignore this email. Your account is secure.</p>
+        </div>
+      `,
+    });
+
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to send account exists email:", error);
     return { success: false };
   }
 }

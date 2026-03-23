@@ -5,6 +5,7 @@ export const metadata: Metadata = {
   title: "Privacy Policy",
   description:
     "Learn how ChartChemistry collects, uses, and protects your personal data including birth information, account details, and astrological readings.",
+  alternates: { canonical: "/privacy" },
 };
 
 export default function PrivacyPolicyPage() {
@@ -15,7 +16,7 @@ export default function PrivacyPolicyPage() {
           Privacy Policy
         </h1>
         <p className="text-sm text-muted-foreground">
-          Last updated: March 3, 2026
+          Last updated: March 23, 2026
         </p>
       </header>
 
@@ -71,6 +72,17 @@ export default function PrivacyPolicyPage() {
               When you subscribe to a paid plan, payment details are collected
               and processed by Stripe. We do not store your credit card number
               on our servers.
+            </li>
+            <li>
+              <strong className="text-foreground">
+                AI-derived information:
+              </strong>{" "}
+              When you chat with Marie, our AI astrologer, we may extract and
+              store key facts from your conversations (such as your name,
+              partner&apos;s name, communication preferences, and relationship
+              topics) to personalize future interactions. You can view and
+              delete this stored information at any time from your dashboard
+              settings.
             </li>
           </ul>
           <h3 className="text-lg font-medium text-foreground mb-2">
@@ -281,9 +293,16 @@ export default function PrivacyPolicyPage() {
               or delete your account.
             </li>
             <li>
-              <strong className="text-foreground">Usage logs:</strong>{" "}
-              Anonymized usage data may be retained indefinitely for analytics
-              and service improvement.
+              <strong className="text-foreground">Chat memories:</strong>{" "}
+              Information extracted by Marie from your conversations (such as
+              names, preferences, and relationship topics) is retained until
+              you manually delete it from your dashboard settings, or until
+              your account is deleted.
+            </li>
+            <li>
+              <strong className="text-foreground">Analytics data:</strong>{" "}
+              Anonymized usage data is retained for up to 12 months for
+              analytics and service improvement purposes.
             </li>
           </ul>
         </section>
@@ -335,10 +354,152 @@ export default function PrivacyPolicyPage() {
           </p>
         </section>
 
-        {/* 7. Cookies & Analytics */}
+        {/* 7. Your Rights Under GDPR */}
         <section>
           <h2 className="font-heading text-2xl font-semibold text-foreground mb-4">
-            7. Cookies & Analytics
+            7. Your Rights Under GDPR (EU Users)
+          </h2>
+          <p className="mb-4">
+            If you are located in the European Economic Area (EEA), you have
+            additional rights under the General Data Protection Regulation
+            (GDPR):
+          </p>
+          <ul className="list-disc list-inside space-y-2 mb-4">
+            <li>
+              <strong className="text-foreground">Right to access:</strong>{" "}
+              Request a copy of the personal data we hold about you.
+            </li>
+            <li>
+              <strong className="text-foreground">Right to rectification:</strong>{" "}
+              Request correction of inaccurate or incomplete personal data.
+            </li>
+            <li>
+              <strong className="text-foreground">Right to erasure:</strong>{" "}
+              Request deletion of your personal data, subject to legal
+              retention obligations.
+            </li>
+            <li>
+              <strong className="text-foreground">Right to data portability:</strong>{" "}
+              Request your personal data in a structured, commonly used, and
+              machine-readable format.
+            </li>
+            <li>
+              <strong className="text-foreground">
+                Right to restriction of processing:
+              </strong>{" "}
+              Request that we limit the processing of your personal data under
+              certain circumstances.
+            </li>
+            <li>
+              <strong className="text-foreground">Right to object:</strong>{" "}
+              Object to the processing of your personal data for direct
+              marketing or where processing is based on legitimate interest.
+            </li>
+          </ul>
+          <h3 className="text-lg font-medium text-foreground mb-2">
+            Legal Basis for Processing
+          </h3>
+          <ul className="list-disc list-inside space-y-2 mb-4">
+            <li>
+              <strong className="text-foreground">Consent:</strong> For AI
+              features (including Marie chat and memory extraction), marketing
+              emails, and analytics.
+            </li>
+            <li>
+              <strong className="text-foreground">Legitimate interest:</strong>{" "}
+              For service operation, security, fraud prevention, and service
+              improvement.
+            </li>
+            <li>
+              <strong className="text-foreground">
+                Contractual necessity:
+              </strong>{" "}
+              For account management, payment processing, and delivering the
+              services you have subscribed to.
+            </li>
+          </ul>
+          <h3 className="text-lg font-medium text-foreground mb-2">
+            International Data Transfers
+          </h3>
+          <p className="mb-4">
+            Your data may be transferred to and processed in the United States
+            by our service providers (Anthropic, OpenAI, Stripe, Supabase).
+            These transfers are protected by Standard Contractual Clauses
+            approved by the European Commission.
+          </p>
+          <h3 className="text-lg font-medium text-foreground mb-2">
+            Supervisory Authority
+          </h3>
+          <p>
+            If you believe your data protection rights have been violated, you
+            have the right to lodge a complaint with your local data protection
+            supervisory authority in the EU member state where you reside or
+            work.
+          </p>
+        </section>
+
+        {/* 8. Your Rights Under CCPA */}
+        <section>
+          <h2 className="font-heading text-2xl font-semibold text-foreground mb-4">
+            8. Your Rights Under CCPA (California Residents)
+          </h2>
+          <p className="mb-4">
+            If you are a California resident, you have additional rights under
+            the California Consumer Privacy Act (CCPA):
+          </p>
+          <ul className="list-disc list-inside space-y-2 mb-4">
+            <li>
+              <strong className="text-foreground">Right to know:</strong>{" "}
+              Request that we disclose the categories and specific pieces of
+              personal information we have collected about you, the sources of
+              that information, and the purposes for which it was collected.
+            </li>
+            <li>
+              <strong className="text-foreground">Right to delete:</strong>{" "}
+              Request the deletion of personal information we have collected
+              from you, subject to certain exceptions.
+            </li>
+            <li>
+              <strong className="text-foreground">
+                Right to opt-out of sale:
+              </strong>{" "}
+              You have the right to opt out of the sale of your personal
+              information.
+            </li>
+            <li>
+              <strong className="text-foreground">
+                Right to non-discrimination:
+              </strong>{" "}
+              We will not discriminate against you for exercising any of your
+              CCPA rights.
+            </li>
+          </ul>
+          <p className="mb-4">
+            <strong className="text-foreground">
+              Do Not Sell My Personal Information:
+            </strong>{" "}
+            We do not sell, rent, or trade your personal information to third
+            parties for monetary or other valuable consideration. As such,
+            ChartChemistry does not offer an opt-out mechanism for the sale of
+            personal information because no such sale occurs.
+          </p>
+          <p>
+            To exercise any of your CCPA rights, please contact us at{" "}
+            <a
+              href="mailto:privacy@chartchemistry.com"
+              className="text-cosmic-purple-light hover:underline"
+            >
+              privacy@chartchemistry.com
+            </a>
+            . We will verify your identity before processing any request and
+            respond within 45 days as required by law.
+          </p>
+        </section>
+
+        {/* 9. Cookies & Analytics */}
+        <section>
+          <h2 className="font-heading text-2xl font-semibold text-foreground mb-4">
+            9. Cookies & Analytics
           </h2>
           <p className="mb-4">
             We use a minimal set of cookies and tracking technologies:
@@ -364,10 +525,10 @@ export default function PrivacyPolicyPage() {
           </p>
         </section>
 
-        {/* 8. Children's Privacy */}
+        {/* 10. Children's Privacy */}
         <section>
           <h2 className="font-heading text-2xl font-semibold text-foreground mb-4">
-            8. Children&apos;s Privacy
+            10. Children&apos;s Privacy
           </h2>
           <p>
             ChartChemistry is not intended for use by children under the age
@@ -387,10 +548,10 @@ export default function PrivacyPolicyPage() {
           </p>
         </section>
 
-        {/* 9. Changes to Policy */}
+        {/* 11. Changes to Policy */}
         <section>
           <h2 className="font-heading text-2xl font-semibold text-foreground mb-4">
-            9. Changes to This Policy
+            11. Changes to This Policy
           </h2>
           <p>
             We may update this Privacy Policy from time to time to reflect
@@ -403,10 +564,10 @@ export default function PrivacyPolicyPage() {
           </p>
         </section>
 
-        {/* 10. Contact Information */}
+        {/* 12. Contact Information */}
         <section>
           <h2 className="font-heading text-2xl font-semibold text-foreground mb-4">
-            10. Contact Information
+            12. Contact Information
           </h2>
           <p className="mb-4">
             If you have any questions, concerns, or requests regarding this
@@ -437,7 +598,7 @@ export default function PrivacyPolicyPage() {
         {/* Footer separator */}
         <div className="border-t border-white/10 pt-8">
           <p className="text-sm text-muted-foreground">
-            This privacy policy is effective as of March 3, 2026.
+            This privacy policy is effective as of March 23, 2026.
           </p>
           <p className="text-sm text-muted-foreground mt-2">
             <Link

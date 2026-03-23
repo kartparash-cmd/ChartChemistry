@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Learn Astrology | Chart Chemistry",
+  title: "Learn Astrology | ChartChemistry",
   description: "Learn about planets, houses, aspects, and how they shape your personality and relationships.",
   alternates: { canonical: "https://chartchemistry.com/learn" },
   openGraph: {
-    title: "Learn Astrology | Chart Chemistry",
+    title: "Learn Astrology | ChartChemistry",
     description: "Understanding planets, houses, aspects, and astrological compatibility.",
   },
 };

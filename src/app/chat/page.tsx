@@ -221,7 +221,7 @@ function CopyButton({ text }: { text: string }) {
   return (
     <button
       onClick={handleCopy}
-      className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground"
+      className="opacity-60 md:opacity-0 md:group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground"
       aria-label="Copy message"
     >
       {copied ? <Check className="h-3.5 w-3.5 text-green-500" /> : <Copy className="h-3.5 w-3.5" />}
@@ -668,6 +668,11 @@ function ChatPageContent() {
     if (!content.trim() || isLoading) return;
     trackEvent("chat_message");
 
+    // Track first message in a new (non-restored) session
+    if (!sessionId && !isRestoredSession) {
+      trackEvent("chat_start");
+    }
+
     setSuggestionsOpen(false);
 
     const userMessage: Message = {
@@ -687,32 +692,26 @@ function ChatPageContent() {
       inputRef.current.style.height = "52px";
     }
 
+    const aiMessageId = `ai-${Date.now()}`;
+
     try {
+      // --- Try streaming first ---
       const res = await fetch("/api/chat", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "text/event-stream",
+        },
         body: JSON.stringify({
           message: content.trim(),
           reportId: selectedReportId || undefined,
           sessionId,
+          stream: true,
         }),
       });
 
-      if (res.ok) {
-        const data = await res.json();
-        if (data.sessionId) {
-          setSessionId(data.sessionId);
-        }
-        const aiMessage: Message = {
-          id: `ai-${Date.now()}`,
-          role: "assistant",
-          content: data.reply || data.response || data.message,
-          timestamp: new Date(),
-        };
-        setMessages((prev) => [...prev, aiMessage]);
-        setLastFailedMessage(null);
-        fetchSessions();
-      } else {
+      if (!res.ok) {
+        // Handle error statuses
         setLastFailedMessage(content.trim());
         let errorText: string;
         switch (res.status) {
@@ -736,11 +735,133 @@ function ChatPageContent() {
           isError: true,
         };
         setMessages((prev) => [...prev, errorMessage]);
+        return;
+      }
+
+      const contentType = res.headers.get("content-type") || "";
+
+      if (contentType.includes("text/event-stream") && res.body) {
+        // --- Streaming response path ---
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let accumulatedText = "";
+        let streamingStarted = false;
+        let buffer = "";
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+
+          // Parse SSE events from the buffer
+          const lines = buffer.split("\n");
+          // Keep the last potentially incomplete line in the buffer
+          buffer = lines.pop() || "";
+
+          for (const line of lines) {
+            if (!line.startsWith("data: ")) continue;
+            const jsonStr = line.slice(6).trim();
+            if (!jsonStr) continue;
+
+            try {
+              const data = JSON.parse(jsonStr);
+
+              // Handle sessionId event (sent first)
+              if (data.sessionId !== undefined) {
+                if (data.sessionId) {
+                  setSessionId(data.sessionId);
+                }
+                continue;
+              }
+
+              // Handle error event
+              if (data.error) {
+                const errorMessage: Message = {
+                  id: aiMessageId,
+                  role: "assistant",
+                  content: data.error,
+                  timestamp: new Date(),
+                  isError: true,
+                };
+                setMessages((prev) => [...prev, errorMessage]);
+                setLastFailedMessage(content.trim());
+                return;
+              }
+
+              // Handle completion event
+              if (data.done) {
+                // Stream is complete — refresh sidebar sessions
+                fetchSessions();
+                continue;
+              }
+
+              // Handle text chunk
+              if (data.text) {
+                accumulatedText += data.text;
+
+                if (!streamingStarted) {
+                  // First chunk: add the assistant message and stop showing typing indicator
+                  streamingStarted = true;
+                  setIsLoading(false);
+                  const aiMessage: Message = {
+                    id: aiMessageId,
+                    role: "assistant",
+                    content: accumulatedText,
+                    timestamp: new Date(),
+                  };
+                  setMessages((prev) => [...prev, aiMessage]);
+                } else {
+                  // Subsequent chunks: update the existing message content
+                  setMessages((prev) =>
+                    prev.map((msg) =>
+                      msg.id === aiMessageId
+                        ? { ...msg, content: accumulatedText }
+                        : msg
+                    )
+                  );
+                }
+              }
+            } catch {
+              // Malformed JSON line — skip
+            }
+          }
+        }
+
+        // If no text was streamed at all, show a fallback
+        if (!streamingStarted) {
+          const fallbackMessage: Message = {
+            id: aiMessageId,
+            role: "assistant",
+            content: "Something went wrong. Please try again.",
+            timestamp: new Date(),
+            isError: true,
+          };
+          setMessages((prev) => [...prev, fallbackMessage]);
+          setLastFailedMessage(content.trim());
+        } else {
+          setLastFailedMessage(null);
+        }
+      } else {
+        // --- Non-streaming JSON response (fallback) ---
+        const data = await res.json();
+        if (data.sessionId) {
+          setSessionId(data.sessionId);
+        }
+        const aiMessage: Message = {
+          id: aiMessageId,
+          role: "assistant",
+          content: data.reply || data.response || data.message,
+          timestamp: new Date(),
+        };
+        setMessages((prev) => [...prev, aiMessage]);
+        setLastFailedMessage(null);
+        fetchSessions();
       }
     } catch {
       setLastFailedMessage(content.trim());
       const aiMessage: Message = {
-        id: `ai-${Date.now()}`,
+        id: aiMessageId,
         role: "assistant",
         content: "Check your internet connection and try again.",
         timestamp: new Date(),
@@ -944,7 +1065,7 @@ function ChatPageContent() {
         <h1 className="sr-only">Marie Chat</h1>
 
         {/* Messages */}
-        <div ref={messagesContainerRef} className="flex-1 overflow-y-auto" role="log" aria-live="polite" aria-relevant="additions">
+        <div ref={messagesContainerRef} className="flex-1 overflow-y-auto" role="log" aria-live="polite" aria-relevant="additions" aria-busy={isLoading}>
           {/* Session restore loading */}
           {isRestoringSession && (
             <div className="flex justify-center py-8">

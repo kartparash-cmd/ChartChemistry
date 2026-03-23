@@ -10,13 +10,35 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { checkAndAwardAchievements } from "@/lib/achievements";
+import { checkAndAwardAchievements, checkStreakAchievements } from "@/lib/achievements";
 
 /**
- * Normalise a Date to a YYYY-MM-DD string in the server's local timezone.
- * Using UTC-based date comparison so behaviour is consistent.
+ * Get "today" as a YYYY-MM-DD string in the user's timezone.
+ * Falls back to UTC if no timezone is provided.
  */
-function toDateString(date: Date): string {
+function getUserToday(timezone?: string): string {
+  const now = new Date();
+  if (timezone) {
+    try {
+      return now.toLocaleDateString("en-CA", { timeZone: timezone }); // "YYYY-MM-DD"
+    } catch {
+      // Invalid timezone — fall back to UTC
+    }
+  }
+  return now.toISOString().split("T")[0];
+}
+
+/**
+ * Format a stored Date as YYYY-MM-DD in the user's timezone (or UTC fallback).
+ */
+function toDateString(date: Date, timezone?: string): string {
+  if (timezone) {
+    try {
+      return date.toLocaleDateString("en-CA", { timeZone: timezone });
+    } catch {
+      // Invalid timezone — fall back to UTC
+    }
+  }
   return date.toISOString().split("T")[0];
 }
 
@@ -77,7 +99,7 @@ export async function GET() {
 // POST — record a daily check-in
 // ============================================================
 
-export async function POST() {
+export async function POST(request: Request) {
   try {
     const session = await getServerSession(authOptions);
 
@@ -86,6 +108,17 @@ export async function POST() {
         { error: "Authentication required" },
         { status: 401 }
       );
+    }
+
+    // Parse optional timezone from request body
+    let timezone: string | undefined;
+    try {
+      const body = await request.json();
+      if (body?.timezone && typeof body.timezone === "string") {
+        timezone = body.timezone;
+      }
+    } catch {
+      // Empty body or invalid JSON — use UTC fallback
     }
 
     const user = await prisma.user.findUnique({
@@ -100,29 +133,40 @@ export async function POST() {
       );
     }
 
-    const todayStr = toDateString(new Date());
+    const todayStr = getUserToday(timezone);
     const lastCheckinStr = user.lastCheckinDate
-      ? toDateString(user.lastCheckinDate)
+      ? toDateString(user.lastCheckinDate, timezone)
       : null;
 
     let newStreakCount: number;
     let isNewDay: boolean;
+    let graceUsed = false;
 
     if (lastCheckinStr === todayStr) {
       // Already checked in today — idempotent, no update needed
       newStreakCount = user.streakCount;
       isNewDay = false;
     } else {
-      // Calculate yesterday's date string
-      const yesterday = new Date();
+      // Calculate day gap using timezone-aware date arithmetic
+      const todayDate = new Date(todayStr + "T12:00:00Z"); // noon to avoid DST edge cases
+      const yesterday = new Date(todayDate);
       yesterday.setUTCDate(yesterday.getUTCDate() - 1);
-      const yesterdayStr = toDateString(yesterday);
+      const yesterdayStr = yesterday.toISOString().split("T")[0];
+
+      const twoDaysAgo = new Date(todayDate);
+      twoDaysAgo.setUTCDate(twoDaysAgo.getUTCDate() - 2);
+      const twoDaysAgoStr = twoDaysAgo.toISOString().split("T")[0];
 
       if (lastCheckinStr === yesterdayStr) {
         // Consecutive day — increment streak
         newStreakCount = user.streakCount + 1;
+      } else if (lastCheckinStr === twoDaysAgoStr) {
+        // Missed exactly 1 day — grace period saves the streak
+        // Continue streak without incrementing (no credit for missed day)
+        newStreakCount = user.streakCount;
+        graceUsed = true;
       } else {
-        // Gap in visits (or first visit ever) — reset to 1
+        // Gap of 3+ days (or first visit ever) — reset to 1
         newStreakCount = 1;
       }
 
@@ -152,6 +196,7 @@ export async function POST() {
       streakCount: newStreakCount,
       lastCheckinDate: todayStr,
       isNewDay,
+      graceUsed,
       newAchievements,
       achievements: allAchievements.map((a) => ({
         achievementType: a.achievementType,

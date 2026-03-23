@@ -14,6 +14,7 @@ import { calculateNatalChart } from "@/lib/astro-client";
 import type { CreateProfileRequest, NatalChartInput } from "@/types/astrology";
 import { Prisma } from "@/generated/prisma/client";
 import { sanitizeName, sanitizeInput } from "@/lib/sanitize";
+import { checkProfileCountAchievements } from "@/lib/achievements";
 
 // ============================================================
 // GET — list user's birth profiles
@@ -218,6 +219,11 @@ export async function POST(request: Request) {
         chartData,
       },
     });
+
+    // Fire-and-forget: check profile count achievements (FIVE_PROFILES)
+    checkProfileCountAchievements(session.user.id).catch((err) =>
+      console.warn("[POST /api/profile] Achievement check failed:", err)
+    );
 
     return NextResponse.json(
       {

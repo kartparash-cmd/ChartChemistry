@@ -97,35 +97,35 @@ describe("getRemainingChecks", () => {
 });
 
 describe("createRateLimiter", () => {
-  it("creates a limiter with custom limits", () => {
+  it("creates a limiter with custom limits", async () => {
     const limiter = createRateLimiter(5, 60_000, "test");
 
-    const r1 = limiter.check("key1");
+    const r1 = await limiter.check("key1");
     expect(r1.allowed).toBe(true);
     expect(r1.remaining).toBe(4);
   });
 
-  it("respects the custom maxRequests", () => {
+  it("respects the custom maxRequests", async () => {
     const limiter = createRateLimiter(2, 60_000);
 
-    limiter.check("k");
-    limiter.check("k");
+    await limiter.check("k");
+    await limiter.check("k");
 
-    const r3 = limiter.check("k");
+    const r3 = await limiter.check("k");
     expect(r3.allowed).toBe(false);
     expect(r3.remaining).toBe(0);
   });
 
-  it("isolates different keys", () => {
+  it("isolates different keys", async () => {
     const limiter = createRateLimiter(1, 60_000);
 
-    const a = limiter.check("a");
+    const a = await limiter.check("a");
     expect(a.allowed).toBe(true);
 
-    const a2 = limiter.check("a");
+    const a2 = await limiter.check("a");
     expect(a2.allowed).toBe(false);
 
-    const b = limiter.check("b");
+    const b = await limiter.check("b");
     expect(b.allowed).toBe(true);
   });
 });

@@ -14,6 +14,7 @@ import { prisma } from "@/lib/prisma";
 import { calculateNatalChart } from "@/lib/astro-client";
 import type { NatalChartInput } from "@/types/astrology";
 import { Prisma } from "@/generated/prisma/client";
+import { sanitizeInput } from "@/lib/sanitize";
 
 // ============================================================
 // GET — fetch a single profile
@@ -182,13 +183,48 @@ export async function PUT(
       updateData.birthTime = body.birthTime;
     }
 
-    if (body.birthCity !== undefined) updateData.birthCity = body.birthCity;
-    if (body.birthCountry !== undefined) updateData.birthCountry = body.birthCountry;
-    if (body.latitude !== undefined) updateData.latitude = body.latitude;
-    if (body.longitude !== undefined) updateData.longitude = body.longitude;
-    if (body.timezone !== undefined) updateData.timezone = body.timezone;
-    if (body.isOwner !== undefined) updateData.isOwner = body.isOwner;
-    if (body.isPublic !== undefined) updateData.isPublic = body.isPublic;
+    if (body.birthCity !== undefined) {
+      if (typeof body.birthCity !== "string") {
+        return NextResponse.json({ error: "birthCity must be a string" }, { status: 400 });
+      }
+      updateData.birthCity = sanitizeInput(body.birthCity);
+    }
+    if (body.birthCountry !== undefined) {
+      if (typeof body.birthCountry !== "string") {
+        return NextResponse.json({ error: "birthCountry must be a string" }, { status: 400 });
+      }
+      updateData.birthCountry = sanitizeInput(body.birthCountry);
+    }
+    if (body.latitude !== undefined) {
+      if (typeof body.latitude !== "number" || body.latitude < -90 || body.latitude > 90) {
+        return NextResponse.json({ error: "latitude must be a number between -90 and 90" }, { status: 400 });
+      }
+      updateData.latitude = body.latitude;
+    }
+    if (body.longitude !== undefined) {
+      if (typeof body.longitude !== "number" || body.longitude < -180 || body.longitude > 180) {
+        return NextResponse.json({ error: "longitude must be a number between -180 and 180" }, { status: 400 });
+      }
+      updateData.longitude = body.longitude;
+    }
+    if (body.timezone !== undefined) {
+      if (typeof body.timezone !== "string") {
+        return NextResponse.json({ error: "timezone must be a string" }, { status: 400 });
+      }
+      updateData.timezone = sanitizeInput(body.timezone);
+    }
+    if (body.isOwner !== undefined) {
+      if (typeof body.isOwner !== "boolean") {
+        return NextResponse.json({ error: "isOwner must be a boolean" }, { status: 400 });
+      }
+      updateData.isOwner = body.isOwner;
+    }
+    if (body.isPublic !== undefined) {
+      if (typeof body.isPublic !== "boolean") {
+        return NextResponse.json({ error: "isPublic must be a boolean" }, { status: 400 });
+      }
+      updateData.isPublic = body.isPublic;
+    }
 
     // Recalculate chart if birth data changed
     const birthDataChanged =
@@ -207,9 +243,9 @@ export async function PUT(
         birthTime: (updateData.birthTime !== undefined
           ? (updateData.birthTime as string | undefined)
           : existing.birthTime) || undefined,
-        latitude: (updateData.latitude as number) || existing.latitude,
-        longitude: (updateData.longitude as number) || existing.longitude,
-        timezone: (updateData.timezone as string) || existing.timezone,
+        latitude: (updateData.latitude as number) ?? existing.latitude,
+        longitude: (updateData.longitude as number) ?? existing.longitude,
+        timezone: (updateData.timezone as string) ?? existing.timezone,
         houseSystem: body.houseSystem as string | undefined,
       };
 
@@ -270,14 +306,24 @@ export async function PATCH(
     if (!profile) return NextResponse.json({ error: "Profile not found" }, { status: 404 });
     if (profile.userId !== session.user.id) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
-    const body = await request.json();
+    let body;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json({ error: "Invalid JSON in request body" }, { status: 400 });
+    }
     const updateData: Record<string, unknown> = {};
 
     if (body.name && typeof body.name === "string") updateData.name = body.name.trim().substring(0, 100);
-    if (body.birthTime && typeof body.birthTime === "string" && /^\d{2}:\d{2}$/.test(body.birthTime)) {
-      updateData.birthTime = body.birthTime;
-      // Clear cached chart data so it gets recalculated with the new time
-      updateData.chartData = null;
+    if (body.birthTime !== undefined) {
+      if (body.birthTime === null) {
+        updateData.birthTime = null;
+        updateData.chartData = null;
+      } else if (typeof body.birthTime === "string" && /^\d{2}:\d{2}$/.test(body.birthTime)) {
+        updateData.birthTime = body.birthTime;
+        // Clear cached chart data so it gets recalculated with the new time
+        updateData.chartData = null;
+      }
     }
 
     if (Object.keys(updateData).length === 0) {

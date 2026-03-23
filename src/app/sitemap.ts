@@ -23,6 +23,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/privacy",
     "/terms",
     "/support",
+    "/quick-match",
+    "/cosmic-identity",
     "/auth/signin",
     "/auth/signup",
   ];

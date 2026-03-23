@@ -3,7 +3,9 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles, User, Heart, ArrowRight, X } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { trackEvent } from "@/lib/analytics";
 
 const steps = [
   {
@@ -27,6 +29,7 @@ const steps = [
 ];
 
 export function OnboardingWizard() {
+  const router = useRouter();
   const [visible, setVisible] = useState(false);
   const [step, setStep] = useState(0);
 
@@ -47,7 +50,9 @@ export function OnboardingWizard() {
     if (step < steps.length - 1) {
       setStep(step + 1);
     } else {
+      trackEvent("onboarding_complete");
       dismiss();
+      router.push("/compatibility");
     }
   };
 

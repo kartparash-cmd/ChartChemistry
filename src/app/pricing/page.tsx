@@ -15,6 +15,7 @@ import {
   Shield,
   Quote,
   ChevronDown,
+  FileText,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -38,7 +39,7 @@ interface PricingTier {
 const tiers: PricingTier[] = [
   {
     name: "Free",
-    icon: <Star className="h-5 w-5" />,
+    icon: <Star aria-hidden="true" className="h-5 w-5" />,
     description: "Get started with basic compatibility insights",
     monthlyPrice: 0,
     annualPrice: 0,
@@ -54,7 +55,7 @@ const tiers: PricingTier[] = [
   },
   {
     name: "Premium",
-    icon: <Zap className="h-5 w-5" />,
+    icon: <Zap aria-hidden="true" className="h-5 w-5" />,
     description: "Full astrological insights, AI guidance, and daily updates",
     monthlyPrice: 9.99,
     annualPrice: 79.99,
@@ -123,9 +124,9 @@ const faqItems = [
 function FeatureValue({ value }: { value: boolean | string }) {
   if (typeof value === "boolean") {
     return value ? (
-      <Check className="h-4 w-4 text-emerald-400" />
+      <Check aria-hidden="true" className="h-4 w-4 text-emerald-400" />
     ) : (
-      <X className="h-4 w-4 text-muted-foreground/40" />
+      <X aria-hidden="true" className="h-4 w-4 text-muted-foreground/40" />
     );
   }
   return <span className="text-sm">{value}</span>;
@@ -144,9 +145,11 @@ function PricingContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl");
+  const cancelled = searchParams.get("cancelled") === "true";
   const [billing, setBilling] = useState<BillingPeriod>("monthly");
   const [toastVisible, setToastVisible] = useState(false);
   const [loadingTier, setLoadingTier] = useState<string | null>(null);
+  const [showCancelledBanner, setShowCancelledBanner] = useState(cancelled);
 
   useEffect(() => {
     trackEvent("pricing_view");
@@ -199,6 +202,41 @@ function PricingContent() {
     }
   };
 
+  const handleSingleReport = async () => {
+    trackEvent("checkout_click", { plan: "single_report" });
+
+    if (!session) {
+      router.push("/auth/signin");
+      return;
+    }
+
+    setLoadingTier("SingleReport");
+    try {
+      const res = await fetch("/api/stripe/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          plan: "SINGLE_REPORT",
+          ...(callbackUrl ? { callbackUrl } : {}),
+        }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok && data.url) {
+        window.location.href = data.url;
+      } else {
+        setToastVisible(true);
+        setTimeout(() => setToastVisible(false), 3000);
+      }
+    } catch {
+      setToastVisible(true);
+      setTimeout(() => setToastVisible(false), 3000);
+    } finally {
+      setLoadingTier(null);
+    }
+  };
+
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -216,6 +254,30 @@ function PricingContent() {
 
   return (
     <div className="min-h-screen">
+      {/* Cancelled Checkout Banner */}
+      {showCancelledBanner && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -10 }}
+          className="mx-auto max-w-3xl mt-20 mb-[-3rem] px-4"
+        >
+          <div className="relative rounded-xl border border-white/10 bg-white/[0.03] px-5 py-4">
+            <button
+              onClick={() => setShowCancelledBanner(false)}
+              className="absolute top-3 right-3 text-muted-foreground/60 hover:text-foreground transition-colors"
+              aria-label="Dismiss"
+            >
+              <X className="h-4 w-4" />
+            </button>
+            <p className="text-sm text-muted-foreground pr-6">
+              Changed your mind? No pressure — you can upgrade anytime. Your
+              free tier still includes 3 daily compatibility checks.
+            </p>
+          </div>
+        </motion.div>
+      )}
+
       {/* Hero */}
       <section className="relative overflow-hidden pt-24 pb-16 px-4">
         <div className="absolute inset-0 bg-gradient-to-b from-cosmic-purple/5 via-transparent to-transparent" />
@@ -229,7 +291,7 @@ function PricingContent() {
               variant="outline"
               className="mb-4 border-cosmic-purple/30 bg-cosmic-purple/10 text-cosmic-purple-light"
             >
-              <Sparkles className="mr-1 h-3 w-3" />
+              <Sparkles aria-hidden="true" className="mr-1 h-3 w-3" />
               Simple Pricing
             </Badge>
             <h1 className="font-heading text-4xl font-bold sm:text-5xl mb-4">
@@ -291,7 +353,7 @@ function PricingContent() {
           transition={{ delay: 0.3 }}
           className="mx-auto max-w-4xl flex items-center justify-center gap-2 text-muted-foreground"
         >
-          <Users className="h-4 w-4 text-cosmic-purple-light" />
+          <Users aria-hidden="true" className="h-4 w-4 text-cosmic-purple-light" />
           <p className="text-sm font-medium">
             Join stargazers exploring cosmic compatibility
           </p>
@@ -320,7 +382,7 @@ function PricingContent() {
               {tier.popular && (
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2">
                   <Badge className="bg-cosmic-purple text-white shadow-lg">
-                    <Sparkles className="mr-1 h-3 w-3" />
+                    <Sparkles aria-hidden="true" className="mr-1 h-3 w-3" />
                     Most Popular
                   </Badge>
                 </div>
@@ -376,7 +438,7 @@ function PricingContent() {
               <ul className="mb-8 flex-1 space-y-3">
                 {tier.features.map((feature) => (
                   <li key={feature} className="flex items-start gap-2">
-                    <Check className="mt-0.5 h-4 w-4 flex-shrink-0 text-emerald-400" />
+                    <Check aria-hidden="true" className="mt-0.5 h-4 w-4 flex-shrink-0 text-emerald-400" />
                     <span className="text-sm text-muted-foreground">
                       {feature}
                     </span>
@@ -396,16 +458,56 @@ function PricingContent() {
                 )}
               >
                 {loadingTier === tier.name ? "Redirecting..." : tier.cta}
-                {loadingTier !== tier.name && <ArrowRight className="ml-2 h-4 w-4" />}
+                {loadingTier !== tier.name && <ArrowRight aria-hidden="true" className="ml-2 h-4 w-4" />}
               </Button>
               {tier.monthlyPrice > 0 && (
                 <p className="mt-3 flex items-center justify-center gap-1 text-xs text-muted-foreground">
-                  <Shield className="h-3 w-3" />
+                  <Shield aria-hidden="true" className="h-3 w-3" />
                   Secure payment powered by Stripe
                 </p>
               )}
             </motion.div>
           ))}
+        </motion.div>
+      </section>
+
+      {/* Single Report Option */}
+      <section className="px-4 pb-12">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+          className="mx-auto max-w-4xl"
+        >
+          <div className="relative rounded-2xl border border-white/10 bg-white/[0.02] p-6 flex flex-col sm:flex-row items-center gap-6">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gold/15">
+              <FileText aria-hidden="true" className="h-6 w-6 text-gold" />
+            </div>
+            <div className="flex-1 text-center sm:text-left">
+              <h3 className="font-heading text-lg font-semibold mb-1">
+                Just need one report?
+              </h3>
+              <p className="text-sm text-muted-foreground">
+                Get a single full 7-section premium compatibility report without a subscription.
+                Perfect for a one-time deep dive into your cosmic connection.
+              </p>
+            </div>
+            <div className="flex flex-col items-center gap-2 shrink-0">
+              <div className="flex items-baseline gap-1">
+                <span className="text-2xl font-bold">$4.99</span>
+                <span className="text-xs text-muted-foreground">one-time</span>
+              </div>
+              <Button
+                onClick={handleSingleReport}
+                disabled={loadingTier !== null}
+                variant="outline"
+                className="whitespace-nowrap border-gold/30 text-gold hover:bg-gold/10 hover:text-gold"
+              >
+                {loadingTier === "SingleReport" ? "Redirecting..." : "Buy Single Report"}
+                {loadingTier !== "SingleReport" && <ArrowRight aria-hidden="true" className="ml-2 h-4 w-4" />}
+              </Button>
+            </div>
+          </div>
         </motion.div>
       </section>
 
@@ -516,7 +618,7 @@ function PricingContent() {
               >
                 <summary className="flex cursor-pointer items-center justify-between px-5 py-4 text-sm font-medium select-none list-none [&::-webkit-details-marker]:hidden">
                   <span>{item.question}</span>
-                  <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200 group-open:rotate-180" />
+                  <ChevronDown aria-hidden="true" className="h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200 group-open:rotate-180" />
                 </summary>
                 <div className="px-5 pb-4 text-sm text-muted-foreground leading-relaxed">
                   {item.answer}
@@ -561,7 +663,7 @@ function PricingContent() {
                 viewport={{ once: true }}
                 className="glass-card rounded-2xl border border-white/10 p-6 flex flex-col"
               >
-                <Quote className="h-5 w-5 text-cosmic-purple-light/50 mb-3" />
+                <Quote aria-hidden="true" className="h-5 w-5 text-cosmic-purple-light/50 mb-3" />
                 <p className="text-sm text-muted-foreground flex-1 mb-4">
                   &ldquo;{testimonial.quote}&rdquo;
                 </p>
@@ -586,7 +688,7 @@ function PricingContent() {
           className="fixed bottom-24 md:bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-xl border border-white/10 bg-navy-light/95 backdrop-blur-xl px-6 py-3 shadow-xl"
         >
           <p className="text-sm font-medium">
-            <Sparkles className="inline mr-1 h-3 w-3 text-cosmic-purple-light" />
+            <Sparkles aria-hidden="true" className="inline mr-1 h-3 w-3 text-cosmic-purple-light" />
             Something went wrong. Please try again or contact support.
           </p>
         </motion.div>

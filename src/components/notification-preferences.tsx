@@ -9,15 +9,23 @@ function Toggle({
   label,
   description,
   icon: Icon,
+  disabled,
 }: {
   checked: boolean;
   onChange: (v: boolean) => void;
   label: string;
   description: string;
   icon: React.ElementType;
+  disabled?: boolean;
 }) {
   return (
-    <label className="flex items-start gap-4 p-4 rounded-lg border border-border hover:bg-muted/50 transition-colors cursor-pointer">
+    <label
+      className={`flex items-start gap-4 p-4 rounded-lg border border-border transition-colors ${
+        disabled
+          ? "opacity-50 cursor-not-allowed"
+          : "hover:bg-muted/50 cursor-pointer"
+      }`}
+    >
       <Icon className="h-5 w-5 text-muted-foreground mt-0.5 shrink-0" />
       <div className="flex-1 min-w-0">
         <p className="text-sm font-medium">{label}</p>
@@ -27,9 +35,14 @@ function Toggle({
         type="button"
         role="switch"
         aria-checked={checked}
-        onClick={() => onChange(!checked)}
+        disabled={disabled}
+        onClick={() => !disabled && onChange(!checked)}
         className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${
-          checked ? "bg-cosmic-purple" : "bg-muted"
+          disabled
+            ? "bg-muted cursor-not-allowed"
+            : checked
+              ? "bg-cosmic-purple"
+              : "bg-muted"
         }`}
       >
         <span
@@ -91,8 +104,8 @@ export function NotificationPreferences() {
       </h3>
       <Toggle
         icon={Mail}
-        label="Weekly Digest"
-        description="Receive weekly cosmic insights and compatibility updates"
+        label="Daily Horoscope Email"
+        description="Receive daily cosmic insights and compatibility updates"
         checked={prefs.emailDigest}
         onChange={(v) => updatePref("emailDigest", v)}
       />
@@ -105,10 +118,11 @@ export function NotificationPreferences() {
       />
       <Toggle
         icon={Smartphone}
-        label="Push Notifications"
+        label="Push Notifications (Coming Soon)"
         description="Real-time alerts for cosmic events and chart updates"
-        checked={prefs.pushEnabled}
-        onChange={(v) => updatePref("pushEnabled", v)}
+        checked={false}
+        onChange={() => {}}
+        disabled
       />
     </div>
   );

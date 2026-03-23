@@ -19,6 +19,9 @@ import {
   Heart,
   Activity,
   Lock,
+  Briefcase,
+  Hash,
+  Palette,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -85,17 +88,27 @@ function getMoonPhase(date: Date): MoonPhaseInfo {
 interface Horoscope {
   date: string;
   userName: string;
-  summary: string;
-  body: string;
+  overview: string;
+  love: string;
+  career: string;
+  wellness: string;
   cosmicTip: string;
   luckyTime: string;
+  luckyNumber: number;
+  luckyColor: string;
   mood: string;
+  // Legacy fields (backward compat)
+  summary?: string;
+  body?: string;
 }
 
 const MOOD_CONFIG: Record<string, { color: string; icon: string }> = {
-  expansive: { color: "text-gold", icon: "✨" },
+  energetic: { color: "text-orange-400", icon: "⚡" },
   reflective: { color: "text-blue-400", icon: "🌙" },
   passionate: { color: "text-red-400", icon: "🔥" },
+  calm: { color: "text-teal-400", icon: "🌊" },
+  adventurous: { color: "text-yellow-400", icon: "🧭" },
+  expansive: { color: "text-gold", icon: "✨" },
   grounded: { color: "text-emerald-400", icon: "🌿" },
   transformative: { color: "text-cosmic-purple-light", icon: "🦋" },
   playful: { color: "text-yellow-400", icon: "⭐" },
@@ -449,10 +462,10 @@ export default function HoroscopePage() {
               </div>
             </div>
 
-            {/* Mood + Summary Card */}
+            {/* Overview + Mood Card */}
             <motion.div
               role="article"
-              aria-label="Today's mood and energy summary"
+              aria-label="Today's mood and energy overview"
               initial={fadeUpSmall.initial}
               animate={fadeUpSmall.animate}
               className="rounded-2xl border border-white/10 bg-gradient-to-br from-cosmic-purple/[0.06] to-transparent p-6"
@@ -483,74 +496,113 @@ export default function HoroscopePage() {
                 </Button>
               </div>
               <p className="text-lg font-medium leading-relaxed">
-                {horoscope.summary}
+                {horoscope.overview}
               </p>
-            </motion.div>
-
-            {/* Main Horoscope Body */}
-            <motion.div
-              role="article"
-              aria-label="Full cosmic reading"
-              initial={fadeUpSmall.initial}
-              animate={fadeUpSmall.animate}
-              transition={prefersReducedMotion ? undefined : { delay: 0.1 }}
-              className="rounded-2xl border border-white/10 bg-white/[0.03] p-6"
-            >
-              <div className="flex items-center gap-2 mb-4">
-                <Sparkles className="h-4 w-4 text-cosmic-purple-light" />
-                <h2 className="font-heading text-lg font-semibold">
-                  {horoscope.userName}&apos;s Cosmic Reading
-                </h2>
-              </div>
-              <div className="prose prose-invert prose-sm max-w-none">
-                <p className="text-sm leading-relaxed text-foreground/90 whitespace-pre-wrap">
-                  {horoscope.body}
-                </p>
+              {/* Lucky badges */}
+              <div className="flex flex-wrap items-center gap-2 mt-4">
+                <Badge variant="outline" className="border-gold/30 bg-gold/10 text-gold text-xs">
+                  <Hash className="mr-1 h-3 w-3" />
+                  Lucky {horoscope.luckyNumber}
+                </Badge>
+                <Badge variant="outline" className="border-cosmic-purple/30 bg-cosmic-purple/10 text-cosmic-purple-light text-xs">
+                  <Palette className="mr-1 h-3 w-3" />
+                  {horoscope.luckyColor}
+                </Badge>
+                <Badge variant="outline" className="border-white/20 bg-white/5 text-muted-foreground text-xs">
+                  <Clock className="mr-1 h-3 w-3" />
+                  {horoscope.luckyTime}
+                </Badge>
               </div>
             </motion.div>
 
-            {/* Bottom Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {/* Cosmic Tip */}
+            {/* Section Cards: Love, Career, Wellness */}
+            <div className="grid grid-cols-1 gap-4">
+              {/* Love */}
               <motion.div
                 role="article"
-                aria-label="Cosmic tip of the day"
+                aria-label="Love and relationships reading"
+                initial={fadeUpSmall.initial}
+                animate={fadeUpSmall.animate}
+                transition={prefersReducedMotion ? undefined : { delay: 0.1 }}
+                className="glass-card rounded-2xl border border-pink-500/20 bg-pink-500/[0.04] p-5 backdrop-blur-sm"
+              >
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-pink-500/10">
+                    <Heart className="h-4 w-4 text-pink-400" />
+                  </div>
+                  <h3 className="font-heading text-sm font-semibold text-pink-400">
+                    Love &amp; Relationships
+                  </h3>
+                </div>
+                <p className="text-sm leading-relaxed text-foreground/85">
+                  {horoscope.love}
+                </p>
+              </motion.div>
+
+              {/* Career */}
+              <motion.div
+                role="article"
+                aria-label="Career and work reading"
+                initial={fadeUpSmall.initial}
+                animate={fadeUpSmall.animate}
+                transition={prefersReducedMotion ? undefined : { delay: 0.15 }}
+                className="glass-card rounded-2xl border border-blue-500/20 bg-blue-500/[0.04] p-5 backdrop-blur-sm"
+              >
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-500/10">
+                    <Briefcase className="h-4 w-4 text-blue-400" />
+                  </div>
+                  <h3 className="font-heading text-sm font-semibold text-blue-400">
+                    Career &amp; Purpose
+                  </h3>
+                </div>
+                <p className="text-sm leading-relaxed text-foreground/85">
+                  {horoscope.career}
+                </p>
+              </motion.div>
+
+              {/* Wellness */}
+              <motion.div
+                role="article"
+                aria-label="Wellness and energy reading"
                 initial={fadeUpSmall.initial}
                 animate={fadeUpSmall.animate}
                 transition={prefersReducedMotion ? undefined : { delay: 0.2 }}
-                className="rounded-xl border border-gold/20 bg-gold/[0.04] p-5"
+                className="glass-card rounded-2xl border border-emerald-500/20 bg-emerald-500/[0.04] p-5 backdrop-blur-sm"
               >
-                <div className="flex items-center gap-2 mb-2">
-                  <Lightbulb className="h-4 w-4 text-gold" />
-                  <h3 className="text-sm font-semibold text-gold">
-                    Cosmic Tip
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/10">
+                    <Activity className="h-4 w-4 text-emerald-400" />
+                  </div>
+                  <h3 className="font-heading text-sm font-semibold text-emerald-400">
+                    Wellness &amp; Energy
                   </h3>
                 </div>
-                <p className="text-sm text-foreground/80">
-                  {horoscope.cosmicTip}
-                </p>
-              </motion.div>
-
-              {/* Lucky Time */}
-              <motion.div
-                role="article"
-                aria-label="Best time window for today"
-                initial={fadeUpSmall.initial}
-                animate={fadeUpSmall.animate}
-                transition={prefersReducedMotion ? undefined : { delay: 0.25 }}
-                className="rounded-xl border border-cosmic-purple/20 bg-cosmic-purple/[0.04] p-5"
-              >
-                <div className="flex items-center gap-2 mb-2">
-                  <Clock className="h-4 w-4 text-cosmic-purple-light" />
-                  <h3 className="text-sm font-semibold text-cosmic-purple-light">
-                    Best Time Window
-                  </h3>
-                </div>
-                <p className="text-sm text-foreground/80">
-                  {horoscope.luckyTime}
+                <p className="text-sm leading-relaxed text-foreground/85">
+                  {horoscope.wellness}
                 </p>
               </motion.div>
             </div>
+
+            {/* Cosmic Tip */}
+            <motion.div
+              role="article"
+              aria-label="Cosmic tip of the day"
+              initial={fadeUpSmall.initial}
+              animate={fadeUpSmall.animate}
+              transition={prefersReducedMotion ? undefined : { delay: 0.25 }}
+              className="rounded-xl border border-gold/20 bg-gold/[0.04] p-5"
+            >
+              <div className="flex items-center gap-2 mb-2">
+                <Lightbulb className="h-4 w-4 text-gold" />
+                <h3 className="text-sm font-semibold text-gold">
+                  Cosmic Tip
+                </h3>
+              </div>
+              <p className="text-sm text-foreground/80">
+                {horoscope.cosmicTip}
+              </p>
+            </motion.div>
 
             {/* Continue Your Cosmic Journey */}
             <motion.nav

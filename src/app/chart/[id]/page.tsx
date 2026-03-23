@@ -17,6 +17,8 @@ import {
   Heart,
   Sun,
   BookOpen,
+  Moon,
+  Star,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -36,6 +38,7 @@ import {
   SheetDescription,
 } from "@/components/ui/sheet";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LazyChartWheel as ChartWheel } from "@/components/lazy-chart-wheel";
 import {
   type PlanetPosition,
@@ -113,6 +116,94 @@ const PLANET_SYMBOLS: Record<string, string> = {
 };
 
 const KEY_PLACEMENTS = ["Sun", "Moon", "Ascendant", "Venus", "Mars"];
+
+const ZODIAC_EMOJIS: Record<string, string> = {
+  Aries: "\u2648",
+  Taurus: "\u2649",
+  Gemini: "\u264A",
+  Cancer: "\u264B",
+  Leo: "\u264C",
+  Virgo: "\u264D",
+  Libra: "\u264E",
+  Scorpio: "\u264F",
+  Sagittarius: "\u2650",
+  Capricorn: "\u2651",
+  Aquarius: "\u2652",
+  Pisces: "\u2653",
+};
+
+const FIRE_SIGNS = ["Aries", "Leo", "Sagittarius"];
+const EARTH_SIGNS = ["Taurus", "Virgo", "Capricorn"];
+const AIR_SIGNS = ["Gemini", "Libra", "Aquarius"];
+const WATER_SIGNS = ["Cancer", "Scorpio", "Pisces"];
+
+function getElement(sign: string): "fire" | "earth" | "air" | "water" {
+  if (FIRE_SIGNS.includes(sign)) return "fire";
+  if (EARTH_SIGNS.includes(sign)) return "earth";
+  if (AIR_SIGNS.includes(sign)) return "air";
+  return "water";
+}
+
+function getElementColors(sign: string) {
+  const element = getElement(sign);
+  switch (element) {
+    case "fire":
+      return {
+        border: "border-orange-500/30",
+        bg: "bg-orange-500/[0.06]",
+        text: "text-orange-400",
+        glow: "hover:shadow-[0_0_20px_rgba(249,115,22,0.15)]",
+        gradient: "from-orange-500/20 to-red-500/10",
+        dot: "bg-orange-400",
+        label: "Fire",
+      };
+    case "earth":
+      return {
+        border: "border-emerald-500/30",
+        bg: "bg-emerald-500/[0.06]",
+        text: "text-emerald-400",
+        glow: "hover:shadow-[0_0_20px_rgba(16,185,129,0.15)]",
+        gradient: "from-emerald-500/20 to-green-500/10",
+        dot: "bg-emerald-400",
+        label: "Earth",
+      };
+    case "air":
+      return {
+        border: "border-sky-500/30",
+        bg: "bg-sky-500/[0.06]",
+        text: "text-sky-400",
+        glow: "hover:shadow-[0_0_20px_rgba(14,165,233,0.15)]",
+        gradient: "from-sky-500/20 to-blue-500/10",
+        dot: "bg-sky-400",
+        label: "Air",
+      };
+    case "water":
+      return {
+        border: "border-blue-500/30",
+        bg: "bg-blue-500/[0.06]",
+        text: "text-blue-400",
+        glow: "hover:shadow-[0_0_20px_rgba(59,130,246,0.15)]",
+        gradient: "from-blue-500/20 to-indigo-500/10",
+        dot: "bg-blue-400",
+        label: "Water",
+      };
+  }
+}
+
+const HOUSE_LABELS: Record<number, string> = {
+  1: "Self",
+  2: "Values",
+  3: "Communication",
+  4: "Home",
+  5: "Creativity",
+  6: "Health",
+  7: "Partnerships",
+  8: "Transformation",
+  9: "Philosophy",
+  10: "Career",
+  11: "Community",
+  12: "Subconscious",
+};
 
 const HOUSE_RULERS: Record<string, string> = {
   Aries: "Mars",
@@ -427,42 +518,60 @@ export default function ChartPage() {
       orb: Number(a.orb || 0),
     })) || [];
 
+  // Derived data for tabs
+  const sunPlanet = chartData?.planets?.find((p) => p.planet === "Sun");
+  const moonPlanet = chartData?.planets?.find((p) => p.planet === "Moon");
+  const ascPlanet = chartData?.planets?.find((p) => p.planet === "Ascendant");
+
+  const harmonious = chartData?.aspects?.filter((a) => {
+    const kind = String((a as Record<string, unknown>).aspect || (a as Record<string, unknown>).type || "");
+    return kind === "trine" || kind === "sextile" || kind === "conjunction";
+  }) || [];
+  const challenging = chartData?.aspects?.filter((a) => {
+    const kind = String((a as Record<string, unknown>).aspect || (a as Record<string, unknown>).type || "");
+    return kind === "square" || kind === "opposition" || kind === "quincunx" || kind === "semisextile";
+  }) || [];
+
   return (
     <div className="min-h-screen">
-      {/* Header */}
+      {/* Compact Header */}
       <section className="border-b border-white/10 bg-gradient-to-b from-cosmic-purple/5 to-transparent">
-        <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
-          <Link
-            href="/dashboard"
-            className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors mb-6"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Back to Dashboard
-          </Link>
-
-          <motion.div
-            {...fadeUp}
-          >
-            <h1 className="font-heading text-2xl sm:text-3xl font-bold mb-2">
+        <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6">
+          <div className="flex items-center justify-between">
+            <Link
+              href="/dashboard"
+              className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Dashboard
+            </Link>
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <Sparkles className="h-3 w-3 text-cosmic-purple-light" />
+              <span className="hidden sm:inline">Tap any placement for AI insights</span>
+              <span className="sm:hidden">Tap for insights</span>
+            </div>
+          </div>
+          <motion.div {...fadeUp} className="mt-3">
+            <h1 className="font-heading text-xl sm:text-2xl font-bold">
               {profile.name}&apos;s Natal Chart
             </h1>
-            <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+            <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground mt-1">
               <span className="flex items-center gap-1">
-                <Calendar className="h-3.5 w-3.5" />
+                <Calendar className="h-3 w-3" />
                 {new Date(profile.birthDate).toLocaleDateString("en-US", {
-                  month: "long",
+                  month: "short",
                   day: "numeric",
                   year: "numeric",
                 })}
               </span>
               {profile.birthTime && (
                 <span className="flex items-center gap-1">
-                  <Clock className="h-3.5 w-3.5" />
+                  <Clock className="h-3 w-3" />
                   {profile.birthTime}
                 </span>
               )}
               <span className="flex items-center gap-1">
-                <MapPin className="h-3.5 w-3.5" />
+                <MapPin className="h-3 w-3" />
                 {profile.birthCity}, {profile.birthCountry}
               </span>
             </div>
@@ -470,23 +579,18 @@ export default function ChartPage() {
         </div>
       </section>
 
-      <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
+      <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
         {/* No birth time notice */}
         {!hasBirthTime && (
           <motion.div
             {...fadeIn}
-            className="mb-6 rounded-xl border border-gold/20 bg-gold/[0.03] p-4 flex items-start gap-3"
+            className="mb-4 rounded-xl border border-gold/20 bg-gold/[0.03] p-3 flex items-start gap-3"
           >
-            <Info className="h-5 w-5 text-gold flex-shrink-0 mt-0.5" />
+            <Info className="h-4 w-4 text-gold flex-shrink-0 mt-0.5" />
             <div>
-              <p className="text-sm font-medium text-gold">
-                Birth time not provided
-              </p>
-              <p className="text-xs text-muted-foreground mt-1">
-                House placements and the exact Moon position are unavailable
-                without a birth time. Rising sign (Ascendant) cannot be
-                calculated. Consider adding your birth time for a more complete
-                chart.
+              <p className="text-xs font-medium text-gold">Birth time not provided</p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Houses, Rising sign, and exact Moon position unavailable.
               </p>
             </div>
           </motion.div>
@@ -496,12 +600,10 @@ export default function ChartPage() {
         {recalcError && (
           <motion.div
             {...(prefersReducedMotion ? {} : { initial: { opacity: 0, y: -5 }, animate: { opacity: 1, y: 0 }, exit: { opacity: 0, y: -5 } })}
-            className="mb-6 rounded-xl border border-red-500/20 bg-red-500/[0.03] p-4 flex items-start gap-3"
+            className="mb-4 rounded-xl border border-red-500/20 bg-red-500/[0.03] p-3 flex items-start gap-3"
           >
-            <AlertTriangle className="h-5 w-5 text-red-400 flex-shrink-0 mt-0.5" />
-            <div className="flex-1">
-              <p className="text-sm text-red-400">{recalcError}</p>
-            </div>
+            <AlertTriangle className="h-4 w-4 text-red-400 flex-shrink-0 mt-0.5" />
+            <p className="text-xs text-red-400 flex-1">{recalcError}</p>
             <button
               onClick={() => setRecalcError(null)}
               className="text-red-400/60 hover:text-red-400 text-sm"
@@ -512,29 +614,17 @@ export default function ChartPage() {
           </motion.div>
         )}
 
-        {/* Tap-to-explain hint */}
-        <motion.div
-          {...fadeIn}
-          {...(prefersReducedMotion ? {} : { transition: { delay: 0.15 } })}
-          className="mb-6 flex items-center gap-2 text-xs text-muted-foreground"
-        >
-          <Sparkles className="h-3.5 w-3.5 text-cosmic-purple-light" />
-          <span>
-            Tap any planet placement, house, or aspect to get an AI-powered
-            explanation.
-          </span>
-        </motion.div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Chart Wheel */}
+        {/* ==================== TOP SECTION: Chart Wheel + Big 3 ==================== */}
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+          {/* Chart Wheel - takes 3 columns */}
           <motion.div
             {...scaleIn}
-            className="rounded-xl border border-white/10 bg-white/[0.03] p-6 backdrop-blur-sm"
+            className="lg:col-span-3 rounded-xl border border-white/10 bg-white/[0.02] p-4 sm:p-6 backdrop-blur-sm"
             role="img"
             aria-label={`Natal chart wheel for ${profile.name}`}
           >
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="font-heading text-lg font-semibold text-center flex-1">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="font-heading text-base font-semibold flex-1">
                 Chart Wheel
               </h2>
               {hasBirthTime && (
@@ -552,7 +642,7 @@ export default function ChartPage() {
                     <SelectTrigger
                       id="house-system"
                       size="sm"
-                      className="w-[140px] text-xs"
+                      className="w-[130px] text-xs"
                     >
                       <SelectValue />
                     </SelectTrigger>
@@ -593,7 +683,7 @@ export default function ChartPage() {
                     <tr key={p.planet}>
                       <td>{p.planet}</td>
                       <td>{p.sign}</td>
-                      <td>{Math.round(p.degree)}°</td>
+                      <td>{Math.round(p.degree)}&deg;</td>
                       <td>{p.house ?? "N/A"}</td>
                       <td>{p.retrograde ? "Yes" : "No"}</td>
                     </tr>
@@ -603,416 +693,559 @@ export default function ChartPage() {
             </div>
           </motion.div>
 
-          {/* Key Placements */}
-          <div className="space-y-6">
-            {/* Key placements highlight */}
-            <motion.div
-              {...fadeUp}
-              {...(prefersReducedMotion ? {} : { transition: { delay: 0.1 } })}
-              className="rounded-xl border border-white/10 bg-white/[0.03] p-6 backdrop-blur-sm"
-            >
-              <h2 className="font-heading text-lg font-semibold mb-4">
-                Key Placements
+          {/* Your Cosmic DNA - Big 3 - takes 2 columns */}
+          <motion.div
+            {...fadeUp}
+            {...(prefersReducedMotion ? {} : { transition: { delay: 0.1 } })}
+            className="lg:col-span-2 flex flex-col gap-4"
+          >
+            <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4 sm:p-5 backdrop-blur-sm flex-1">
+              <h2 className="font-heading text-base font-semibold mb-1">
+                Your Cosmic DNA
               </h2>
-              <div role="region" aria-label="Key Planetary Placements" className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {KEY_PLACEMENTS.map((planetName) => {
-                  const planet = chartData?.planets?.find(
-                    (p) => p.planet === planetName
-                  );
-                  if (!planet && planetName === "Ascendant" && !hasBirthTime)
-                    return (
-                      <div
-                        key={planetName}
-                        className="rounded-lg border border-white/5 bg-white/[0.02] p-3 text-center opacity-50"
-                      >
-                        <p className="text-lg mb-0.5">ASC</p>
-                        <p className="text-xs text-muted-foreground">
-                          {planetName}
-                        </p>
-                        <p className="text-xs text-muted-foreground italic mt-1">
-                          Needs birth time
-                        </p>
-                      </div>
-                    );
-                  if (!planet) return null;
+              <p className="text-xs text-muted-foreground mb-4">The Big 3 that define you</p>
 
-                  const elementDesc = `${planet.planet} in ${planet.sign}${planet.house ? ` in House ${planet.house}` : ""}`;
-
+              <div className="space-y-3">
+                {/* Sun Card */}
+                {sunPlanet ? (() => {
+                  const colors = getElementColors(sunPlanet.sign);
+                  const elementDesc = `Sun in ${sunPlanet.sign}${sunPlanet.house ? ` in House ${sunPlanet.house}` : ""}`;
                   return (
                     <button
                       type="button"
-                      key={planetName}
                       onClick={() => handleExplain(elementDesc)}
                       className={cn(
-                        "group/card rounded-lg border border-white/10 bg-white/[0.03] p-3 text-center transition-all duration-200",
-                        "hover:border-cosmic-purple/30 hover:bg-cosmic-purple/[0.06] hover:shadow-[0_0_15px_rgba(124,58,237,0.1)]",
-                        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cosmic-purple/50",
-                        "cursor-pointer"
+                        "group/big3 w-full rounded-xl border p-4 text-left transition-all duration-300",
+                        colors.border, colors.bg, colors.glow,
+                        "hover:scale-[1.02] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cosmic-purple/50 cursor-pointer"
                       )}
                       title={`Explain ${elementDesc}`}
                     >
-                      <p className="text-lg mb-0.5">
-                        {PLANET_SYMBOLS[planetName] || planetName}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {planetName}
-                      </p>
-                      <p className="text-sm font-medium mt-1">{planet.sign}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {formatDegree(planet.degree)}
-                        {planet.house && ` | House ${planet.house}`}
-                        {planet.retrograde && " R"}
-                      </p>
-                      <Sparkles className="mx-auto mt-1.5 h-3 w-3 text-cosmic-purple-light opacity-0 group-hover/card:opacity-70 transition-opacity duration-200" />
+                      <div className="flex items-center gap-4">
+                        <div className={cn("text-4xl", colors.text)}>
+                          {ZODIAC_EMOJIS[sunPlanet.sign] || "\u2609"}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs uppercase tracking-wider text-muted-foreground font-medium">Sun Sign</span>
+                            <Badge variant="outline" className={cn("text-[10px] py-0", colors.border, colors.text)}>
+                              {getElementColors(sunPlanet.sign).label}
+                            </Badge>
+                          </div>
+                          <p className={cn("text-xl font-heading font-bold mt-0.5", colors.text)}>
+                            {sunPlanet.sign}
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            {formatDegree(sunPlanet.degree)}
+                            {sunPlanet.house && ` \u00B7 House ${sunPlanet.house}`}
+                          </p>
+                        </div>
+                        <Sparkles className="h-4 w-4 text-cosmic-purple-light opacity-0 group-hover/big3:opacity-70 transition-opacity" />
+                      </div>
                     </button>
                   );
-                })}
-              </div>
-            </motion.div>
+                })() : null}
 
-            {/* CTA */}
-            <motion.div
-              {...fadeUp}
-              {...(prefersReducedMotion ? {} : { transition: { delay: 0.2 } })}
-              className="rounded-xl border border-cosmic-purple/20 bg-gradient-to-br from-cosmic-purple/10 to-transparent p-6 text-center"
+                {/* Moon Card */}
+                {moonPlanet ? (() => {
+                  const colors = getElementColors(moonPlanet.sign);
+                  const elementDesc = `Moon in ${moonPlanet.sign}${moonPlanet.house ? ` in House ${moonPlanet.house}` : ""}`;
+                  return (
+                    <button
+                      type="button"
+                      onClick={() => handleExplain(elementDesc)}
+                      className={cn(
+                        "group/big3 w-full rounded-xl border p-4 text-left transition-all duration-300",
+                        colors.border, colors.bg, colors.glow,
+                        "hover:scale-[1.02] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cosmic-purple/50 cursor-pointer"
+                      )}
+                      title={`Explain ${elementDesc}`}
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className={cn("text-4xl", colors.text)}>
+                          {ZODIAC_EMOJIS[moonPlanet.sign] || "\u263D"}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs uppercase tracking-wider text-muted-foreground font-medium">Moon Sign</span>
+                            <Badge variant="outline" className={cn("text-[10px] py-0", colors.border, colors.text)}>
+                              {getElementColors(moonPlanet.sign).label}
+                            </Badge>
+                          </div>
+                          <p className={cn("text-xl font-heading font-bold mt-0.5", colors.text)}>
+                            {moonPlanet.sign}
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            {formatDegree(moonPlanet.degree)}
+                            {moonPlanet.house && ` \u00B7 House ${moonPlanet.house}`}
+                          </p>
+                        </div>
+                        <Sparkles className="h-4 w-4 text-cosmic-purple-light opacity-0 group-hover/big3:opacity-70 transition-opacity" />
+                      </div>
+                    </button>
+                  );
+                })() : null}
+
+                {/* Rising / Ascendant Card */}
+                {ascPlanet ? (() => {
+                  const colors = getElementColors(ascPlanet.sign);
+                  const elementDesc = `Ascendant in ${ascPlanet.sign}`;
+                  return (
+                    <button
+                      type="button"
+                      onClick={() => handleExplain(elementDesc)}
+                      className={cn(
+                        "group/big3 w-full rounded-xl border p-4 text-left transition-all duration-300",
+                        colors.border, colors.bg, colors.glow,
+                        "hover:scale-[1.02] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cosmic-purple/50 cursor-pointer"
+                      )}
+                      title={`Explain ${elementDesc}`}
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className={cn("text-4xl", colors.text)}>
+                          {ZODIAC_EMOJIS[ascPlanet.sign] || "ASC"}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs uppercase tracking-wider text-muted-foreground font-medium">Rising Sign</span>
+                            <Badge variant="outline" className={cn("text-[10px] py-0", colors.border, colors.text)}>
+                              {getElementColors(ascPlanet.sign).label}
+                            </Badge>
+                          </div>
+                          <p className={cn("text-xl font-heading font-bold mt-0.5", colors.text)}>
+                            {ascPlanet.sign}
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            {formatDegree(ascPlanet.degree)}
+                          </p>
+                        </div>
+                        <Sparkles className="h-4 w-4 text-cosmic-purple-light opacity-0 group-hover/big3:opacity-70 transition-opacity" />
+                      </div>
+                    </button>
+                  );
+                })() : (
+                  <div className="w-full rounded-xl border border-white/5 bg-white/[0.02] p-4 opacity-50">
+                    <div className="flex items-center gap-4">
+                      <div className="text-4xl text-muted-foreground">ASC</div>
+                      <div>
+                        <span className="text-xs uppercase tracking-wider text-muted-foreground font-medium">Rising Sign</span>
+                        <p className="text-sm text-muted-foreground italic mt-1">Needs birth time</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Quick CTA under Big 3 */}
+            <Button
+              asChild
+              className="bg-cosmic-purple hover:bg-cosmic-purple-dark text-white w-full"
             >
-              <h3 className="font-heading text-lg font-semibold mb-2">
-                Check Compatibility With Someone
-              </h3>
-              <p className="text-sm text-muted-foreground mb-4">
-                See how your chart aligns with someone special.
-              </p>
-              <Button
-                asChild
-                className="bg-cosmic-purple hover:bg-cosmic-purple-dark text-white"
-              >
-                <Link href="/compatibility">
-                  <Users className="mr-2 h-4 w-4" />
-                  Check Compatibility
-                </Link>
-              </Button>
-            </motion.div>
-          </div>
+              <Link href="/compatibility">
+                <Users className="mr-2 h-4 w-4" />
+                Check Compatibility
+              </Link>
+            </Button>
+          </motion.div>
         </div>
 
-        {/* Planet Positions Table */}
+        {/* ==================== MIDDLE SECTION: Tabbed Interface ==================== */}
         <motion.div
           {...fadeUp}
-          {...(prefersReducedMotion ? {} : { transition: { delay: 0.3 } })}
-          className="mt-8 rounded-xl border border-white/10 bg-white/[0.03] p-6 backdrop-blur-sm"
+          {...(prefersReducedMotion ? {} : { transition: { delay: 0.2 } })}
+          className="mt-6"
         >
-          <h2 className="font-heading text-lg font-semibold mb-4">
-            Planet Positions
-          </h2>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <caption className="sr-only">Planetary Positions</caption>
-              <thead>
-                <tr className="border-b border-white/10">
-                  <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                    Planet
-                  </th>
-                  <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                    Sign
-                  </th>
-                  <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                    Degree
-                  </th>
-                  {hasBirthTime && (
-                    <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      House
-                    </th>
-                  )}
-                  <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                    Retrograde
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
+          <Tabs defaultValue="planets" className="w-full">
+            <TabsList className="w-full sm:w-auto bg-white/[0.03] border border-white/10 rounded-xl p-1">
+              <TabsTrigger value="planets" className="gap-1.5 data-[state=active]:bg-cosmic-purple/20 data-[state=active]:text-cosmic-purple-light rounded-lg">
+                <Star className="h-3.5 w-3.5" />
+                Planets
+                {chartData?.planets && (
+                  <Badge variant="outline" className="ml-1 text-[10px] py-0 px-1.5 border-white/10">
+                    {chartData.planets.length}
+                  </Badge>
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="aspects" className="gap-1.5 data-[state=active]:bg-cosmic-purple/20 data-[state=active]:text-cosmic-purple-light rounded-lg">
+                <Sparkles className="h-3.5 w-3.5" />
+                Aspects
+                {chartData?.aspects && (
+                  <Badge variant="outline" className="ml-1 text-[10px] py-0 px-1.5 border-white/10">
+                    {chartData.aspects.length}
+                  </Badge>
+                )}
+              </TabsTrigger>
+              {hasBirthTime && chartData?.houses && (
+                <TabsTrigger value="houses" className="gap-1.5 data-[state=active]:bg-cosmic-purple/20 data-[state=active]:text-cosmic-purple-light rounded-lg">
+                  <Moon className="h-3.5 w-3.5" />
+                  Houses
+                  <Badge variant="outline" className="ml-1 text-[10px] py-0 px-1.5 border-white/10">
+                    12
+                  </Badge>
+                </TabsTrigger>
+              )}
+            </TabsList>
+
+            {/* ========== TAB 1: Planets as Cards Grid ========== */}
+            <TabsContent value="planets" className="mt-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
                 {chartData?.planets?.map((planet) => {
+                  const colors = getElementColors(planet.sign);
                   const isKey = KEY_PLACEMENTS.includes(planet.planet);
                   const elementDesc = `${planet.planet} in ${planet.sign}${planet.house ? ` in House ${planet.house}` : ""}${planet.retrograde ? " (retrograde)" : ""}`;
 
                   return (
-                    <tr
+                    <button
+                      type="button"
                       key={planet.planet}
+                      onClick={() => handleExplain(elementDesc)}
                       className={cn(
-                        "border-b border-white/5 transition-colors hover:bg-white/[0.02]",
-                        isKey && "bg-cosmic-purple/[0.03]"
+                        "group/planet relative rounded-xl border p-3 sm:p-4 text-left transition-all duration-300",
+                        "hover:scale-[1.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cosmic-purple/50 cursor-pointer",
+                        colors.border, colors.bg, colors.glow,
+                        isKey && "ring-1 ring-cosmic-purple/20"
                       )}
+                      title={`Explain ${elementDesc}`}
                     >
-                      <td className="px-3 py-3">
-                        <ExplainableElement
-                          element={elementDesc}
-                          onExplain={handleExplain}
+                      {/* Retrograde badge */}
+                      {planet.retrograde && (
+                        <Badge
+                          variant="outline"
+                          className="absolute top-2 right-2 text-[10px] py-0 px-1 border-gold/40 text-gold"
                         >
-                          <span className="flex items-center gap-2">
-                            <span className="text-lg">
-                              {PLANET_SYMBOLS[planet.planet] || ""}
-                            </span>
-                            <span
-                              className={cn(
-                                "text-sm",
-                                isKey &&
-                                  "font-semibold text-cosmic-purple-light"
-                              )}
-                            >
-                              {planet.planet}
-                            </span>
-                          </span>
-                        </ExplainableElement>
-                      </td>
-                      <td className="px-3 py-3">
-                        <ExplainableElement
-                          element={elementDesc}
-                          onExplain={handleExplain}
-                          className="text-sm"
-                        >
-                          {planet.sign}
-                        </ExplainableElement>
-                      </td>
-                      <td className="px-3 py-3 text-sm font-mono text-muted-foreground">
-                        {formatDegree(planet.degree)}
-                      </td>
-                      {hasBirthTime && (
-                        <td className="px-3 py-3 text-sm text-muted-foreground">
-                          {planet.house || "\u2014"}
-                        </td>
+                          Rx
+                        </Badge>
                       )}
-                      <td className="px-3 py-3">
-                        {planet.retrograde ? (
-                          <Badge
-                            variant="outline"
-                            className="text-xs border-gold/30 text-gold"
-                          >
-                            R
-                          </Badge>
-                        ) : (
-                          <span className="text-xs text-muted-foreground/40">
-                            \u2014
-                          </span>
-                        )}
-                      </td>
-                    </tr>
+
+                      {/* Planet symbol - large */}
+                      <div className={cn("text-3xl sm:text-4xl mb-2", colors.text)}>
+                        {PLANET_SYMBOLS[planet.planet] || planet.planet}
+                      </div>
+
+                      {/* Planet name */}
+                      <p className={cn(
+                        "text-sm font-semibold leading-tight",
+                        isKey ? "text-cosmic-purple-light" : "text-foreground"
+                      )}>
+                        {planet.planet}
+                      </p>
+
+                      {/* Sign with emoji */}
+                      <p className={cn("text-xs font-medium mt-1", colors.text)}>
+                        {ZODIAC_EMOJIS[planet.sign] || ""} {planet.sign}
+                      </p>
+
+                      {/* Degree and house */}
+                      <p className="text-[11px] text-muted-foreground mt-1 font-mono">
+                        {formatDegree(planet.degree)}
+                        {planet.house ? ` \u00B7 H${planet.house}` : ""}
+                      </p>
+
+                      {/* Hover sparkle */}
+                      <Sparkles className="absolute bottom-2 right-2 h-3 w-3 text-cosmic-purple-light opacity-0 group-hover/planet:opacity-60 transition-opacity duration-200" />
+                    </button>
                   );
                 })}
-              </tbody>
-            </table>
-          </div>
-        </motion.div>
+              </div>
 
-        {/* Aspects Table */}
-        {chartData?.aspects && chartData.aspects.length > 0 && (
-          <motion.div
-            {...fadeUp}
-            {...(prefersReducedMotion ? {} : { transition: { delay: 0.35 } })}
-            className="mt-8 rounded-xl border border-white/10 bg-white/[0.03] p-6 backdrop-blur-sm"
-          >
-            <h2 className="font-heading text-lg font-semibold mb-4">
-              Aspects
-            </h2>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <caption className="sr-only">Planetary Aspects</caption>
-                <thead>
-                  <tr className="border-b border-white/10">
-                    <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      Aspect
-                    </th>
-                    <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      Type
-                    </th>
-                    <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      Orb
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {chartData.aspects.map((aspect, i) => {
-                    const a = aspect as Record<string, unknown>;
-                    const aspectKind = String(a.aspect || a.type || "");
-                    const aspectLabel =
-                      ASPECT_LABELS[aspectKind] || aspectKind;
-                    const elementDesc = `${aspect.planet1} ${aspectLabel} ${aspect.planet2} (orb ${aspect.orb.toFixed(1)}\u00B0)`;
-                    const isHarmonious =
-                      aspectKind === "trine" ||
-                      aspectKind === "sextile" ||
-                      aspectKind === "conjunction";
-
-                    return (
-                      <tr
-                        key={`${aspect.planet1}-${aspect.planet2}-${i}`}
-                        className="border-b border-white/5 transition-colors hover:bg-white/[0.02]"
-                      >
-                        <td className="px-3 py-3">
-                          <ExplainableElement
-                            element={elementDesc}
-                            onExplain={handleExplain}
-                          >
-                            <span className="flex items-center gap-1.5 text-sm">
-                              <span>
-                                {PLANET_SYMBOLS[aspect.planet1] || ""}{" "}
-                                {aspect.planet1}
-                              </span>
-                              <span className="text-muted-foreground">
-                                &ndash;
-                              </span>
-                              <span>
-                                {PLANET_SYMBOLS[aspect.planet2] || ""}{" "}
-                                {aspect.planet2}
-                              </span>
-                            </span>
-                          </ExplainableElement>
-                        </td>
-                        <td className="px-3 py-3">
-                          <Badge
-                            variant="outline"
-                            className={cn(
-                              "text-xs",
-                              isHarmonious
-                                ? "border-emerald-500/30 text-emerald-400"
-                                : "border-red-500/30 text-red-400"
-                            )}
-                          >
-                            {aspectLabel}
-                          </Badge>
-                        </td>
-                        <td className="px-3 py-3 text-sm font-mono text-muted-foreground">
-                          {aspect.orb.toFixed(1)}&deg;
-                        </td>
+              {/* Screen reader table */}
+              <div className="sr-only">
+                <table>
+                  <caption>Planetary Positions</caption>
+                  <thead>
+                    <tr>
+                      <th scope="col">Planet</th>
+                      <th scope="col">Sign</th>
+                      <th scope="col">Degree</th>
+                      <th scope="col">House</th>
+                      <th scope="col">Retrograde</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {chartData?.planets?.map((p) => (
+                      <tr key={`sr-${p.planet}`}>
+                        <td>{p.planet}</td>
+                        <td>{p.sign}</td>
+                        <td>{Math.round(p.degree)}&deg;</td>
+                        <td>{p.house ?? "N/A"}</td>
+                        <td>{p.retrograde ? "Yes" : "No"}</td>
                       </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </motion.div>
-        )}
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </TabsContent>
 
-        {/* House Placements Table */}
-        {hasBirthTime && chartData?.houses && (
-          <motion.div
-            {...fadeUp}
-            {...(prefersReducedMotion ? {} : { transition: { delay: 0.4 } })}
-            className="mt-8 rounded-xl border border-white/10 bg-white/[0.03] p-6 backdrop-blur-sm"
-          >
-            <h2 className="font-heading text-lg font-semibold mb-4">
-              House Placements
-            </h2>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <caption className="sr-only">House Placements</caption>
-                <thead>
-                  <tr className="border-b border-white/10">
-                    <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      House
-                    </th>
-                    <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      Sign
-                    </th>
-                    <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      Ruler
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
+            {/* ========== TAB 2: Aspects - Grouped by Harmony ========== */}
+            <TabsContent value="aspects" className="mt-4">
+              {chartData?.aspects && chartData.aspects.length > 0 ? (
+                <div className="space-y-4">
+                  {/* Summary badges */}
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <div className="flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/[0.06] px-3 py-1">
+                      <span className="h-2 w-2 rounded-full bg-emerald-400" />
+                      <span className="text-xs font-medium text-emerald-400">
+                        {harmonious.length} Harmonious
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1.5 rounded-full border border-red-500/20 bg-red-500/[0.06] px-3 py-1">
+                      <span className="h-2 w-2 rounded-full bg-red-400" />
+                      <span className="text-xs font-medium text-red-400">
+                        {challenging.length} Challenging
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Harmonious aspects */}
+                  {harmonious.length > 0 && (
+                    <div>
+                      <h3 className="text-xs uppercase tracking-wider text-emerald-400/80 font-medium mb-2 flex items-center gap-1.5">
+                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                        Harmonious Aspects
+                      </h3>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {harmonious.map((aspect, i) => {
+                          const a = aspect as Record<string, unknown>;
+                          const aspectKind = String(a.aspect || a.type || "");
+                          const aspectLabel = ASPECT_LABELS[aspectKind] || aspectKind;
+                          const elementDesc = `${aspect.planet1} ${aspectLabel} ${aspect.planet2} (orb ${aspect.orb.toFixed(1)}\u00B0)`;
+
+                          return (
+                            <button
+                              type="button"
+                              key={`h-${aspect.planet1}-${aspect.planet2}-${i}`}
+                              onClick={() => handleExplain(elementDesc)}
+                              className={cn(
+                                "group/aspect flex items-center gap-3 rounded-lg border border-emerald-500/15 bg-emerald-500/[0.03] p-2.5 text-left transition-all duration-200",
+                                "hover:border-emerald-500/30 hover:bg-emerald-500/[0.08] cursor-pointer",
+                                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50"
+                              )}
+                              title={`Explain ${elementDesc}`}
+                            >
+                              <div className="flex items-center gap-1.5 flex-1 min-w-0">
+                                <span className="text-base shrink-0">{PLANET_SYMBOLS[aspect.planet1] || ""}</span>
+                                <span className="text-emerald-500/40 text-xs">&mdash;</span>
+                                <span className="text-base shrink-0">{PLANET_SYMBOLS[aspect.planet2] || ""}</span>
+                                <div className="ml-1.5 min-w-0">
+                                  <p className="text-xs font-medium truncate">
+                                    {aspect.planet1} &amp; {aspect.planet2}
+                                  </p>
+                                  <p className="text-[10px] text-emerald-400">
+                                    {aspectLabel} <span className="text-muted-foreground font-mono">{aspect.orb.toFixed(1)}&deg;</span>
+                                  </p>
+                                </div>
+                              </div>
+                              <Sparkles className="h-3 w-3 text-emerald-400 opacity-0 group-hover/aspect:opacity-60 transition-opacity shrink-0" />
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Challenging aspects */}
+                  {challenging.length > 0 && (
+                    <div>
+                      <h3 className="text-xs uppercase tracking-wider text-red-400/80 font-medium mb-2 flex items-center gap-1.5">
+                        <span className="h-1.5 w-1.5 rounded-full bg-red-400" />
+                        Challenging Aspects
+                      </h3>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {challenging.map((aspect, i) => {
+                          const a = aspect as Record<string, unknown>;
+                          const aspectKind = String(a.aspect || a.type || "");
+                          const aspectLabel = ASPECT_LABELS[aspectKind] || aspectKind;
+                          const elementDesc = `${aspect.planet1} ${aspectLabel} ${aspect.planet2} (orb ${aspect.orb.toFixed(1)}\u00B0)`;
+
+                          return (
+                            <button
+                              type="button"
+                              key={`c-${aspect.planet1}-${aspect.planet2}-${i}`}
+                              onClick={() => handleExplain(elementDesc)}
+                              className={cn(
+                                "group/aspect flex items-center gap-3 rounded-lg border border-red-500/15 bg-red-500/[0.03] p-2.5 text-left transition-all duration-200",
+                                "hover:border-red-500/30 hover:bg-red-500/[0.08] cursor-pointer",
+                                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500/50"
+                              )}
+                              title={`Explain ${elementDesc}`}
+                            >
+                              <div className="flex items-center gap-1.5 flex-1 min-w-0">
+                                <span className="text-base shrink-0">{PLANET_SYMBOLS[aspect.planet1] || ""}</span>
+                                <span className="text-red-500/40 text-xs">&mdash;</span>
+                                <span className="text-base shrink-0">{PLANET_SYMBOLS[aspect.planet2] || ""}</span>
+                                <div className="ml-1.5 min-w-0">
+                                  <p className="text-xs font-medium truncate">
+                                    {aspect.planet1} &amp; {aspect.planet2}
+                                  </p>
+                                  <p className="text-[10px] text-red-400">
+                                    {aspectLabel} <span className="text-muted-foreground font-mono">{aspect.orb.toFixed(1)}&deg;</span>
+                                  </p>
+                                </div>
+                              </div>
+                              <Sparkles className="h-3 w-3 text-red-400 opacity-0 group-hover/aspect:opacity-60 transition-opacity shrink-0" />
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Screen reader table */}
+                  <div className="sr-only">
+                    <table>
+                      <caption>Planetary Aspects</caption>
+                      <thead>
+                        <tr>
+                          <th scope="col">Planet 1</th>
+                          <th scope="col">Planet 2</th>
+                          <th scope="col">Aspect</th>
+                          <th scope="col">Orb</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {chartData.aspects.map((aspect, i) => {
+                          const a = aspect as Record<string, unknown>;
+                          const aspectKind = String(a.aspect || a.type || "");
+                          return (
+                            <tr key={`sr-a-${i}`}>
+                              <td>{aspect.planet1}</td>
+                              <td>{aspect.planet2}</td>
+                              <td>{ASPECT_LABELS[aspectKind] || aspectKind}</td>
+                              <td>{aspect.orb.toFixed(1)}&deg;</td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground text-center py-8">
+                  No aspect data available.
+                </p>
+              )}
+            </TabsContent>
+
+            {/* ========== TAB 3: Houses - Compact Grid ========== */}
+            {hasBirthTime && chartData?.houses && (
+              <TabsContent value="houses" className="mt-4">
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3">
                   {chartData.houses.map((house) => {
-                    const ruler =
-                      house.ruler || HOUSE_RULERS[house.sign] || "\u2014";
+                    const colors = getElementColors(house.sign);
+                    const ruler = house.ruler || HOUSE_RULERS[house.sign] || "\u2014";
+                    const isAngular = house.house === 1 || house.house === 4 || house.house === 7 || house.house === 10;
+                    const specialLabel = house.house === 1 ? "ASC" : house.house === 10 ? "MC" : null;
                     const elementDesc = `House ${house.house} in ${house.sign}${house.house === 1 ? " (Ascendant)" : ""}${house.house === 10 ? " (Midheaven)" : ""}, ruled by ${ruler}`;
 
                     return (
-                      <tr
+                      <button
+                        type="button"
                         key={house.house}
+                        onClick={() => handleExplain(elementDesc)}
                         className={cn(
-                          "border-b border-white/5 transition-colors hover:bg-white/[0.02]",
-                          (house.house === 1 || house.house === 10) &&
-                            "bg-cosmic-purple/[0.03]"
+                          "group/house relative rounded-xl border p-3 text-left transition-all duration-300",
+                          "hover:scale-[1.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cosmic-purple/50 cursor-pointer",
+                          colors.border, colors.bg, colors.glow,
+                          isAngular && "ring-1 ring-cosmic-purple/25"
                         )}
+                        title={`Explain ${elementDesc}`}
                       >
-                        <td className="px-3 py-3">
-                          <ExplainableElement
-                            element={elementDesc}
-                            onExplain={handleExplain}
-                          >
-                            <span
-                              className={cn(
-                                "text-sm",
-                                (house.house === 1 || house.house === 10) &&
-                                  "font-semibold text-cosmic-purple-light"
-                              )}
-                            >
-                              House {house.house}
-                              {house.house === 1 && " (ASC)"}
-                              {house.house === 10 && " (MC)"}
-                            </span>
-                          </ExplainableElement>
-                        </td>
-                        <td className="px-3 py-3">
-                          <ExplainableElement
-                            element={elementDesc}
-                            onExplain={handleExplain}
-                            className="text-sm"
-                          >
-                            {house.sign}
-                          </ExplainableElement>
-                        </td>
-                        <td className="px-3 py-3 text-sm text-muted-foreground">
-                          {ruler}
-                        </td>
-                      </tr>
+                        {/* House number */}
+                        <div className="flex items-center justify-between mb-2">
+                          <span className={cn(
+                            "text-2xl font-heading font-bold leading-none",
+                            isAngular ? "text-cosmic-purple-light" : "text-foreground/70"
+                          )}>
+                            {house.house}
+                          </span>
+                          {specialLabel && (
+                            <Badge variant="outline" className="text-[10px] py-0 px-1.5 border-cosmic-purple/30 text-cosmic-purple-light">
+                              {specialLabel}
+                            </Badge>
+                          )}
+                        </div>
+
+                        {/* House theme */}
+                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1.5">
+                          {HOUSE_LABELS[house.house] || ""}
+                        </p>
+
+                        {/* Sign */}
+                        <p className={cn("text-sm font-semibold", colors.text)}>
+                          {ZODIAC_EMOJIS[house.sign] || ""} {house.sign}
+                        </p>
+
+                        {/* Ruler */}
+                        <p className="text-[11px] text-muted-foreground mt-1">
+                          {PLANET_SYMBOLS[ruler] || ""} {ruler}
+                        </p>
+
+                        <Sparkles className="absolute bottom-2 right-2 h-3 w-3 text-cosmic-purple-light opacity-0 group-hover/house:opacity-60 transition-opacity duration-200" />
+                      </button>
                     );
                   })}
-                </tbody>
-              </table>
-            </div>
-          </motion.div>
-        )}
+                </div>
 
-        {/* What's Next */}
+                {/* Screen reader table */}
+                <div className="sr-only">
+                  <table>
+                    <caption>House Placements</caption>
+                    <thead>
+                      <tr>
+                        <th scope="col">House</th>
+                        <th scope="col">Sign</th>
+                        <th scope="col">Ruler</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {chartData.houses.map((house) => (
+                        <tr key={`sr-h-${house.house}`}>
+                          <td>House {house.house}</td>
+                          <td>{house.sign}</td>
+                          <td>{house.ruler || HOUSE_RULERS[house.sign] || "\u2014"}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </TabsContent>
+            )}
+          </Tabs>
+        </motion.div>
+
+        {/* ==================== BOTTOM: Compact What's Next ==================== */}
         <motion.div
           {...fadeUp}
-          {...(prefersReducedMotion ? {} : { transition: { delay: 0.45 } })}
-          className="mt-8 rounded-xl border border-white/10 bg-white/[0.03] p-6 backdrop-blur-sm"
+          {...(prefersReducedMotion ? {} : { transition: { delay: 0.3 } })}
+          className="mt-6 mb-4"
         >
-          <h2 className="font-heading text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-4">
-            What&apos;s Next
-          </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="grid grid-cols-3 gap-2 sm:gap-3">
             <Link
               href="/compatibility"
-              className="group glass-card rounded-xl border border-white/10 p-4 flex flex-col items-center text-center gap-2 transition-all hover:border-cosmic-purple/50 hover:bg-cosmic-purple/5"
+              className="group glass-card rounded-xl border border-white/10 p-3 flex flex-col items-center text-center gap-1.5 transition-all hover:border-cosmic-purple/50 hover:bg-cosmic-purple/5"
             >
-              <Heart className="h-5 w-5 text-cosmic-purple-light group-hover:text-cosmic-purple transition-colors" />
-              <span className="text-sm font-medium leading-tight">
-                Check Compatibility
-              </span>
-              <span className="text-[11px] leading-snug text-muted-foreground">
-                See how your chart aligns with someone
+              <Heart className="h-4 w-4 text-cosmic-purple-light group-hover:text-cosmic-purple transition-colors" />
+              <span className="text-xs sm:text-sm font-medium leading-tight">
+                Compatibility
               </span>
             </Link>
             <Link
               href="/horoscope"
-              className="group glass-card rounded-xl border border-white/10 p-4 flex flex-col items-center text-center gap-2 transition-all hover:border-cosmic-purple/50 hover:bg-cosmic-purple/5"
+              className="group glass-card rounded-xl border border-white/10 p-3 flex flex-col items-center text-center gap-1.5 transition-all hover:border-cosmic-purple/50 hover:bg-cosmic-purple/5"
             >
-              <Sun className="h-5 w-5 text-cosmic-purple-light group-hover:text-cosmic-purple transition-colors" />
-              <span className="text-sm font-medium leading-tight">
-                Daily Horoscope
-              </span>
-              <span className="text-[11px] leading-snug text-muted-foreground">
-                Your personalized cosmic guidance today
+              <Sun className="h-4 w-4 text-cosmic-purple-light group-hover:text-cosmic-purple transition-colors" />
+              <span className="text-xs sm:text-sm font-medium leading-tight">
+                Horoscope
               </span>
             </Link>
             <Link
               href="/learn"
-              className="group glass-card rounded-xl border border-white/10 p-4 flex flex-col items-center text-center gap-2 transition-all hover:border-cosmic-purple/50 hover:bg-cosmic-purple/5"
+              className="group glass-card rounded-xl border border-white/10 p-3 flex flex-col items-center text-center gap-1.5 transition-all hover:border-cosmic-purple/50 hover:bg-cosmic-purple/5"
             >
-              <BookOpen className="h-5 w-5 text-cosmic-purple-light group-hover:text-cosmic-purple transition-colors" />
-              <span className="text-sm font-medium leading-tight">
-                Explore Your Placements
-              </span>
-              <span className="text-[11px] leading-snug text-muted-foreground">
-                Learn what your chart positions mean
+              <BookOpen className="h-4 w-4 text-cosmic-purple-light group-hover:text-cosmic-purple transition-colors" />
+              <span className="text-xs sm:text-sm font-medium leading-tight">
+                Learn More
               </span>
             </Link>
           </div>

@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Sparkles, ArrowRight, Heart } from "lucide-react";
+import { Sparkles, ArrowRight, Heart, ThumbsUp, AlertTriangle, MessageCircle, HeartHandshake, Star, Lightbulb } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { getPairContent } from "@/lib/zodiac-pair-content";
 
 const ZODIAC_SIGNS = [
   "aries", "taurus", "gemini", "cancer", "leo", "virgo",
@@ -100,6 +101,7 @@ export default async function ZodiacPairPage({
   const el1 = SIGN_ELEMENTS[sign1];
   const el2 = SIGN_ELEMENTS[sign2];
   const elementNote = getElementCompat(el1, el2);
+  const pairContent = getPairContent(sign1, sign2);
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-16 sm:px-6">
@@ -131,45 +133,96 @@ export default async function ZodiacPairPage({
           </p>
         </section>
 
+        {pairContent && (
+          <>
+            <section className="glass-card rounded-xl p-6">
+              <h2 className="text-xl font-heading font-semibold mb-3 flex items-center gap-2">
+                <ThumbsUp className="h-5 w-5 text-green-400" />
+                Relationship Strengths
+              </h2>
+              <ul className="space-y-2 text-muted-foreground">
+                {pairContent.strengths.map((s, i) => (
+                  <li key={i} className="flex items-start gap-2">
+                    <Star className="h-4 w-4 text-gold mt-1 shrink-0" />
+                    <span>{s}</span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+
+            <section className="glass-card rounded-xl p-6">
+              <h2 className="text-xl font-heading font-semibold mb-3 flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5 text-amber-400" />
+                Potential Challenges
+              </h2>
+              <ul className="space-y-2 text-muted-foreground">
+                {pairContent.challenges.map((c, i) => (
+                  <li key={i} className="flex items-start gap-2">
+                    <Sparkles className="h-4 w-4 text-amber-400 mt-1 shrink-0" />
+                    <span>{c}</span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+
+            <section className="glass-card rounded-xl p-6">
+              <h2 className="text-xl font-heading font-semibold mb-3 flex items-center gap-2">
+                <HeartHandshake className="h-5 w-5 text-cosmic-purple-light" />
+                Emotional Dynamics
+              </h2>
+              <p className="text-muted-foreground">{pairContent.emotionalDynamics}</p>
+            </section>
+
+            <section className="glass-card rounded-xl p-6">
+              <h2 className="text-xl font-heading font-semibold mb-3 flex items-center gap-2">
+                <MessageCircle className="h-5 w-5 text-blue-400" />
+                Communication Style
+              </h2>
+              <p className="text-muted-foreground">{pairContent.communicationStyle}</p>
+            </section>
+
+            {pairContent.famousCouples.length > 0 && (
+              <section className="glass-card rounded-xl p-6">
+                <h2 className="text-xl font-heading font-semibold mb-3 flex items-center gap-2">
+                  <Star className="h-5 w-5 text-gold" />
+                  Famous Couples
+                </h2>
+                <ul className="space-y-2 text-muted-foreground">
+                  {pairContent.famousCouples.map((couple, i) => (
+                    <li key={i} className="flex items-start gap-2">
+                      <Heart className="h-4 w-4 text-cosmic-purple-light mt-1 shrink-0" />
+                      <span>
+                        <strong>{couple.names}</strong>{" "}
+                        <span className="text-sm opacity-75">({couple.signs})</span>
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
+
+            <section className="glass-card rounded-xl p-6 border border-cosmic-purple/20">
+              <h2 className="text-xl font-heading font-semibold mb-3 flex items-center gap-2">
+                <Lightbulb className="h-5 w-5 text-gold" />
+                Relationship Advice
+              </h2>
+              <p className="text-muted-foreground italic">{pairContent.advice}</p>
+            </section>
+          </>
+        )}
+
         <section className="glass-card rounded-xl p-6">
           <h2 className="text-xl font-heading font-semibold mb-3">
             Beyond Sun Signs
           </h2>
           <p className="text-muted-foreground">
-            Sun sign compatibility is just the surface. True astrological
-            compatibility involves analyzing Moon signs (emotional needs), Venus
+            Sun sign compatibility is just the starting point for {capitalize(sign1)} and {capitalize(sign2)}.
+            True astrological compatibility involves analyzing Moon signs (emotional needs), Venus
             signs (love language), Mars signs (passion and drive), and the
             intricate web of planetary aspects between two full birth charts.
+            A full synastry reading reveals house overlays, composite chart patterns, and
+            the unique energy that only your specific combination of birth charts creates.
           </p>
-        </section>
-
-        <section className="glass-card rounded-xl p-6">
-          <h2 className="text-xl font-heading font-semibold mb-3">
-            Key Areas to Explore
-          </h2>
-          <ul className="space-y-2 text-muted-foreground">
-            <li className="flex items-start gap-2">
-              <Sparkles className="h-4 w-4 text-cosmic-purple-light mt-1 shrink-0" />
-              <span>
-                <strong>Synastry aspects:</strong> How your planets interact with
-                each other
-              </span>
-            </li>
-            <li className="flex items-start gap-2">
-              <Sparkles className="h-4 w-4 text-cosmic-purple-light mt-1 shrink-0" />
-              <span>
-                <strong>House overlays:</strong> Which life areas you activate in
-                each other
-              </span>
-            </li>
-            <li className="flex items-start gap-2">
-              <Sparkles className="h-4 w-4 text-cosmic-purple-light mt-1 shrink-0" />
-              <span>
-                <strong>Composite chart:</strong> The unique energy of your
-                relationship itself
-              </span>
-            </li>
-          </ul>
         </section>
 
         <div className="text-center pt-4">

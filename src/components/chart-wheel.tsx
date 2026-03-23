@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo } from "react";
-import { motion } from "framer-motion";
+import { useMemo, useState, useCallback } from "react";
+import { motion, useReducedMotion } from "framer-motion";
 
 // Zodiac sign data
 const ZODIAC_SIGNS = [
@@ -85,6 +85,151 @@ function polarToCartesian(
   };
 }
 
+/** CSS keyframes for chart animations, embedded in SVG <style> */
+function getChartStyles(reduced: boolean): string {
+  if (reduced) {
+    return `
+      .cw-planet-group { cursor: pointer; }
+      .cw-aspect-line { transition: none; }
+    `;
+  }
+
+  return `
+    /* === Entrance: outer ring draw-in === */
+    @keyframes cw-ring-draw {
+      from { stroke-dashoffset: var(--cw-circumference); }
+      to   { stroke-dashoffset: 0; }
+    }
+    .cw-ring-draw {
+      stroke-dasharray: var(--cw-circumference);
+      stroke-dashoffset: var(--cw-circumference);
+      animation: cw-ring-draw 1.4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+
+    /* === Entrance: house lines fade in === */
+    @keyframes cw-fade-in {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+    .cw-house-line {
+      opacity: 0;
+      animation: cw-fade-in 0.5s ease-out forwards;
+      animation-delay: var(--cw-delay, 0.8s);
+    }
+
+    /* === Entrance: planet pop-in === */
+    @keyframes cw-planet-pop {
+      0%   { transform: scale(0); opacity: 0; }
+      70%  { transform: scale(1.15); opacity: 1; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    .cw-planet-group {
+      transform-origin: var(--cw-tx) var(--cw-ty);
+      transform: scale(0);
+      opacity: 0;
+      animation: cw-planet-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+      animation-delay: var(--cw-delay);
+      cursor: pointer;
+    }
+
+    /* === Entrance: aspect line draw === */
+    @keyframes cw-line-draw {
+      0%   { stroke-dashoffset: var(--cw-line-len); opacity: 0; }
+      10%  { opacity: 1; }
+      100% { stroke-dashoffset: 0; opacity: 1; }
+    }
+    .cw-aspect-line {
+      stroke-dasharray: var(--cw-line-len);
+      stroke-dashoffset: var(--cw-line-len);
+      opacity: 0;
+      animation: cw-line-draw 0.6s ease-out forwards;
+      animation-delay: var(--cw-delay);
+      transition: stroke-opacity 0.3s ease;
+    }
+    /* Dashed aspect lines (square/opposition) restore dash pattern after draw */
+    .cw-aspect-line.cw-aspect-dashed {
+      stroke-dasharray: 3, 3;
+      stroke-dashoffset: 0;
+      opacity: 0;
+      animation: cw-fade-in 0.5s ease-out forwards;
+      animation-delay: var(--cw-delay);
+    }
+
+    /* === Idle: planet breathing glow === */
+    @keyframes cw-planet-glow {
+      0%, 100% { opacity: 0.10; r: 12; }
+      50%      { opacity: 0.22; r: 14; }
+    }
+    .cw-planet-glow-circle {
+      animation: cw-planet-glow 3s ease-in-out infinite;
+      animation-delay: var(--cw-glow-delay, 0s);
+    }
+
+    /* === Idle: ring shimmer === */
+    @keyframes cw-ring-shimmer {
+      0%   { stroke-dashoffset: 0; }
+      100% { stroke-dashoffset: var(--cw-circumference); }
+    }
+    .cw-ring-shimmer {
+      animation: cw-ring-shimmer 12s linear infinite;
+      animation-delay: 1.6s;
+    }
+
+    /* === Idle: aspect pulse === */
+    @keyframes cw-aspect-pulse {
+      0%, 100% { stroke-opacity: 0.35; }
+      50%      { stroke-opacity: 0.50; }
+    }
+    .cw-aspect-idle {
+      animation: cw-aspect-pulse 4s ease-in-out infinite;
+      animation-delay: var(--cw-pulse-delay, 0s);
+    }
+
+    /* === Interaction: planet hover === */
+    .cw-planet-group:hover .cw-planet-glow-circle {
+      opacity: 0.4 !important;
+      r: 16;
+      transition: all 0.2s ease;
+      animation: none;
+    }
+    .cw-planet-group:hover .cw-planet-dot {
+      r: 4;
+      opacity: 1;
+      transition: all 0.2s ease;
+    }
+    .cw-planet-group:hover .cw-planet-symbol {
+      fill: #FFFFFF;
+      transition: fill 0.2s ease;
+    }
+
+    /* === Interaction: highlight aspects for hovered planet === */
+    .cw-aspect-line.cw-aspect-highlight {
+      stroke-opacity: 0.85 !important;
+      stroke-width: 1.4;
+      filter: url(#glow);
+      animation: none;
+    }
+
+    /* === Respect reduced motion === */
+    @media (prefers-reduced-motion: reduce) {
+      .cw-ring-draw,
+      .cw-planet-group,
+      .cw-house-line,
+      .cw-aspect-line {
+        animation: none !important;
+        opacity: 1 !important;
+        transform: scale(1) !important;
+        stroke-dashoffset: 0 !important;
+      }
+      .cw-planet-glow-circle,
+      .cw-ring-shimmer,
+      .cw-aspect-idle {
+        animation: none !important;
+      }
+    }
+  `;
+}
+
 export function ChartWheel({
   planets = [],
   houses = [],
@@ -92,6 +237,11 @@ export function ChartWheel({
   size = 400,
   className,
 }: ChartWheelProps) {
+  const shouldReduceMotion = useReducedMotion();
+  const reduced = !!shouldReduceMotion;
+
+  const [hoveredPlanet, setHoveredPlanet] = useState<string | null>(null);
+
   const cx = size / 2;
   const cy = size / 2;
   const outerR = size / 2 - 10;
@@ -100,6 +250,9 @@ export function ChartWheel({
   const houseRingInner = houseRingOuter - 60;
   const planetRingR = (houseRingOuter + houseRingInner) / 2;
   const aspectRingR = houseRingInner - 10;
+
+  const outerCircumference = 2 * Math.PI * outerR;
+  const innerCircumference = 2 * Math.PI * signRingInner;
 
   // Generate zodiac sign segments
   const signSegments = useMemo(() => {
@@ -204,7 +357,10 @@ export function ChartWheel({
           planetDegreeMap[a.planet2]
         );
         const color = ASPECT_COLORS[a.type] || "#64748B";
-        return { ...a, pos1, pos2, color };
+        const lineLen = Math.sqrt(
+          (pos2.x - pos1.x) ** 2 + (pos2.y - pos1.y) ** 2
+        );
+        return { ...a, pos1, pos2, color, lineLen };
       });
   }, [aspects, planets, cx, cy, aspectRingR]);
 
@@ -233,6 +389,19 @@ export function ChartWheel({
 
   const displayPlanets = showDemo ? demoPlanets : planetPositions;
 
+  // Determine which aspect lines to highlight based on hovered planet
+  const isAspectHighlighted = useCallback(
+    (aspect: { planet1: string; planet2: string }) => {
+      if (!hoveredPlanet) return false;
+      return aspect.planet1 === hoveredPlanet || aspect.planet2 === hoveredPlanet;
+    },
+    [hoveredPlanet]
+  );
+
+  // Shimmer gradient: a short bright segment that visually rotates around the ring
+  const shimmerDashLen = outerCircumference * 0.08; // 8% of circumference is the bright segment
+  const shimmerGapLen = outerCircumference - shimmerDashLen;
+
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.9 }}
@@ -258,13 +427,23 @@ export function ChartWheel({
               <feMergeNode in="SourceGraphic" />
             </feMerge>
           </filter>
+          <filter id="planetHoverGlow">
+            <feGaussianBlur stdDeviation="3" result="coloredBlur" />
+            <feMerge>
+              <feMergeNode in="coloredBlur" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
         </defs>
+
+        {/* Embedded animation styles */}
+        <style>{getChartStyles(reduced)}</style>
 
         {/* Background */}
         <circle cx={cx} cy={cy} r={outerR} fill="url(#chartBg)" />
 
         {/* Zodiac sign segments */}
-        {signSegments.map((sign, i) => (
+        {signSegments.map((sign) => (
           <g key={sign.name}>
             <path
               d={sign.path}
@@ -287,7 +466,7 @@ export function ChartWheel({
           </g>
         ))}
 
-        {/* Sign ring border circles */}
+        {/* Sign ring border circles — animated draw-in */}
         <circle
           cx={cx}
           cy={cy}
@@ -295,6 +474,10 @@ export function ChartWheel({
           fill="none"
           stroke="rgba(255,255,255,0.2)"
           strokeWidth="1"
+          className="cw-ring-draw"
+          style={
+            { "--cw-circumference": outerCircumference } as React.CSSProperties
+          }
         />
         <circle
           cx={cx}
@@ -303,7 +486,33 @@ export function ChartWheel({
           fill="none"
           stroke="rgba(255,255,255,0.2)"
           strokeWidth="1"
+          className="cw-ring-draw"
+          style={
+            {
+              "--cw-circumference": innerCircumference,
+              animationDelay: "0.15s",
+            } as React.CSSProperties
+          }
         />
+
+        {/* Shimmer overlay on outer ring (idle animation) */}
+        {!reduced && (
+          <circle
+            cx={cx}
+            cy={cy}
+            r={outerR}
+            fill="none"
+            stroke="rgba(167,139,250,0.15)"
+            strokeWidth="2"
+            strokeDasharray={`${shimmerDashLen} ${shimmerGapLen}`}
+            className="cw-ring-shimmer"
+            style={
+              {
+                "--cw-circumference": outerCircumference,
+              } as React.CSSProperties
+            }
+          />
+        )}
 
         {/* House ring */}
         <circle
@@ -315,9 +524,15 @@ export function ChartWheel({
           strokeWidth="0.5"
         />
 
-        {/* House division lines */}
+        {/* House division lines — fade in after ring draws */}
         {houseLines.map((house) => (
-          <g key={`house-${house.house}`}>
+          <g
+            key={`house-${house.house}`}
+            className="cw-house-line"
+            style={
+              { "--cw-delay": "0.9s" } as React.CSSProperties
+            }
+          >
             <line
               x1={house.outer.x}
               y1={house.outer.y}
@@ -343,50 +558,84 @@ export function ChartWheel({
           </g>
         ))}
 
-        {/* Aspect lines */}
-        {aspectLines.map((aspect, i) => (
-          <line
-            key={`aspect-${i}`}
-            x1={aspect.pos1.x}
-            y1={aspect.pos1.y}
-            x2={aspect.pos2.x}
-            y2={aspect.pos2.y}
-            stroke={aspect.color}
-            strokeWidth="0.7"
-            strokeOpacity="0.4"
-            strokeDasharray={
-              aspect.type === "square" || aspect.type === "opposition"
-                ? "3,3"
-                : undefined
-            }
-          />
-        ))}
+        {/* Aspect lines — draw in + idle pulse + highlight on hover */}
+        {aspectLines.map((aspect, i) => {
+          const highlighted = isAspectHighlighted(aspect);
+          const isDashed =
+            aspect.type === "square" || aspect.type === "opposition";
 
-        {/* Planet positions */}
+          return (
+            <line
+              key={`aspect-${i}`}
+              x1={aspect.pos1.x}
+              y1={aspect.pos1.y}
+              x2={aspect.pos2.x}
+              y2={aspect.pos2.y}
+              stroke={aspect.color}
+              strokeWidth={highlighted ? 1.4 : 0.7}
+              strokeOpacity={highlighted ? 0.85 : 0.4}
+              strokeDasharray={reduced && isDashed ? "3,3" : undefined}
+              className={[
+                "cw-aspect-line",
+                !reduced && isDashed && "cw-aspect-dashed",
+                !reduced && "cw-aspect-idle",
+                highlighted && "cw-aspect-highlight",
+              ]
+                .filter(Boolean)
+                .join(" ")}
+              style={
+                {
+                  "--cw-line-len": aspect.lineLen,
+                  "--cw-delay": `${1.2 + i * 0.04}s`,
+                  "--cw-pulse-delay": `${i * 0.3}s`,
+                } as React.CSSProperties
+              }
+              filter={highlighted ? "url(#glow)" : undefined}
+            />
+          );
+        })}
+
+        {/* Planet positions — pop in staggered + idle glow + hover interaction */}
         {displayPlanets.map((p, i) => (
-          <motion.g
+          <g
             key={p.planet}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: i * 0.05, duration: 0.3 }}
+            className="cw-planet-group"
+            style={
+              {
+                "--cw-delay": `${0.8 + i * 0.08}s`,
+                "--cw-tx": `${p.pos.x}px`,
+                "--cw-ty": `${p.pos.y}px`,
+              } as React.CSSProperties
+            }
+            onMouseEnter={() => setHoveredPlanet(p.planet)}
+            onMouseLeave={() => setHoveredPlanet(null)}
           >
-            {/* Planet dot/glow */}
+            {/* Planet glow background (idle breathing animation) */}
             <circle
+              className="cw-planet-glow-circle"
               cx={p.pos.x}
               cy={p.pos.y}
-              r="12"
+              r={12}
               fill="rgba(124,58,237,0.1)"
               filter="url(#glow)"
+              style={
+                {
+                  "--cw-glow-delay": `${i * 0.4}s`,
+                } as React.CSSProperties
+              }
             />
+            {/* Planet dot */}
             <circle
+              className="cw-planet-dot"
               cx={p.pos.x}
               cy={p.pos.y}
-              r="3"
+              r={3}
               fill="#A78BFA"
-              opacity="0.7"
+              opacity={0.7}
             />
             {/* Planet symbol */}
             <text
+              className="cw-planet-symbol select-none"
               x={p.pos.x}
               y={p.pos.y - 10}
               textAnchor="middle"
@@ -394,7 +643,6 @@ export function ChartWheel({
               fill="#F1F5F9"
               fontSize="11"
               fontWeight="bold"
-              className="select-none"
             >
               {p.symbol}
             </text>
@@ -411,7 +659,7 @@ export function ChartWheel({
                 R
               </text>
             )}
-          </motion.g>
+          </g>
         ))}
 
         {/* Center decoration */}

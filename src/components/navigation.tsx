@@ -41,6 +41,7 @@ const publicNavLinks = [
   { href: "/", label: "Home" },
   { href: "/compatibility", label: "Compatibility" },
   { href: "/learn", label: "Learn" },
+  { href: "/blog", label: "Blog" },
   { href: "/pricing", label: "Pricing" },
 ];
 

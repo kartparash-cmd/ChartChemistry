@@ -8,6 +8,7 @@ const footerLinks = {
     { href: "/", label: "Home" },
     { href: "/compatibility", label: "Compatibility" },
     { href: "/learn", label: "Learn" },
+    { href: "/blog", label: "Blog" },
     { href: "/pricing", label: "Pricing" },
     { href: "/quick-match", label: "Quick Match" },
   ],

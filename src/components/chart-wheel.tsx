@@ -103,7 +103,7 @@ function getChartStyles(reduced: boolean): string {
     .cw-ring-draw {
       stroke-dasharray: var(--cw-circumference);
       stroke-dashoffset: var(--cw-circumference);
-      animation: cw-ring-draw 1.4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+      animation: cw-ring-draw 2.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
     }
 
     /* === Entrance: house lines fade in === */
@@ -127,7 +127,7 @@ function getChartStyles(reduced: boolean): string {
       transform-origin: var(--cw-tx) var(--cw-ty);
       transform: scale(0);
       opacity: 0;
-      animation: cw-planet-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+      animation: cw-planet-pop 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
       animation-delay: var(--cw-delay);
       cursor: pointer;
     }
@@ -602,7 +602,7 @@ export function ChartWheel({
             className="cw-planet-group"
             style={
               {
-                "--cw-delay": `${0.8 + i * 0.08}s`,
+                "--cw-delay": `${1.8 + i * 0.12}s`,
                 "--cw-tx": `${p.pos.x}px`,
                 "--cw-ty": `${p.pos.y}px`,
               } as React.CSSProperties

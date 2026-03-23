@@ -355,6 +355,10 @@ function DashboardContent() {
   const [greetingPrefix, setGreetingPrefix] = useState("Welcome back");
   const [portalLoading, setPortalLoading] = useState(false);
   const [achievements, setAchievements] = useState<EarnedAchievement[]>([]);
+  const [cursorGlowDisabled, setCursorGlowDisabled] = useState(() => {
+    if (typeof window !== "undefined") return localStorage.getItem("cursor-glow-disabled") === "true";
+    return false;
+  });
   const [referralData, setReferralData] = useState<{
     referralCode: string;
     referralCount: number;
@@ -1598,6 +1602,31 @@ function DashboardContent() {
                   {/* Notification Preferences */}
                   <div className="rounded-xl border border-white/10 bg-white/[0.03] p-6 backdrop-blur-sm">
                     <NotificationPreferences />
+                  </div>
+
+                  {/* Visual Preferences */}
+                  <div className="rounded-xl border border-white/10 bg-white/[0.03] p-6 backdrop-blur-sm">
+                    <h3 className="font-heading text-lg font-semibold mb-4">Visual Preferences</h3>
+                    <div className="flex items-center justify-between py-2">
+                      <div>
+                        <p className="text-sm font-medium">Cursor Glow Effect</p>
+                        <p className="text-xs text-muted-foreground">Purple glow that follows your mouse (desktop only)</p>
+                      </div>
+                      <button
+                        type="button"
+                        role="switch"
+                        aria-checked={!cursorGlowDisabled}
+                        onClick={() => {
+                          const newVal = !cursorGlowDisabled;
+                          setCursorGlowDisabled(newVal);
+                          localStorage.setItem("cursor-glow-disabled", String(newVal));
+                          window.dispatchEvent(new Event("cursor-glow-toggle"));
+                        }}
+                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${!cursorGlowDisabled ? "bg-cosmic-purple" : "bg-white/10"}`}
+                      >
+                        <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${!cursorGlowDisabled ? "translate-x-6" : "translate-x-1"}`} />
+                      </button>
+                    </div>
                   </div>
 
                   {/* What Marie Knows About You — premium only */}

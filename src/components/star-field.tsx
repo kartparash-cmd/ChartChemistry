@@ -256,8 +256,8 @@ export function StarField({ starCount = 100, className, cosmic = false }: StarFi
           dots.push({
             angle: spiralAngle + scatter,
             dist: Math.max(0, distScatter),
-            size: 0.5 + Math.random() * 1.5 * (1 - t * 0.5), // bigger near center
-            brightness: 0.3 + Math.random() * 0.7 * (1 - t * 0.6), // brighter near center
+            size: 1.0 + Math.random() * 2.5 * (1 - t * 0.5), // bigger dots for visibility
+            brightness: 0.5 + Math.random() * 0.5 * (1 - t * 0.4), // brighter for visibility
           });
         }
       }
@@ -277,7 +277,7 @@ export function StarField({ starCount = 100, className, cosmic = false }: StarFi
         x: 0.15 * width + Math.random() * 0.7 * width,
         y: 0.15 * height + Math.random() * 0.7 * height,
         size,
-        opacity: 0.1 + Math.random() * 0.1, // 0.1-0.2
+        opacity: 0.35 + Math.random() * 0.2, // 0.35-0.55
         rotation: Math.random() * Math.PI * 2,
         rotationSpeed: ((Math.random() > 0.5 ? 1 : -1) * (0.0003 + Math.random() * 0.0005)), // full rotation ~60-120s at 60fps
         hue,

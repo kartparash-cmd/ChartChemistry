@@ -14,7 +14,19 @@ export function CursorGlow() {
 
     if (!isDesktop || prefersReducedMotion) return;
 
+    // Check user preference from localStorage
+    const userDisabled = localStorage.getItem("cursor-glow-disabled") === "true";
+    if (userDisabled) return;
+
     setEnabled(true);
+
+    // Listen for toggle changes from settings
+    const handleToggle = () => {
+      const disabled = localStorage.getItem("cursor-glow-disabled") === "true";
+      setEnabled(!disabled);
+    };
+    window.addEventListener("cursor-glow-toggle", handleToggle);
+    return () => window.removeEventListener("cursor-glow-toggle", handleToggle);
   }, []);
 
   useEffect(() => {

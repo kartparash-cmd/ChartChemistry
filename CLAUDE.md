@@ -8,12 +8,15 @@ AI-powered astrology compatibility app. Next.js frontend + Python FastAPI micros
 - **Auth:** NextAuth v4 (JWT strategy) — Google OAuth + email/password credentials
 - **Database:** PostgreSQL (Supabase) via Prisma 7 with `@prisma/adapter-pg`
 - **AI:** Multi-model — Claude Sonnet for reports, OpenAI GPT-4.1 Nano for chat/horoscopes/explanations
-- **Payments:** Stripe (PREMIUM $9.99/mo, ANNUAL $79.99/yr)
+- **Payments:** Stripe (PREMIUM $9.99/mo, ANNUAL $79.99/yr, SINGLE_REPORT $4.99 one-time)
 - **Styling:** Tailwind CSS v4, shadcn/ui (New York style), Framer Motion
 - **Astro Service:** Python FastAPI with Swiss Ephemeris (`pyswisseph`)
-- **Email:** Resend (transactional emails from `noreply@send.chartchemistry.com`)
-- **Analytics:** Umami (analytics.ownerly.xyz)
-- **Testing:** Vitest + @testing-library/react (75 tests across 6 files)
+- **Email:** Resend (transactional + lifecycle emails from `noreply@send.chartchemistry.com`)
+- **Analytics:** Umami (analytics.ownerly.xyz, consent-gated) + server-side structured logging
+- **Monitoring:** Sentry (conditional, production-only) on all critical API routes
+- **Testing:** Vitest + @testing-library/react (169 tests across 9 files)
+- **CI/CD:** Dependabot (weekly), GitHub Actions security audit
+- **PWA:** manifest.json + service worker for installability
 
 ## Commands
 
@@ -45,36 +48,53 @@ src/
 │   │   ├── auth/           # [...nextauth] + signup + verify-email + forgot-password
 │   │   ├── chat/           # Marie (personal astrologer) chat (premium-gated)
 │   │   ├── compatibility/  # Free (route.ts) + full premium (full/route.ts)
-│   │   ├── cron/           # daily-digest (Vercel Cron)
+│   │   ├── cosmic-card/    # Shareable cosmic identity card image generation
+│   │   ├── cron/           # daily-digest (Vercel Cron) — premium + free drip + birthday reminders
+│   │   ├── daily-cosmic/   # Free daily cosmic weather (all users, no auth)
+│   │   ├── health/         # Consolidated health check (DB, astro, AI, Stripe, Redis)
+│   │   ├── marie-memory/   # View/delete Marie's extracted memories
 │   │   ├── profile/        # CRUD birth profiles
+│   │   ├── referral/       # GET status + POST claim reward
 │   │   ├── report/[id]/    # Fetch + share compatibility report
-│   │   ├── stripe/         # checkout, webhook, portal
-│   │   └── user/           # preferences, export, delete
+│   │   ├── story-card/     # 1080x1920 Instagram/TikTok story image generation
+│   │   ├── stripe/         # checkout (subscription + single report), webhook, portal
+│   │   └── user/           # preferences, export, delete (cancels Stripe)
 │   ├── auth/               # signin + signup + verify-email pages
+│   ├── blog/               # Blog with [slug] pages (server components, JSON-LD)
+│   ├── calendar/           # Monthly cosmic events calendar
 │   ├── chart/[id]/         # Natal chart viewer
-│   ├── chat/               # Marie chat page (ChatGPT/Claude-style UI)
-│   ├── compatibility/      # Compatibility tool + [signs]/ programmatic SEO pages
-│   ├── dashboard/          # User dashboard (profiles, reports, settings)
-│   ├── pricing/            # Pricing tiers
-│   ├── quick-match/        # Viral zodiac compatibility tool
-│   └── report/[id]/        # Report viewer with social sharing
+│   ├── chat/               # Marie chat page (streaming SSE, ChatGPT-style UI)
+│   ├── compatibility/      # Compatibility tool + [signs]/ programmatic SEO (78 pages, ISR)
+│   ├── dashboard/          # User dashboard (profiles, reports, settings, Marie memories)
+│   ├── embed/              # Embeddable compatibility widget (iframe-friendly)
+│   ├── embed-code/         # Embed code generator page
+│   ├── pricing/            # Pricing tiers (subscription + single report + promo codes)
+│   ├── quick-match/        # Viral zodiac tool (share-to-unlock)
+│   └── report/[id]/        # Report viewer with social sharing + story cards
 ├── components/
 │   ├── ui/                 # shadcn/ui components
 │   ├── providers/          # SessionProvider wrapper
 │   └── *.tsx               # Feature components (navigation, chart-wheel, social-share, etc.)
 ├── generated/prisma/       # Auto-generated Prisma client (DO NOT EDIT)
 ├── lib/
-│   ├── auth.ts             # NextAuth config (Google + Credentials + signin rate limiting)
+│   ├── auth.ts             # NextAuth config (Google + Credentials + Redis-backed signin rate limiting)
 │   ├── prisma.ts           # Prisma singleton (pg adapter for Supabase)
-│   ├── claude.ts           # AI orchestration (Claude for reports, OpenAI for chat/horoscopes)
+│   ├── claude.ts           # AI orchestration (Claude for reports, OpenAI for chat/horoscopes, streaming SSE)
 │   ├── openai.ts           # OpenAI client wrapper (GPT-4.1 Nano, lazy-init singleton)
 │   ├── astro-client.ts     # HTTP client for Python astro-service (with circuit breaker)
-│   ├── stripe.ts           # Stripe SDK init + plan definitions
-│   ├── rate-limit.ts       # Redis (Upstash) rate limiter with in-memory fallback
-│   ├── email.ts            # Resend transactional emails (verify, reset, dunning, receipt)
-│   ├── emails.ts           # Resend marketing emails (welcome, digest)
-│   ├── analytics.ts        # Type-safe Umami event tracking
-│   ├── sanitize.ts         # Input sanitization (XSS prevention)
+│   ├── stripe.ts           # Stripe SDK init + plan definitions (subscription + single report)
+│   ├── rate-limit.ts       # Redis (Upstash) rate limiter for all endpoints, in-memory fallback
+│   ├── email.ts            # Resend transactional emails (verify, reset, dunning 3-tier, receipt, cancellation)
+│   ├── emails.ts           # Resend lifecycle emails (welcome, digest, drip day1/3/weekly, birthday)
+│   ├── analytics.ts        # Type-safe Umami event tracking (24 event types, all wired)
+│   ├── server-analytics.ts # Server-side structured event logging (revenue, signups)
+│   ├── moderation.ts       # Content moderation (input + output) for AI chat
+│   ├── achievements.ts     # Achievement system (20 types with auto-triggers)
+│   ├── achievement-defs.ts # Achievement definitions and metadata
+│   ├── blog-posts.ts       # Blog content data (articles, categories, slugs)
+│   ├── zodiac-pair-content.ts # Unique content for 78 zodiac pair SEO pages
+│   ├── geocode.ts          # Nominatim geocoding with 5s timeout + 24h cache (1000 entries)
+│   ├── sanitize.ts         # Input sanitization (HTML tags + entities + incomplete tags)
 │   └── utils.ts            # cn() utility (clsx + tailwind-merge)
 ├── middleware.ts            # Auth middleware (protected pages + API routes + admin)
 ├── types/
@@ -92,13 +112,20 @@ astro-service/              # Python FastAPI microservice
 - **Auth gating:** Centralized via `src/middleware.ts` + defense-in-depth `getServerSession` in API routes
 - **Plan checks:** JWT token carries `plan` field; API routes check `session.user.plan` for premium features
 - **Prisma client:** Singleton in `src/lib/prisma.ts` using `globalThis` for dev hot-reload safety
-- **AI clients:** Claude (reports) + OpenAI (chat/horoscopes) — both lazy-initialized singletons, 30s timeout
-- **AI persona:** Marie — the user-facing astrologer name across chat, emails, and marketing
+- **AI clients:** Claude (reports) + OpenAI (chat/horoscopes) — both lazy-initialized singletons, 30s timeout, explicit temperatures, bi-directional failover
+- **AI streaming:** Marie chat uses SSE (Server-Sent Events) for progressive token display
+- **AI moderation:** Input + output content moderation via regex-based keyword detection
+- **AI persona:** Marie — the user-facing astrologer name across chat, emails, and marketing; persistent memory via MarieMemory model
 - **Path alias:** `@/*` maps to `./src/*`
-- **Dark mode:** Forced via `class="dark"` on `<html>` in layout.tsx
-- **Rate limiting:** Redis (Upstash) when available, in-memory fallback; per-IP for compatibility, per-email for signin
-- **Email:** Resend SDK with graceful fallback (logs warning if API key missing)
-- **Analytics:** Umami script loaded conditionally when env vars present; type-safe `trackEvent()` wrapper
+- **Dark mode:** Forced via `class="dark"` on `<html>` in layout.tsx; High Contrast Mode fallback for cosmic-text
+- **Rate limiting:** Redis (Upstash) for ALL endpoints, in-memory fallback; per-IP for compatibility/city-search, per-email for signin
+- **Email:** Resend SDK with graceful fallback; lifecycle emails (welcome, drip day1/3/weekly, birthday, dunning 3-tier, cancellation)
+- **Analytics:** Umami consent-gated via cookie-consent; 24 event types all wired; server-side logging for revenue events
+- **Error monitoring:** Sentry on all critical API routes with user context
+- **Achievements:** 20 types with auto-triggers across API routes (fire-and-forget)
+- **Geocoding:** Nominatim with 5s timeout, 24h in-memory cache (1000 entries), rate-limited proxy
+- **PWA:** manifest.json + service worker for mobile installability
+- **ISR:** Compatibility/[signs] pages use 24h revalidation; learn pages are server components
 
 ## Database
 
@@ -146,9 +173,10 @@ ASTRO_SERVICE_URL         # http://localhost:8000 in dev
 
 ## External Services
 
-- **Stripe:** Live mode, products configured, webhook at `/api/stripe/webhook`, customer portal enabled
+- **Stripe:** Live mode, subscription + single-report purchases, webhook, customer portal, promo codes enabled
 - **Resend:** Domain `chartchemistry.com` verified, from address `noreply@send.chartchemistry.com`
-- **Umami:** analytics.ownerly.xyz, tracking on signup/compatibility/report/chat/quick-match pages
+- **Umami:** analytics.ownerly.xyz, consent-gated, 24 event types tracked across all pages
+- **Sentry:** Conditional (production-only), 10% trace rate, 100% error replay, instrumented in 6+ API routes
 - **Supabase:** PostgreSQL, schema synced, all indexes applied
 
 ## Deployment
@@ -157,4 +185,6 @@ ASTRO_SERVICE_URL         # http://localhost:8000 in dev
 - Vercel scope: `kartikeya-parashars-projects`
 - Astro-service has Dockerfile (Python 3.11-slim, port 8000)
 - Supabase for PostgreSQL hosting
-- Vercel Cron for daily digest emails
+- Vercel Cron for daily digest + free drip + birthday reminders
+- GitHub Actions for security audits (npm audit on PRs)
+- Dependabot for weekly dependency updates

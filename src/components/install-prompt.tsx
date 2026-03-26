@@ -15,7 +15,7 @@ export function InstallPrompt() {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    const dismissed = localStorage.getItem("pwa-install-dismissed");
+    const dismissed = sessionStorage.getItem("pwa-install-dismissed");
     if (dismissed) return;
 
     const handler = (e: Event) => {
@@ -39,7 +39,7 @@ export function InstallPrompt() {
   };
 
   const dismiss = () => {
-    localStorage.setItem("pwa-install-dismissed", "true");
+    sessionStorage.setItem("pwa-install-dismissed", "true");
     setVisible(false);
   };
 

@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Cormorant+Garamond:ital,wght@0,600;0,700;1,600&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    width: 1080px;
+    height: 1920px;
+    overflow: hidden;
+    font-family: 'Inter', -apple-system, sans-serif;
+    color: #fff;
+  }
+
+  .slide {
+    width: 1080px;
+    height: 1920px;
+    position: relative;
+    overflow: hidden;
+    display: none;
+  }
+  .slide.active { display: flex; }
+
+  .slide-inner {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 80px 60px;
+    text-align: center;
+    position: relative;
+    z-index: 5;
+  }
+
+  /* ─── Constellation lines decoration ─── */
+  .constellation {
+    position: absolute;
+    z-index: 2;
+    opacity: 0.06;
+  }
+  .constellation svg { width: 100%; height: 100%; }
+  .constellation line {
+    stroke: #c084fc;
+    stroke-width: 1.5;
+  }
+  .constellation circle {
+    fill: #e0d0ff;
+  }
+
+  /* ─── Stars ─── */
+  .stars { position: absolute; inset: 0; z-index: 1; overflow: hidden; }
+  .star {
+    position: absolute;
+    background: #fff;
+    border-radius: 50%;
+    animation: twinkle 4s ease-in-out infinite;
+  }
+  .star.bright {
+    box-shadow: 0 0 6px 2px rgba(192, 132, 252, 0.4);
+  }
+  @keyframes twinkle {
+    0%, 100% { opacity: 0.1; transform: scale(1); }
+    50% { opacity: 0.85; transform: scale(1.3); }
+  }
+
+  /* ─── Nebula glow layers ─── */
+  .nebula {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+  }
+
+  /* ─── Decorative ring ─── */
+  .orbit-ring {
+    position: absolute;
+    border-radius: 50%;
+    border: 1px solid rgba(168, 85, 247, 0.06);
+    z-index: 2;
+  }
+
+  /* ─── Thin top/bottom accent lines ─── */
+  .accent-line {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 200px;
+    height: 1px;
+    z-index: 6;
+  }
+  .accent-line.top { top: 60px; }
+  .accent-line.bottom { bottom: 100px; }
+  .accent-line-inner {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(192,132,252,0.3), rgba(251,191,36,0.3), rgba(192,132,252,0.3), transparent);
+  }
+
+  .watermark {
+    position: absolute;
+    bottom: 44px;
+    left: 0;
+    right: 0;
+    text-align: center;
+    font-size: 22px;
+    font-weight: 500;
+    color: rgba(255,255,255,0.12);
+    letter-spacing: 4px;
+    z-index: 6;
+  }
+
+  /* ═══════════════════════════════════════
+     SLIDE 1: HOOK
+     ═══════════════════════════════════════ */
+  .slide-hook {
+    background: linear-gradient(165deg, #1a0730 0%, #0d1025 35%, #0f0b2a 65%, #180a30 100%);
+  }
+  .slide-hook .nebula {
+    background:
+      radial-gradient(ellipse 600px 800px at 65% 25%, rgba(139, 92, 246, 0.18) 0%, transparent 70%),
+      radial-gradient(ellipse 500px 600px at 20% 75%, rgba(236, 72, 153, 0.12) 0%, transparent 60%),
+      radial-gradient(ellipse 300px 300px at 80% 80%, rgba(99, 102, 241, 0.08) 0%, transparent 50%);
+  }
+
+  .hook-emoji {
+    font-size: 110px;
+    margin-bottom: 50px;
+    line-height: 1.2;
+    filter: drop-shadow(0 0 30px rgba(168, 85, 247, 0.3));
+  }
+  .hook-text {
+    font-family: 'Cormorant Garamond', 'Playfair Display', serif;
+    font-size: 58px;
+    font-weight: 700;
+    line-height: 1.4;
+    color: #fff;
+    max-width: 880px;
+    text-shadow: 0 4px 60px rgba(0,0,0,0.4);
+    letter-spacing: -0.5px;
+  }
+  .hook-divider {
+    width: 80px;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, #c084fc, #fbbf24, #c084fc, transparent);
+    margin: 40px 0;
+    border-radius: 2px;
+  }
+  .hook-pair {
+    font-size: 32px;
+    font-weight: 700;
+    letter-spacing: 8px;
+    background: linear-gradient(135deg, #c084fc, #f9a8d4);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .hook-swipe {
+    margin-top: 100px;
+    font-size: 24px;
+    color: rgba(255, 255, 255, 0.2);
+    letter-spacing: 2px;
+    font-weight: 500;
+  }
+
+  /* ═══════════════════════════════════════
+     SLIDE 2: THE PAIR
+     ═══════════════════════════════════════ */
+  .slide-pair {
+    background: linear-gradient(165deg, #0c1245 0%, #150a35 40%, #0d1030 70%, #0a0820 100%);
+  }
+  .slide-pair .nebula {
+    background:
+      radial-gradient(ellipse 500px 600px at 50% 40%, rgba(99, 102, 241, 0.14) 0%, transparent 60%),
+      radial-gradient(ellipse 400px 400px at 25% 70%, rgba(168, 85, 247, 0.08) 0%, transparent 50%);
+  }
+
+  .pair-date {
+    position: absolute;
+    top: 55px;
+    right: 65px;
+    font-size: 20px;
+    font-weight: 600;
+    color: rgba(148, 163, 184, 0.5);
+    letter-spacing: 3px;
+    z-index: 6;
+  }
+  .pair-signs {
+    display: flex;
+    align-items: center;
+    gap: 44px;
+    margin-bottom: 55px;
+  }
+  .sign-col { text-align: center; }
+  .sign-circle {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255,255,255,0.03);
+    border: 2px solid rgba(168, 85, 247, 0.25);
+    box-shadow: 0 0 50px rgba(168, 85, 247, 0.08), inset 0 0 30px rgba(168, 85, 247, 0.05);
+    position: relative;
+  }
+  .sign-circle::after {
+    content: '';
+    position: absolute;
+    inset: -8px;
+    border-radius: 50%;
+    border: 1px solid rgba(168, 85, 247, 0.08);
+  }
+  .sign-symbol { font-size: 68px; line-height: 1; }
+  .sign-name {
+    margin-top: 18px;
+    font-size: 24px;
+    font-weight: 500;
+    color: #94a3b8;
+    letter-spacing: 2px;
+  }
+  .pair-vs {
+    font-size: 40px;
+    font-weight: 900;
+    color: #fbbf24;
+    text-shadow: 0 0 30px rgba(251, 191, 36, 0.25);
+    margin-top: -20px;
+  }
+  .pair-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 62px;
+    font-weight: 700;
+    margin-bottom: 14px;
+    letter-spacing: 1px;
+  }
+  .pair-tagline {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 30px;
+    font-style: italic;
+    color: #a78bfa;
+    line-height: 1.5;
+    max-width: 750px;
+  }
+  .famous-box {
+    margin-top: 65px;
+    padding: 30px 40px;
+    background: linear-gradient(135deg, rgba(255,255,255,0.03), rgba(168,85,247,0.04));
+    border-radius: 20px;
+    border-left: 4px solid #fbbf24;
+    text-align: left;
+    width: 75%;
+    backdrop-filter: blur(4px);
+  }
+  .famous-label {
+    font-size: 16px;
+    font-weight: 700;
+    color: #fbbf24;
+    letter-spacing: 3px;
+    margin-bottom: 12px;
+  }
+  .famous-names { font-size: 28px; color: #e2e8f0; font-weight: 500; }
+
+  /* ═══════════════════════════════════════
+     SLIDE 3: STRENGTHS
+     ═══════════════════════════════════════ */
+  .slide-strengths {
+    background: linear-gradient(165deg, #041f1e 0%, #0a1628 40%, #0f1530 70%, #130a28 100%);
+  }
+  .slide-strengths .nebula {
+    background:
+      radial-gradient(ellipse 500px 700px at 25% 60%, rgba(52, 211, 153, 0.1) 0%, transparent 60%),
+      radial-gradient(ellipse 400px 400px at 75% 30%, rgba(16, 185, 129, 0.06) 0%, transparent 50%);
+  }
+
+  .section-icon { font-size: 72px; margin-bottom: 16px; filter: drop-shadow(0 0 20px rgba(255,255,255,0.15)); }
+  .section-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 50px;
+    font-weight: 700;
+    margin-bottom: 50px;
+    letter-spacing: 1px;
+  }
+  .section-title.green { color: #6ee7b7; text-shadow: 0 0 40px rgba(110, 231, 183, 0.15); }
+  .section-title.red { color: #fca5a5; text-shadow: 0 0 40px rgba(252, 165, 165, 0.15); }
+
+  .bullet-list { width: 82%; text-align: left; }
+  .bullet-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 22px;
+    margin-bottom: 40px;
+    padding: 20px 24px;
+    background: rgba(255,255,255,0.02);
+    border-radius: 16px;
+    border: 1px solid rgba(255,255,255,0.04);
+  }
+  .bullet-dot {
+    flex-shrink: 0;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    font-weight: 700;
+    color: #fff;
+    margin-top: 2px;
+  }
+  .bullet-dot.green {
+    background: linear-gradient(135deg, #34d399, #6ee7b7);
+    box-shadow: 0 0 20px rgba(52, 211, 153, 0.25);
+  }
+  .bullet-dot.red {
+    background: linear-gradient(135deg, #ef4444, #f87171);
+    box-shadow: 0 0 20px rgba(239, 68, 68, 0.25);
+  }
+  .bullet-text {
+    font-size: 28px;
+    line-height: 1.55;
+    color: #e2e8f0;
+    font-weight: 400;
+  }
+
+  /* ═══════════════════════════════════════
+     SLIDE 4: CHALLENGES
+     ═══════════════════════════════════════ */
+  .slide-challenges {
+    background: linear-gradient(165deg, #200a0a 0%, #150a20 40%, #0f0b2a 70%, #1a0820 100%);
+  }
+  .slide-challenges .nebula {
+    background:
+      radial-gradient(ellipse 500px 600px at 70% 30%, rgba(239, 68, 68, 0.1) 0%, transparent 55%),
+      radial-gradient(ellipse 400px 500px at 30% 70%, rgba(168, 85, 247, 0.06) 0%, transparent 50%);
+  }
+
+  /* ═══════════════════════════════════════
+     SLIDE 5: EMOTIONAL
+     ═══════════════════════════════════════ */
+  .slide-emotional {
+    background: linear-gradient(165deg, #1a0735 0%, #15104b 40%, #0d0f35 70%, #0a0820 100%);
+  }
+  .slide-emotional .nebula {
+    background:
+      radial-gradient(ellipse 600px 600px at 50% 45%, rgba(244, 114, 182, 0.12) 0%, transparent 55%),
+      radial-gradient(ellipse 400px 500px at 20% 20%, rgba(139, 92, 246, 0.08) 0%, transparent 50%);
+  }
+
+  .emotional-icon {
+    font-size: 80px;
+    margin-bottom: 16px;
+    filter: drop-shadow(0 0 25px rgba(168, 85, 247, 0.3));
+  }
+  .emotional-label {
+    font-size: 20px;
+    font-weight: 700;
+    color: #7c3aed;
+    letter-spacing: 5px;
+    margin-bottom: 50px;
+  }
+  .quote-mark {
+    font-size: 160px;
+    color: rgba(168, 85, 247, 0.1);
+    font-family: 'Cormorant Garamond', serif;
+    position: absolute;
+    top: 320px;
+    left: 40px;
+    z-index: 6;
+    line-height: 1;
+  }
+  .emotional-quote {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 36px;
+    font-style: italic;
+    line-height: 1.6;
+    color: #f0abfc;
+    max-width: 860px;
+    margin-bottom: 65px;
+    text-shadow: 0 2px 30px rgba(0,0,0,0.2);
+  }
+  .advice-box {
+    background: linear-gradient(135deg, rgba(255,255,255,0.03), rgba(168,85,247,0.05));
+    border-radius: 24px;
+    padding: 36px 44px;
+    width: 86%;
+    border: 1px solid rgba(168, 85, 247, 0.1);
+    backdrop-filter: blur(4px);
+  }
+  .advice-label {
+    font-size: 20px;
+    font-weight: 700;
+    color: #fbbf24;
+    margin-bottom: 18px;
+    letter-spacing: 2px;
+  }
+  .advice-text {
+    font-size: 28px;
+    line-height: 1.6;
+    color: #e2e8f0;
+  }
+
+  /* ═══════════════════════════════════════
+     SLIDE 6: CTA
+     ═══════════════════════════════════════ */
+  .slide-cta {
+    background: linear-gradient(165deg, #1a0730 0%, #0d1025 35%, #0f0b2a 65%, #180a30 100%);
+  }
+  .slide-cta .nebula {
+    background:
+      radial-gradient(ellipse 500px 500px at 50% 30%, rgba(251, 191, 36, 0.1) 0%, transparent 55%),
+      radial-gradient(ellipse 600px 600px at 50% 70%, rgba(168, 85, 247, 0.1) 0%, transparent 50%);
+  }
+
+  .cta-logo {
+    width: 400px;
+    height: auto;
+    margin-bottom: 40px;
+    filter: drop-shadow(0 0 40px rgba(168, 85, 247, 0.35));
+  }
+  .cta-brand {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 72px;
+    font-weight: 700;
+    background: linear-gradient(135deg, #c084fc 0%, #f9a8d4 40%, #fbbf24 80%, #f9a8d4 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 30px;
+    letter-spacing: 1px;
+  }
+  .cta-text {
+    font-size: 30px;
+    color: #b8c5d6;
+    line-height: 1.65;
+    max-width: 780px;
+    margin-bottom: 60px;
+  }
+  .cta-button {
+    background: linear-gradient(135deg, #7c3aed, #a855f7, #c084fc);
+    border: none;
+    border-radius: 60px;
+    padding: 28px 72px;
+    color: #fff;
+    font-size: 30px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    box-shadow: 0 8px 40px rgba(139, 92, 246, 0.4), 0 0 80px rgba(139, 92, 246, 0.15);
+    position: relative;
+  }
+  .cta-button::after {
+    content: '';
+    position: absolute;
+    inset: -3px;
+    border-radius: 63px;
+    background: linear-gradient(135deg, rgba(192,132,252,0.3), rgba(249,168,212,0.2), rgba(251,191,36,0.2));
+    z-index: -1;
+    filter: blur(8px);
+  }
+  .cta-link {
+    margin-top: 36px;
+    font-size: 24px;
+    color: #64748b;
+    letter-spacing: 1px;
+  }
+  .cta-today {
+    margin-top: 60px;
+    font-size: 22px;
+    font-weight: 500;
+    color: rgba(255,255,255,0.15);
+    letter-spacing: 3px;
+  }
+</style>
+</head>
+<body>
+
+<!-- SLIDE 1: HOOK -->
+<div class="slide slide-hook" id="slide-1">
+  <div class="nebula"></div>
+  <div class="stars" id="stars-1"></div>
+  <div class="orbit-ring" style="width:900px;height:900px;top:-200px;right:-300px;"></div>
+  <div class="orbit-ring" style="width:600px;height:600px;bottom:-100px;left:-200px;"></div>
+  <div class="accent-line top"><div class="accent-line-inner"></div></div>
+  <div class="accent-line bottom"><div class="accent-line-inner"></div></div>
+  <div class="slide-inner">
+    <div class="hook-emoji" id="hook-emoji">&#9800; &#9801;</div>
+    <div class="hook-text" id="hook-text">The wildfire met the mountain. One won&#x2019;t stop. The other won&#x2019;t move.</div>
+    <div class="hook-divider"></div>
+    <div class="hook-pair" id="hook-pair">ARIES x TAURUS</div>
+    <div class="hook-swipe">swipe for the truth &#x2192;</div>
+  </div>
+  <div class="watermark">@chartchemistry</div>
+</div>
+
+<!-- SLIDE 2: THE PAIR -->
+<div class="slide slide-pair" id="slide-2">
+  <div class="nebula"></div>
+  <div class="stars" id="stars-2"></div>
+  <div class="orbit-ring" style="width:1000px;height:1000px;top:200px;left:50%;transform:translateX(-50%);"></div>
+  <div class="accent-line top"><div class="accent-line-inner"></div></div>
+  <div class="accent-line bottom"><div class="accent-line-inner"></div></div>
+  <div class="slide-inner">
+    <div class="pair-date" id="pair-date">MAR 25</div>
+    <div class="pair-signs">
+      <div class="sign-col">
+        <div class="sign-circle">
+          <div class="sign-symbol" id="sign-a-symbol">&#9800;</div>
+        </div>
+        <div class="sign-name" id="sign-a-name">Aries</div>
+      </div>
+      <div class="pair-vs">&#215;</div>
+      <div class="sign-col">
+        <div class="sign-circle">
+          <div class="sign-symbol" id="sign-b-symbol">&#9801;</div>
+        </div>
+        <div class="sign-name" id="sign-b-name">Taurus</div>
+      </div>
+    </div>
+    <div class="pair-title" id="pair-title">Aries &#215; Taurus</div>
+    <div class="pair-tagline" id="pair-tagline">&#x201C;Fire meets Earth &#x2014; wildfire and mountain.&#x201D;</div>
+    <div class="famous-box" id="famous-box">
+      <div class="famous-label">FAMOUS PAIR</div>
+      <div class="famous-names" id="famous-names">Victoria &amp; David Beckham</div>
+    </div>
+  </div>
+  <div class="watermark">@chartchemistry</div>
+</div>
+
+<!-- SLIDE 3: STRENGTHS -->
+<div class="slide slide-strengths" id="slide-3">
+  <div class="nebula"></div>
+  <div class="stars" id="stars-3"></div>
+  <div class="orbit-ring" style="width:700px;height:700px;top:-150px;left:-250px;"></div>
+  <div class="accent-line top"><div class="accent-line-inner"></div></div>
+  <div class="accent-line bottom"><div class="accent-line-inner"></div></div>
+  <div class="slide-inner">
+    <div class="section-icon">&#x2728;</div>
+    <div class="section-title green">Why This Works</div>
+    <div class="bullet-list" id="strengths-list">
+      <div class="bullet-item">
+        <div class="bullet-dot green">&#x2713;</div>
+        <div class="bullet-text">Aries brings excitement and spontaneity that pulls Taurus out of their comfort zone</div>
+      </div>
+      <div class="bullet-item">
+        <div class="bullet-dot green">&#x2713;</div>
+        <div class="bullet-text">Taurus provides grounding stability that gives Aries a safe base to return to</div>
+      </div>
+      <div class="bullet-item">
+        <div class="bullet-dot green">&#x2713;</div>
+        <div class="bullet-text">Together they balance impulsiveness with practicality &#x2014; effective goal-crushers</div>
+      </div>
+    </div>
+  </div>
+  <div class="watermark">@chartchemistry</div>
+</div>
+
+<!-- SLIDE 4: CHALLENGES -->
+<div class="slide slide-challenges" id="slide-4">
+  <div class="nebula"></div>
+  <div class="stars" id="stars-4"></div>
+  <div class="orbit-ring" style="width:800px;height:800px;bottom:-200px;right:-300px;"></div>
+  <div class="accent-line top"><div class="accent-line-inner"></div></div>
+  <div class="accent-line bottom"><div class="accent-line-inner"></div></div>
+  <div class="slide-inner">
+    <div class="section-icon">&#x26A0;&#xFE0F;</div>
+    <div class="section-title red">Where It Gets Tense</div>
+    <div class="bullet-list" id="challenges-list">
+      <div class="bullet-item">
+        <div class="bullet-dot red">!</div>
+        <div class="bullet-text">Aries&#x2019; need for speed clashes with Taurus&#x2019; measured, deliberate pace</div>
+      </div>
+      <div class="bullet-item">
+        <div class="bullet-dot red">!</div>
+        <div class="bullet-text">Taurus sees Aries as reckless. Aries sees Taurus as frustratingly stubborn.</div>
+      </div>
+      <div class="bullet-item">
+        <div class="bullet-dot red">!</div>
+        <div class="bullet-text">Money fights incoming &#x2014; Aries spends freely while Taurus prioritizes security</div>
+      </div>
+    </div>
+  </div>
+  <div class="watermark">@chartchemistry</div>
+</div>
+
+<!-- SLIDE 5: EMOTIONAL TRUTH -->
+<div class="slide slide-emotional" id="slide-5">
+  <div class="nebula"></div>
+  <div class="stars" id="stars-5"></div>
+  <div class="orbit-ring" style="width:900px;height:900px;top:300px;left:50%;transform:translateX(-50%);"></div>
+  <div class="accent-line top"><div class="accent-line-inner"></div></div>
+  <div class="accent-line bottom"><div class="accent-line-inner"></div></div>
+  <div class="slide-inner">
+    <div class="emotional-icon">&#x1F49C;</div>
+    <div class="emotional-label">EMOTIONAL TRUTH</div>
+    <div class="quote-mark">&#x201C;</div>
+    <div class="emotional-quote" id="emotional-quote">Taurus processes emotions slowly and deeply, building toward a steady flame, while Aries experiences feelings in sudden bursts. When they sync up, Taurus&#x2019; constancy gives Aries&#x2019; passion a safe container.</div>
+    <div class="advice-box">
+      <div class="advice-label">&#x1F4AB; THE ADVICE</div>
+      <div class="advice-text" id="advice-text">Respect each other&#x2019;s internal clock. Your differences are your superpower when wielded with mutual respect.</div>
+    </div>
+  </div>
+  <div class="watermark">@chartchemistry</div>
+</div>
+
+<!-- SLIDE 6: CTA -->
+<div class="slide slide-cta" id="slide-6">
+  <div class="nebula"></div>
+  <div class="stars" id="stars-6"></div>
+  <div class="orbit-ring" style="width:800px;height:800px;top:100px;left:50%;transform:translateX(-50%);"></div>
+  <div class="orbit-ring" style="width:500px;height:500px;bottom:200px;left:50%;transform:translateX(-50%);"></div>
+  <div class="accent-line top"><div class="accent-line-inner"></div></div>
+  <div class="accent-line bottom"><div class="accent-line-inner"></div></div>
+  <div class="slide-inner">
+    <img class="cta-logo" src="assets/logo.png" alt="ChartChemistry" />
+    <div class="cta-brand">ChartChemistry</div>
+    <div class="cta-text">See your full compatibility report &#x2014; strengths, red flags, and the emotional truth between your signs.</div>
+    <button class="cta-button">Check Your Match</button>
+    <div class="cta-link">chartchemistry.com &#x2022; link in bio</div>
+    <div class="cta-today" id="cta-today">Today: Aries &#215; Taurus</div>
+  </div>
+  <div class="watermark">@chartchemistry</div>
+</div>
+
+<script>
+  // Generate rich star field
+  for (let i = 1; i <= 6; i++) {
+    const container = document.getElementById(`stars-${i}`);
+    if (!container) continue;
+    for (let j = 0; j < 120; j++) {
+      const star = document.createElement('div');
+      star.className = Math.random() > 0.85 ? 'star bright' : 'star';
+      star.style.top = `${Math.random() * 100}%`;
+      star.style.left = `${Math.random() * 100}%`;
+      const size = Math.random() > 0.9 ? Math.random() * 4 + 2 : Math.random() * 2.5 + 0.5;
+      star.style.width = `${size}px`;
+      star.style.height = `${size}px`;
+      star.style.animationDelay = `${Math.random() * 5}s`;
+      star.style.animationDuration = `${Math.random() * 3 + 2}s`;
+      container.appendChild(star);
+    }
+  }
+</script>
+
+</body>
+</html>

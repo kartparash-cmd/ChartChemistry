@@ -5,7 +5,7 @@ import { X, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { trackEvent } from "@/lib/analytics";
 
-const STORAGE_KEY = "cc_exit_popup_dismissed";
+const STORAGE_KEY = "cc_popup_dismissed";
 const ZODIAC_SIGNS = [
   "Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo",
   "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces",
@@ -22,7 +22,7 @@ export function ExitPopup() {
   useEffect(() => {
     // Never show again if already dismissed
     try {
-      if (localStorage.getItem(STORAGE_KEY)) return;
+      if (sessionStorage.getItem(STORAGE_KEY)) return;
     } catch {
       return;
     }
@@ -79,7 +79,7 @@ export function ExitPopup() {
 
   const markDismissed = () => {
     try {
-      localStorage.setItem(STORAGE_KEY, "1");
+      sessionStorage.setItem(STORAGE_KEY, "1");
     } catch {}
   };
 

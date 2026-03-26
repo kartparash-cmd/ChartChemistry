@@ -252,6 +252,16 @@ model RelationshipCheckIn {
   @@index([userId, createdAt])
 }
 
+model EmailSubscriber {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  sign      String?  // zodiac sign preference
+  source    String   @default("exit_popup") // "exit_popup", "inline_capture"
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+}
+
 model MarieAnalytics {
   id            String   @id @default(cuid())
   topic         String   // e.g. "relationship", "chart_education", "timing", "conflict", "general"

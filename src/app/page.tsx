@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/button";
 import { StarField } from "@/components/star-field";
 import { TiltCard } from "@/components/tilt-card";
 import { trackEvent } from "@/lib/analytics";
+import { EmailCapture } from "@/components/email-capture";
 
 /* -------------------------------------------------------------------------- */
 /*  Animation variants                                                        */
@@ -460,6 +461,9 @@ export default function Home() {
           </p>
         </div>
       </section>
+
+      {/* ========================= EMAIL CAPTURE ========================= */}
+      <EmailCapture />
 
       {/* Footer is rendered globally in layout.tsx */}
     </div>

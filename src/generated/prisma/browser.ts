@@ -83,6 +83,11 @@ export type UserAchievement = Prisma.UserAchievementModel
  */
 export type RelationshipCheckIn = Prisma.RelationshipCheckInModel
 /**
+ * Model EmailSubscriber
+ * 
+ */
+export type EmailSubscriber = Prisma.EmailSubscriberModel
+/**
  * Model MarieAnalytics
  * 
  */

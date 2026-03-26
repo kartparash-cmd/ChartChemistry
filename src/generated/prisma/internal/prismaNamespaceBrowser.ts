@@ -64,6 +64,7 @@ export const ModelName = {
   MarieMemory: 'MarieMemory',
   UserAchievement: 'UserAchievement',
   RelationshipCheckIn: 'RelationshipCheckIn',
+  EmailSubscriber: 'EmailSubscriber',
   MarieAnalytics: 'MarieAnalytics'
 } as const
 
@@ -280,6 +281,17 @@ export const RelationshipCheckInScalarFieldEnum = {
 } as const
 
 export type RelationshipCheckInScalarFieldEnum = (typeof RelationshipCheckInScalarFieldEnum)[keyof typeof RelationshipCheckInScalarFieldEnum]
+
+
+export const EmailSubscriberScalarFieldEnum = {
+  id: 'id',
+  email: 'email',
+  sign: 'sign',
+  source: 'source',
+  createdAt: 'createdAt'
+} as const
+
+export type EmailSubscriberScalarFieldEnum = (typeof EmailSubscriberScalarFieldEnum)[keyof typeof EmailSubscriberScalarFieldEnum]
 
 
 export const MarieAnalyticsScalarFieldEnum = {

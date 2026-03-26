@@ -27,7 +27,8 @@ type EventName =
   | "pricing_view"
   | "cta_click"
   | "error_shown"
-  | "onboarding_complete";
+  | "onboarding_complete"
+  | "email_subscribe";
 
 interface EventData {
   [key: string]: string | number | boolean;

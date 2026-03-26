@@ -33,13 +33,21 @@ const PLANET_SYMBOLS: Record<string, string> = {
   Pluto: "\u2647",
 };
 
-// Aspect types with colors
+// Aspect types with colors — muted for clean look
 const ASPECT_COLORS: Record<string, string> = {
   conjunction: "#06B6D4",
   sextile: "#10B981",
   square: "#EF4444",
   trine: "#10B981",
   opposition: "#EF4444",
+};
+
+// Angle labels for the four chart axes
+const AXIS_LABELS: Record<number, string> = {
+  1: "AC",   // Ascendant
+  4: "IC",   // Imum Coeli
+  7: "DC",   // Descendant
+  10: "MC",  // Midheaven
 };
 
 export interface PlanetPosition {
@@ -85,7 +93,13 @@ function polarToCartesian(
   };
 }
 
-/** CSS keyframes for chart animations, embedded in SVG <style> */
+/** Format degree as sign-relative (e.g., 135 -> "15° Leo") */
+function formatDegree(absDegree: number): string {
+  const signDeg = ((absDegree % 30) + 30) % 30;
+  return `${Math.round(signDeg)}°`;
+}
+
+/** CSS keyframes for chart animations — entrance only, no idle effects */
 function getChartStyles(reduced: boolean): string {
   if (reduced) {
     return `
@@ -120,14 +134,14 @@ function getChartStyles(reduced: boolean): string {
     /* === Entrance: planet pop-in === */
     @keyframes cw-planet-pop {
       0%   { transform: scale(0); opacity: 0; }
-      70%  { transform: scale(1.15); opacity: 1; }
+      70%  { transform: scale(1.1); opacity: 1; }
       100% { transform: scale(1); opacity: 1; }
     }
     .cw-planet-group {
       transform-origin: var(--cw-tx) var(--cw-ty);
       transform: scale(0);
       opacity: 0;
-      animation: cw-planet-pop 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+      animation: cw-planet-pop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
       animation-delay: var(--cw-delay);
       cursor: pointer;
     }
@@ -146,7 +160,6 @@ function getChartStyles(reduced: boolean): string {
       animation-delay: var(--cw-delay);
       transition: stroke-opacity 0.3s ease;
     }
-    /* Dashed aspect lines (square/opposition) restore dash pattern after draw */
     .cw-aspect-line.cw-aspect-dashed {
       stroke-dasharray: 3, 3;
       stroke-dashoffset: 0;
@@ -155,43 +168,7 @@ function getChartStyles(reduced: boolean): string {
       animation-delay: var(--cw-delay);
     }
 
-    /* === Idle: planet breathing glow === */
-    @keyframes cw-planet-glow {
-      0%, 100% { opacity: 0.10; r: 12; }
-      50%      { opacity: 0.22; r: 14; }
-    }
-    .cw-planet-glow-circle {
-      animation: cw-planet-glow 3s ease-in-out infinite;
-      animation-delay: var(--cw-glow-delay, 0s);
-    }
-
-    /* === Idle: ring shimmer === */
-    @keyframes cw-ring-shimmer {
-      0%   { stroke-dashoffset: 0; }
-      100% { stroke-dashoffset: var(--cw-circumference); }
-    }
-    .cw-ring-shimmer {
-      animation: cw-ring-shimmer 12s linear infinite;
-      animation-delay: 1.6s;
-    }
-
-    /* === Idle: aspect pulse === */
-    @keyframes cw-aspect-pulse {
-      0%, 100% { stroke-opacity: 0.35; }
-      50%      { stroke-opacity: 0.50; }
-    }
-    .cw-aspect-idle {
-      animation: cw-aspect-pulse 4s ease-in-out infinite;
-      animation-delay: var(--cw-pulse-delay, 0s);
-    }
-
     /* === Interaction: planet hover === */
-    .cw-planet-group:hover .cw-planet-glow-circle {
-      opacity: 0.4 !important;
-      r: 16;
-      transition: all 0.2s ease;
-      animation: none;
-    }
     .cw-planet-group:hover .cw-planet-dot {
       r: 4;
       opacity: 1;
@@ -201,13 +178,16 @@ function getChartStyles(reduced: boolean): string {
       fill: #FFFFFF;
       transition: fill 0.2s ease;
     }
+    .cw-planet-group:hover .cw-degree-label {
+      opacity: 1 !important;
+      transition: opacity 0.2s ease;
+    }
 
     /* === Interaction: highlight aspects for hovered planet === */
     .cw-aspect-line.cw-aspect-highlight {
       stroke-opacity: 0.85 !important;
       stroke-width: 1.4;
       filter: url(#glow);
-      animation: none;
     }
 
     /* === Respect reduced motion === */
@@ -220,11 +200,6 @@ function getChartStyles(reduced: boolean): string {
         opacity: 1 !important;
         transform: scale(1) !important;
         stroke-dashoffset: 0 !important;
-      }
-      .cw-planet-glow-circle,
-      .cw-ring-shimmer,
-      .cw-aspect-idle {
-        animation: none !important;
       }
     }
   `;
@@ -245,7 +220,9 @@ export function ChartWheel({
   const cx = size / 2;
   const cy = size / 2;
   const outerR = size / 2 - 10;
-  const signRingInner = outerR - 35;
+  const nameRingR = outerR - 14;        // radius for sign names (outermost text)
+  const signRingInner = outerR - 40;     // wider ring for name + glyph
+  const glyphRingR = signRingInner + 8;  // glyphs sit just inside the inner border
   const houseRingOuter = signRingInner - 2;
   const houseRingInner = houseRingOuter - 60;
   const planetRingR = (houseRingOuter + houseRingInner) / 2;
@@ -261,43 +238,42 @@ export function ChartWheel({
       const endAngle = (i + 1) * 30;
       const midAngle = startAngle + 15;
 
+      // Division lines between signs
       const outerStart = polarToCartesian(cx, cy, outerR, startAngle);
-      const outerEnd = polarToCartesian(cx, cy, outerR, endAngle);
       const innerStart = polarToCartesian(cx, cy, signRingInner, startAngle);
-      const innerEnd = polarToCartesian(cx, cy, signRingInner, endAngle);
-      const glyphPos = polarToCartesian(
-        cx,
-        cy,
-        (outerR + signRingInner) / 2,
-        midAngle
-      );
 
-      // SVG arc path for the sign segment
-      const path = [
-        `M ${outerStart.x} ${outerStart.y}`,
-        `A ${outerR} ${outerR} 0 0 0 ${outerEnd.x} ${outerEnd.y}`,
-        `L ${innerEnd.x} ${innerEnd.y}`,
-        `A ${signRingInner} ${signRingInner} 0 0 1 ${innerStart.x} ${innerStart.y}`,
-        "Z",
-      ].join(" ");
+      // Sign name position (outer)
+      const namePos = polarToCartesian(cx, cy, nameRingR, midAngle);
+      // Glyph position (inner)
+      const glyphPos = polarToCartesian(cx, cy, glyphRingR, midAngle);
 
-      return { ...sign, path, glyphPos, startAngle, endAngle };
+      // Rotation for text to follow the arc
+      const textRotation = -(180 - midAngle);
+
+      return { ...sign, outerStart, innerStart, namePos, glyphPos, textRotation, startAngle, endAngle };
     });
-  }, [cx, cy, outerR, signRingInner]);
+  }, [cx, cy, outerR, signRingInner, nameRingR, glyphRingR]);
 
   // Generate house lines
   const houseLines = useMemo(() => {
     if (houses.length === 0) return [];
     return houses.map((house) => {
+      const isAxis = house.house === 1 || house.house === 4 || house.house === 7 || house.house === 10;
       const outer = polarToCartesian(cx, cy, houseRingOuter, house.degree);
       const inner = polarToCartesian(cx, cy, houseRingInner, house.degree);
+      // Label inside the house sector (midpoint between this cusp and midway toward center)
       const labelPos = polarToCartesian(
         cx,
         cy,
-        houseRingInner + 15,
+        houseRingInner + 20,
         house.degree + 15
       );
-      return { ...house, outer, inner, labelPos };
+      // Axis label just outside the house ring
+      const axisLabel = AXIS_LABELS[house.house];
+      const axisLabelPos = axisLabel
+        ? polarToCartesian(cx, cy, houseRingOuter + 8, house.degree)
+        : null;
+      return { ...house, outer, inner, labelPos, isAxis, axisLabel, axisLabelPos };
     });
   }, [houses, cx, cy, houseRingOuter, houseRingInner]);
 
@@ -305,10 +281,9 @@ export function ChartWheel({
   const planetPositions = useMemo(() => {
     if (planets.length === 0) return [];
 
-    // Resolve overlapping planets by nudging
     const sorted = [...planets].sort((a, b) => a.degree - b.degree);
     const positions: Array<PlanetPosition & { displayDegree: number }> = [];
-    const minSep = 8; // minimum degrees separation for display
+    const minSep = 10;
 
     for (const p of sorted) {
       let disp = p.degree;
@@ -324,7 +299,8 @@ export function ChartWheel({
     return positions.map((p) => {
       const pos = polarToCartesian(cx, cy, planetRingR, p.displayDegree);
       const symbol = PLANET_SYMBOLS[p.planet] || p.planet.charAt(0);
-      return { ...p, pos, symbol };
+      const degreeText = formatDegree(p.degree);
+      return { ...p, pos, symbol, degreeText };
     });
   }, [planets, cx, cy, planetRingR]);
 
@@ -344,18 +320,8 @@ export function ChartWheel({
           planetDegreeMap[a.planet2] !== undefined
       )
       .map((a) => {
-        const pos1 = polarToCartesian(
-          cx,
-          cy,
-          aspectRingR,
-          planetDegreeMap[a.planet1]
-        );
-        const pos2 = polarToCartesian(
-          cx,
-          cy,
-          aspectRingR,
-          planetDegreeMap[a.planet2]
-        );
+        const pos1 = polarToCartesian(cx, cy, aspectRingR, planetDegreeMap[a.planet1]);
+        const pos2 = polarToCartesian(cx, cy, aspectRingR, planetDegreeMap[a.planet2]);
         const color = ASPECT_COLORS[a.type] || "#64748B";
         const lineLen = Math.sqrt(
           (pos2.x - pos1.x) ** 2 + (pos2.y - pos1.y) ** 2
@@ -383,13 +349,13 @@ export function ChartWheel({
     return demoData.map((p) => {
       const pos = polarToCartesian(cx, cy, planetRingR, p.degree);
       const symbol = PLANET_SYMBOLS[p.planet] || p.planet.charAt(0);
-      return { ...p, displayDegree: p.degree, pos, symbol };
+      const degreeText = formatDegree(p.degree);
+      return { ...p, displayDegree: p.degree, pos, symbol, degreeText };
     });
   }, [showDemo, cx, cy, planetRingR]);
 
   const displayPlanets = showDemo ? demoPlanets : planetPositions;
 
-  // Determine which aspect lines to highlight based on hovered planet
   const isAspectHighlighted = useCallback(
     (aspect: { planet1: string; planet2: string }) => {
       if (!hoveredPlanet) return false;
@@ -397,10 +363,6 @@ export function ChartWheel({
     },
     [hoveredPlanet]
   );
-
-  // Shimmer gradient: a short bright segment that visually rotates around the ring
-  const shimmerDashLen = outerCircumference * 0.08; // 8% of circumference is the bright segment
-  const shimmerGapLen = outerCircumference - shimmerDashLen;
 
   return (
     <motion.div
@@ -417,18 +379,11 @@ export function ChartWheel({
       >
         <defs>
           <radialGradient id="chartBg" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor="#1E293B" stopOpacity="0.8" />
-            <stop offset="100%" stopColor="#0F172A" stopOpacity="1" />
+            <stop offset="0%" stopColor="#1E293B" stopOpacity="0.6" />
+            <stop offset="100%" stopColor="#0F172A" stopOpacity="0.9" />
           </radialGradient>
           <filter id="glow">
             <feGaussianBlur stdDeviation="2" result="coloredBlur" />
-            <feMerge>
-              <feMergeNode in="coloredBlur" />
-              <feMergeNode in="SourceGraphic" />
-            </feMerge>
-          </filter>
-          <filter id="planetHoverGlow">
-            <feGaussianBlur stdDeviation="3" result="coloredBlur" />
             <feMerge>
               <feMergeNode in="coloredBlur" />
               <feMergeNode in="SourceGraphic" />
@@ -439,27 +394,46 @@ export function ChartWheel({
         {/* Embedded animation styles */}
         <style>{getChartStyles(reduced)}</style>
 
-        {/* Background */}
+        {/* Background — subtle, not heavy */}
         <circle cx={cx} cy={cy} r={outerR} fill="url(#chartBg)" />
 
-        {/* Zodiac sign segments */}
+        {/* Zodiac sign division lines (thin, clean) + names + glyphs */}
         {signSegments.map((sign) => (
           <g key={sign.name}>
-            <path
-              d={sign.path}
-              fill={`${sign.color}10`}
-              stroke="rgba(255,255,255,0.15)"
+            {/* Division line between signs */}
+            <line
+              x1={sign.outerStart.x}
+              y1={sign.outerStart.y}
+              x2={sign.innerStart.x}
+              y2={sign.innerStart.y}
+              stroke="rgba(255,255,255,0.12)"
               strokeWidth="0.5"
             />
+            {/* Sign name (outer ring) */}
+            <text
+              x={sign.namePos.x}
+              y={sign.namePos.y}
+              textAnchor="middle"
+              dominantBaseline="central"
+              fill="rgba(255,255,255,0.5)"
+              fontSize="7"
+              fontWeight="500"
+              letterSpacing="0.5"
+              className="select-none"
+              transform={`rotate(${sign.textRotation}, ${sign.namePos.x}, ${sign.namePos.y})`}
+            >
+              {sign.name.toUpperCase()}
+            </text>
+            {/* Glyph (just inside inner border) */}
             <text
               x={sign.glyphPos.x}
               y={sign.glyphPos.y}
               textAnchor="middle"
               dominantBaseline="central"
               fill={sign.color}
-              fontSize="14"
+              fontSize="12"
               className="select-none"
-              style={{ opacity: 0.9 }}
+              style={{ opacity: 0.8 }}
             >
               {sign.glyph}
             </text>
@@ -473,7 +447,7 @@ export function ChartWheel({
           r={outerR}
           fill="none"
           stroke="rgba(255,255,255,0.2)"
-          strokeWidth="1"
+          strokeWidth="0.8"
           className="cw-ring-draw"
           style={
             { "--cw-circumference": outerCircumference } as React.CSSProperties
@@ -485,7 +459,7 @@ export function ChartWheel({
           r={signRingInner}
           fill="none"
           stroke="rgba(255,255,255,0.2)"
-          strokeWidth="1"
+          strokeWidth="0.8"
           className="cw-ring-draw"
           style={
             {
@@ -495,26 +469,7 @@ export function ChartWheel({
           }
         />
 
-        {/* Shimmer overlay on outer ring (idle animation) */}
-        {!reduced && (
-          <circle
-            cx={cx}
-            cy={cy}
-            r={outerR}
-            fill="none"
-            stroke="rgba(167,139,250,0.15)"
-            strokeWidth="2"
-            strokeDasharray={`${shimmerDashLen} ${shimmerGapLen}`}
-            className="cw-ring-shimmer"
-            style={
-              {
-                "--cw-circumference": outerCircumference,
-              } as React.CSSProperties
-            }
-          />
-        )}
-
-        {/* House ring */}
+        {/* House ring (inner circle) */}
         <circle
           cx={cx}
           cy={cy}
@@ -524,7 +479,7 @@ export function ChartWheel({
           strokeWidth="0.5"
         />
 
-        {/* House division lines — fade in after ring draws */}
+        {/* House division lines + numbers + axis labels */}
         {houseLines.map((house) => (
           <g
             key={`house-${house.house}`}
@@ -539,26 +494,43 @@ export function ChartWheel({
               x2={house.inner.x}
               y2={house.inner.y}
               stroke={
-                house.house === 1 || house.house === 10
-                  ? "rgba(167,139,250,0.6)"
-                  : "rgba(255,255,255,0.15)"
+                house.isAxis
+                  ? "rgba(167,139,250,0.5)"
+                  : "rgba(255,255,255,0.12)"
               }
-              strokeWidth={house.house === 1 || house.house === 10 ? 1.5 : 0.5}
+              strokeWidth={house.isAxis ? 1.2 : 0.5}
             />
+            {/* House number — larger, more visible */}
             <text
               x={house.labelPos.x}
               y={house.labelPos.y}
               textAnchor="middle"
               dominantBaseline="central"
-              fill="rgba(255,255,255,0.3)"
-              fontSize="8"
+              fill="rgba(255,255,255,0.4)"
+              fontSize="10"
+              fontWeight="600"
             >
               {house.house}
             </text>
+            {/* Axis label (AC/IC/DC/MC) */}
+            {house.axisLabel && house.axisLabelPos && (
+              <text
+                x={house.axisLabelPos.x}
+                y={house.axisLabelPos.y}
+                textAnchor="middle"
+                dominantBaseline="central"
+                fill="#A78BFA"
+                fontSize="8"
+                fontWeight="700"
+                letterSpacing="0.5"
+              >
+                {house.axisLabel}
+              </text>
+            )}
           </g>
         ))}
 
-        {/* Aspect lines — draw in + idle pulse + highlight on hover */}
+        {/* Aspect lines — draw in + highlight on hover (no idle pulse) */}
         {aspectLines.map((aspect, i) => {
           const highlighted = isAspectHighlighted(aspect);
           const isDashed =
@@ -572,13 +544,12 @@ export function ChartWheel({
               x2={aspect.pos2.x}
               y2={aspect.pos2.y}
               stroke={aspect.color}
-              strokeWidth={highlighted ? 1.4 : 0.7}
-              strokeOpacity={highlighted ? 0.85 : 0.4}
+              strokeWidth={highlighted ? 1.4 : 0.6}
+              strokeOpacity={highlighted ? 0.85 : 0.3}
               strokeDasharray={reduced && isDashed ? "3,3" : undefined}
               className={[
                 "cw-aspect-line",
                 !reduced && isDashed && "cw-aspect-dashed",
-                !reduced && "cw-aspect-idle",
                 highlighted && "cw-aspect-highlight",
               ]
                 .filter(Boolean)
@@ -587,7 +558,6 @@ export function ChartWheel({
                 {
                   "--cw-line-len": aspect.lineLen,
                   "--cw-delay": `${1.2 + i * 0.04}s`,
-                  "--cw-pulse-delay": `${i * 0.3}s`,
                 } as React.CSSProperties
               }
               filter={highlighted ? "url(#glow)" : undefined}
@@ -595,14 +565,14 @@ export function ChartWheel({
           );
         })}
 
-        {/* Planet positions — pop in staggered + idle glow + hover interaction */}
+        {/* Planet positions — pop in staggered, degree labels, no idle glow */}
         {displayPlanets.map((p, i) => (
           <g
             key={p.planet}
             className="cw-planet-group"
             style={
               {
-                "--cw-delay": `${1.8 + i * 0.12}s`,
+                "--cw-delay": `${1.6 + i * 0.1}s`,
                 "--cw-tx": `${p.pos.x}px`,
                 "--cw-ty": `${p.pos.y}px`,
               } as React.CSSProperties
@@ -610,20 +580,6 @@ export function ChartWheel({
             onMouseEnter={() => setHoveredPlanet(p.planet)}
             onMouseLeave={() => setHoveredPlanet(null)}
           >
-            {/* Planet glow background (idle breathing animation) */}
-            <circle
-              className="cw-planet-glow-circle"
-              cx={p.pos.x}
-              cy={p.pos.y}
-              r={12}
-              fill="rgba(124,58,237,0.1)"
-              filter="url(#glow)"
-              style={
-                {
-                  "--cw-glow-delay": `${i * 0.4}s`,
-                } as React.CSSProperties
-              }
-            />
             {/* Planet dot */}
             <circle
               className="cw-planet-dot"
@@ -631,30 +587,43 @@ export function ChartWheel({
               cy={p.pos.y}
               r={3}
               fill="#A78BFA"
-              opacity={0.7}
+              opacity={0.8}
             />
-            {/* Planet symbol */}
+            {/* Planet symbol — larger */}
             <text
               className="cw-planet-symbol select-none"
               x={p.pos.x}
-              y={p.pos.y - 10}
+              y={p.pos.y - 12}
               textAnchor="middle"
               dominantBaseline="central"
               fill="#F1F5F9"
-              fontSize="11"
+              fontSize="13"
               fontWeight="bold"
             >
               {p.symbol}
             </text>
+            {/* Degree label next to planet */}
+            <text
+              className="cw-degree-label select-none"
+              x={p.pos.x + 10}
+              y={p.pos.y + 2}
+              textAnchor="start"
+              dominantBaseline="central"
+              fill="rgba(255,255,255,0.45)"
+              fontSize="7"
+            >
+              {p.degreeText}
+            </text>
             {/* Retrograde indicator */}
             {p.retrograde && (
               <text
-                x={p.pos.x + 8}
-                y={p.pos.y - 8}
+                x={p.pos.x + 10}
+                y={p.pos.y - 10}
                 textAnchor="middle"
                 dominantBaseline="central"
                 fill="#F59E0B"
                 fontSize="7"
+                fontWeight="600"
               >
                 R
               </text>
@@ -662,16 +631,16 @@ export function ChartWheel({
           </g>
         ))}
 
-        {/* Center decoration */}
+        {/* Center decoration — minimal */}
         <circle
           cx={cx}
           cy={cy}
-          r="8"
+          r="6"
           fill="none"
-          stroke="rgba(167,139,250,0.3)"
+          stroke="rgba(167,139,250,0.25)"
           strokeWidth="0.5"
         />
-        <circle cx={cx} cy={cy} r="2" fill="rgba(167,139,250,0.5)" />
+        <circle cx={cx} cy={cy} r="1.5" fill="rgba(167,139,250,0.4)" />
       </svg>
     </motion.div>
   );

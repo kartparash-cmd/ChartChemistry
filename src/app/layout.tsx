@@ -10,6 +10,7 @@ import { Footer } from "@/components/footer";
 import { ImpersonationBanner } from "@/components/admin/impersonation-banner";
 import { StarField } from "@/components/star-field";
 import { CookieConsent } from "@/components/cookie-consent";
+import { ExitPopup } from "@/components/exit-popup";
 import { PageTransition } from "@/components/page-transition";
 import { CursorGlow } from "@/components/cursor-glow";
 import { ConstellationLines } from "@/components/constellation-lines";
@@ -194,6 +195,7 @@ export default function RootLayout({
           </SessionProvider>
           <Toaster position="top-right" richColors />
           <CookieConsent />
+          <ExitPopup />
         </ThemeProvider>
       </body>
     </html>
